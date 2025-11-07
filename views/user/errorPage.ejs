@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Nuvia Fashion - Error Page</title>
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="shortcut icon" type="image/x-icon" href="#">
+  <link rel="stylesheet" href="/css/admin.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/16d4885483.js" crossorigin="anonymous"></script>
+
+  <style>
+    /* Base styles */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      background: 
+        linear-gradient(rgba(255, 245, 245, 0.8), rgba(255, 230, 230, 0.8)),
+        url("/img/backimg.png") center/cover no-repeat;
+    }
+
+    /* Error container */
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .error-container img {
+      width: 250px;
+      max-width: 80%;
+      margin-bottom: 30px;
+    }
+
+    .error-container h1 {
+      font-size: 80px;
+      color: #ff4f81;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .error-container p {
+      font-size: 20px;
+      color: #555;
+      margin-bottom: 25px;
+    }
+
+    .error-container a {
+      display: inline-block;
+      background-color: #ff4f81;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 25px;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    .error-container a:hover {
+      background-color: #ff3366;
+    }
+
+    @media (max-width: 768px) {
+      .error-container h1 {
+        font-size: 60px;
+      }
+
+      .error-container p {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="error-container">
+    <h1>403</h1>
+    <p>Oops! You don’t have permission to access this page.</p>
+    <!-- ✅ Smart Go Back Button -->
+    <a href="#" onclick="if(document.referrer){window.history.back();}else{window.location.href='/';}">
+      <i class="fas fa-arrow-left"></i> Go Back
+    </a>
+  </div>
+</body>
+</body>
+
+</html>

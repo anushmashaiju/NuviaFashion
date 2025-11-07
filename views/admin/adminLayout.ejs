@@ -1,0 +1,115 @@
+<%- include("../../views/partials/adminHeader", { pageTitle: pageTitle }) %>
+
+<style>
+  /* 🌸 GLOBAL ADMIN LAYOUT */
+  body {
+    background-color: #fff5f7;
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  .admin-layout {
+    display: flex;
+    margin-top: 60px; /* Fixed header height */
+  }
+
+  .admin-main {
+    flex: 1;
+    margin-left: 230px; /* Sidebar width */
+    padding: 40px;
+    background-color: #fff;
+    min-height: calc(100vh - 100px);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 🌺 CARD STYLE */
+  .card {
+    background: #ffe6eb;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 🌼 PAGE HEADINGS */
+  h1, h2, h3 {
+    color: #a04c74;
+    font-weight: 600;
+  }
+
+  /* 🌷 BUTTON STYLES */
+  .btn-pink {
+    background-color: #f08da4;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.2s;
+  }
+
+  .btn-pink:hover {
+    background-color: #e26689;
+  }
+
+  /* 🌻 TABLE STYLING */
+  .table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff0f4;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .table-custom th {
+    background-color: #ffc4d6;
+    color: #a04c74;
+    font-weight: 600;
+  }
+
+  .table-custom th,
+  .table-custom td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ffd4dd;
+  }
+
+  .table-custom tr:nth-child(even) {
+    background-color: #ffe6eb;
+  }
+
+  /* 🌸 PAGINATION */
+  .pagination-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .page-btn {
+    background-color: #f08da4;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    margin: 0 8px;
+    cursor: pointer;
+  }
+
+  .page-btn:hover {
+    background-color: #e26689;
+  }
+</style>
+
+<div class="admin-layout">
+  <%- include("../../views/partials/adminSidebar") %>
+
+  <main class="admin-main">
+    <!-- 🌟 MAIN CONTENT AREA STARTS -->
+    <%- body %>
+    <!-- 🌟 MAIN CONTENT AREA ENDS -->
+  </main>
+</div>
+
+<%- include("../../views/partials/adminFooter") %>

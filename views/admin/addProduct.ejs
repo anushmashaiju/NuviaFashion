@@ -1,0 +1,324 @@
+<%- include("../partials/adminHeader", { pageTitle: "Add Product" }) %>
+
+<style>
+  body {
+    background-color: #fdf2f5;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .admin-layout {
+    display: flex;
+    margin-top: 60px;
+  }
+
+  .admin-main {
+    flex: 1;
+    margin-left: 230px;
+    padding: 30px;
+    background-color: #fff;
+    min-height: calc(100vh - 80px);
+  }
+
+  .card {
+    background: #ffe6eb;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 1000px;
+    margin: 30px auto;
+  }
+
+  h3 {
+    color: #a04c74;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #f08da4;
+    background-color: #fff;
+    font-size: 15px;
+  }
+
+  label {
+    font-weight: 500;
+    color: #444;
+  }
+
+  .btn-submit {
+    background-color: #f08da4;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: 0.3s;
+  }
+
+  .btn-submit:hover {
+    background-color: #e96c8b;
+    transform: scale(1.03);
+  }
+
+  .preview-thumb {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ffd4dd;
+    margin: 6px;
+  }
+
+  .image-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 7px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .variant-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+  }
+
+  .variant-table th {
+    background-color: #d83f80;
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .variant-table td {
+    background-color: #ffccd8;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .add-variant-btn {
+    background-color: #f08da4;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .add-variant-btn:hover {
+    background-color: #e96c8b;
+  }
+</style>
+
+<div class="admin-layout">
+  <%- include("../partials/adminSidebar.ejs") %>
+
+  <main class="admin-main">
+    <div class="card">
+      <h3>Add Product</h3>
+
+      <form id="productForm" method="POST" action="/admin/products/add" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label>Product Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+
+          <div class="col-md-6">
+            <label>Category</label>
+            <select name="category" class="form-select" required>
+              <option value="" disabled selected>Select Category</option>
+              <% categories.forEach(category => { %>
+                <option value="<%= category._id %>"><%= category.categoryName %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label>Brand</label>
+            <input type="text" name="brand" class="form-control" required>
+          </div>
+
+          <div class="col-md-4">
+            <label>Price</label>
+            <input type="number" name="price" class="form-control" required>
+          </div>
+
+          <div class="col-md-4">
+            <label>Discount (%)</label>
+            <input type="number" name="discount" class="form-control" id="discount" required>
+          </div>
+
+          <div class="col-md-4">
+            <label>Final Price</label>
+            <input type="number" name="finalPrice" class="form-control" id="finalPrice" readonly>
+          </div>
+
+          <div class="col-12">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="3" required></textarea>
+          </div>
+
+          <div class="col-12">
+            <label>Product Images (Minimum 3)</label>
+            <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control mt-1">
+            <div id="preview" class="d-flex flex-wrap mt-2"></div>
+          </div>
+
+          <div class="col-12 mt-4">
+            <label>Variants (Color / Size / SKU / Stock)</label>
+            <table class="variant-table">
+              <thead>
+                <tr>
+                  <th>Color</th>
+                  <th>Size</th>
+                  <th>SKU</th>
+                  <th>Stock</th>
+                  <th>Image</th>
+                  <th>Preview</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="variantBody"></tbody>
+            </table>
+            <button type="button" class="add-variant-btn" onclick="addVariant()">+</button>
+          </div>
+        </div>
+
+        <div class="text-center mt-4">
+          <button type="submit" class="btn-submit">Submit</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<%- include("../../views/partials/adminFooter") %>
+
+<script>
+  // Auto-calculate final price
+  document.getElementById("discount").addEventListener("input", function() {
+    const price = parseFloat(document.querySelector("[name='price']").value || 0);
+    const discount = parseFloat(this.value || 0);
+    document.getElementById("finalPrice").value = (price - price * discount / 100).toFixed(2);
+  });
+
+  // ===== Main Product Images =====
+  let uploadedFiles = [];
+  const input = document.getElementById('imageInput');
+  const preview = document.getElementById('preview');
+
+  input.addEventListener('change', function() {
+    uploadedFiles.push(...Array.from(this.files));
+    updateInputFiles();
+    renderPreview();
+  });
+
+  function updateInputFiles() {
+    const dt = new DataTransfer();
+    uploadedFiles.forEach(file => dt.items.add(file));
+    input.files = dt.files;
+  }
+
+  function renderPreview() {
+    preview.innerHTML = '';
+    Array.from(input.files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper';
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-thumb';
+
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => { removeFile(index); };
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        preview.appendChild(wrapper);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    updateInputFiles();
+    renderPreview();
+  }
+
+  // ===== Variants =====
+  function addVariant() {
+    const tbody = document.getElementById('variantBody');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+      <td><input type="text" class="form-control" name="variantColor[]" placeholder="Color"></td>
+      <td><input type="text" class="form-control" name="variantSize[]" placeholder="Size"></td>
+      <td><input type="text" class="form-control" name="variantSKU[]" placeholder="SKU"></td>
+      <td><input type="number" class="form-control" name="variantStock[]" placeholder="Stock"></td>
+      <td><input type="file" class="form-control variant-input" name="variantImages" accept="image/*"></td>
+      <td><div class="variant-preview"></div></td>
+      <td><i class="bi bi-trash text-danger" style="cursor:pointer" onclick="this.closest('tr').remove()"></i></td>
+    `;
+
+    const variantInput = row.querySelector('.variant-input');
+    const variantPreview = row.querySelector('.variant-preview');
+
+    variantInput.addEventListener('change', function() {
+      variantPreview.innerHTML = '';
+      Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'image-wrapper';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'preview-thumb';
+
+          const removeBtn = document.createElement('span');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = '×';
+          removeBtn.onclick = () => {
+            this.value = '';
+            wrapper.remove();
+          };
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(removeBtn);
+          variantPreview.appendChild(wrapper);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    tbody.appendChild(row);
+  }
+
+  document.getElementById('productForm').addEventListener('submit', function(e) {
+    if (input.files.length < 3) {
+      alert("Please upload at least 3 main product images");
+      e.preventDefault();
+    }
+  });
+</script>

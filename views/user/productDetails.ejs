@@ -1,0 +1,241 @@
+<%- include("../partials/userHeader", { title: product.name }) %>
+
+<style>
+body { background-color: #ffffff; font-family: 'Poppins', sans-serif; }
+
+/* Breadcrumb */
+.breadcrumb { background-color: #f8f9fa; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; margin: 100px auto 10px; max-width: 1100px; }
+.breadcrumb a { color: #a04c74; text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+/* Product Container */
+.product-container { max-width: 1100px; margin: 20px auto 60px; display: flex; gap: 40px; }
+
+/* Left Section */
+.image-gallery { flex: 1; }
+.main-image-container { position: relative; width: 100%; overflow: hidden; border-radius: 12px; }
+.main-image { width: 100%; border-radius: 12px; border: 1px solid #ddd; transition: transform 0.3s ease; cursor: zoom-in; }
+.main-image:hover { transform: scale(1.5); cursor: zoom-out; }
+.thumbnail-row { display: flex; gap: 10px; margin-top: 12px; }
+.thumbnail-row img { width: 70px; height: 80px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: all 0.3s ease; object-fit: cover; }
+.thumbnail-row img:hover, .thumbnail-row img.active { border-color: #a04c74; }
+
+/* Right Section */
+.product-details { flex: 1.2; }
+.product-details h2 { color: #a04c74; font-weight: 600; }
+.price { margin: 10px 0; font-size: 1.3rem; color: #ff4f8a; font-weight: 600; }
+.price .old { text-decoration: line-through; color: #999; font-size: 1rem; margin-left: 6px; }
+.price .discount { color: #28a745; font-size: 0.9rem; margin-left: 6px; }
+.in-stock { color: #28a745; font-weight: 500; }
+.out-stock { color: red; font-weight: 500; }
+
+/* Buttons */
+.btn-group { display: flex; gap: 10px; margin-top: 15px; }
+.btn-buy, .btn-cart { border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; font-weight: 500; transition: all 0.3s ease; }
+.btn-buy { background-color: #a04c74; color: white; }
+.btn-buy:hover { background-color: #ff4f8a; transform: scale(1.05); }
+.btn-cart { background-color: #ffe6f0; color: #a04c74; border: 1px solid #a04c74; }
+.btn-cart:hover { background-color: #ff4f8a; color: white; transform: scale(1.05); }
+.btn-cart.disabled, .btn-buy.disabled { opacity: 0.6; pointer-events: none; }
+
+/* Sections */
+.section-box { background-color: #fff; padding: 20px; border-radius: 12px; margin-top: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.section-box h4 { color: #a04c74; font-weight: 600; margin-bottom: 10px; }
+.section-box ul { list-style: none; padding: 0; line-height: 1.8; }
+.section-box li { color: #444; font-size: 0.95rem; }
+
+/* Ratings */
+.ratings-box { background-color: #fff7fa; border-radius: 10px; padding: 15px; text-align: center; margin-top: 30px; width: 250px; }
+.ratings-box h5 { color: #a04c74; font-weight: 600; }
+.ratings-box .stars { color: #ffcc00; font-size: 1.2rem; margin: 8px 0; }
+
+/* Recommended */
+.recommended { margin-top: 50px; }
+.recommended h4 { color: #a04c74; font-weight: 600; margin-bottom: 20px; }
+.recommended-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; }
+.recommended-card { border: 1px solid #eee; border-radius: 10px; text-align: center; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.3s ease; width: 200px; margin-bottom: 20px; }
+.recommended-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(160,76,116,0.2); }
+.recommended-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; }
+.recommended-card h6 { font-size: 0.95rem; color: #333; margin-top: 8px; }
+.recommended-card .price { font-size: 0.9rem; color: #ff4f8a; font-weight: 600; }
+.recommended-card .stars { color: #ffcc00; font-size: 0.8rem; }
+
+/* Reviews */
+.review-section { margin: 60px auto; max-width: 1100px; }
+.review-section h4 { color: #a04c74; font-weight: 600; margin-bottom: 15px; }
+.review-card { border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; background-color: #fff; }
+.review-card .stars { color: #ffcc00; }
+.review-form { background-color: #fff7fa; padding: 20px; border-radius: 10px; margin-top: 20px; }
+.review-form textarea { width: 100%; border-radius: 8px; padding: 10px; border: 1px solid #ccc; }
+.review-form button { background-color: #a04c74; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+.review-form button:hover { background-color: #ff4f8a; }
+
+/* Flash & Modal */
+.out-stock-banner { background-color: #ffe6e6; color: #ff4f4f; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 600; }
+.zoom-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; cursor: zoom-out; }
+.zoom-modal img { max-width:90%; max-height:90%; border-radius:12px; }
+.flash-message { max-width:1100px; margin:20px auto; padding:10px; border-radius:8px; }
+.flash-success { background-color:#e6ffed; color:#28a745; }
+.flash-error { background-color:#ffe6e6; color:#ff4f4f; }
+</style>
+
+<!-- Flash Messages -->
+<% if(flash.success) { %>
+  <div class="flash-message flash-success"><%= flash.success %></div>
+<% } %>
+<% if(flash.error) { %>
+  <div class="flash-message flash-error"><%= flash.error %></div>
+<% } %>
+
+<!-- Sold out banner -->
+<% if(product.stock <= 0) { %>
+  <div class="out-stock-banner">⚠️ This product is sold out!</div>
+<% } %>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="breadcrumb">
+  <a href="/">Home</a> / 
+  <a href="/products">Products</a> / 
+  <a href="/products?category=<%= product.category.categoryName %>">
+    <%= product.category.categoryName %>
+  </a> /  
+  <span><%= product.name %></span>
+</nav>
+
+<div class="container product-container">
+  <!-- Left: Image Gallery -->
+  <div class="image-gallery">
+    <div class="main-image-container">
+      <img src="<%= product.images[0] %>" alt="Main Image" class="main-image" id="mainImage"
+           onclick="openZoomModal('<%= product.images[0] %>')">
+    </div>
+    <div class="thumbnail-row">
+      <% product.images.forEach((img, i)=> { %>
+        <img src="<%= img %>" alt="Thumbnail" class="<%= i === 0 ? 'active' : '' %>"
+          onclick="changeImage('<%= img %>', this)">
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Right: Product Info -->
+  <div class="product-details">
+    <h2><%= product.name %></h2>
+    <div class="price">
+      ₹<%= (product.price * (1 - (product.discount || 0)/100)).toFixed(2) %>
+      <% if (product.discount) { %>
+        <span class="old">₹<%= product.price.toFixed(2) %></span>
+        <span class="discount">(<%= product.discount %>% OFF)</span>
+      <% } %>
+    </div>
+    <p class="<%= product.stock > 0 ? 'in-stock' : 'out-stock' %>">
+      <%= product.stock>0 ? 'In Stock' : 'Out of Stock' %>
+    </p>
+    <div class="btn-group">
+      <a href="/add-to-cart/<%= product._id %>" class="btn-cart <%= product.stock <= 0 ? 'disabled' : '' %>">Add to Cart</a>
+      <a href="/checkout/<%= product._id %>" class="btn-buy <%= product.stock <= 0 ? 'disabled' : '' %>">Buy Now</a>
+    </div>
+
+    <!-- Coupons -->
+    <div class="section-box">
+      <h4>Available Coupons:</h4>
+      <% if(product.coupons && product.coupons.length>0) { %>
+        <ul>
+          <% product.coupons.forEach(c => { %>
+            <li><strong><%= c.code %></strong> - <%= c.description %></li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p>No coupons available</p>
+      <% } %>
+    </div>
+
+    <!-- Ratings Box -->
+    <div class="ratings-box">
+      <h5>Ratings & Reviews</h5>
+      <div class="stars">
+        <% for(let i=1; i<=5; i++){ %>
+          <i class="fa <%= i <= Math.floor(product.rating || 0) ? 'fa-star' : 'fa-star-o' %>"></i>
+        <% } %>
+      </div>
+      <p><%= (product.rating || 0).toFixed(1) %> based on <%= product.reviewCount || 0 %> reviews</p>
+    </div>
+  </div>
+</div>
+
+<!-- Reviews Section -->
+<div class="review-section">
+  <h4>Customer Reviews</h4>
+  <% if (product.reviews && product.reviews.length > 0) { %>
+    <% product.reviews.forEach(review => { %>
+      <div class="review-card">
+        <strong><%= review.userName %></strong>
+        <div class="stars">
+          <% for(let i=1; i<=5; i++){ %>
+            <i class="fa <%= i <= review.rating ? 'fa-star' : 'fa-star-o' %>"></i>
+          <% } %>
+        </div>
+        <p><%= review.comment %></p>
+        <small class="text-muted"><%= new Date(review.date).toLocaleDateString() %></small>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No reviews yet. Be the first to review!</p>
+  <% } %>
+
+  <!-- Review Form -->
+  <form class="review-form" action="/product/<%= product._id %>/review" method="POST">
+    <h5>Write a Review</h5>
+    <label>Rating:</label>
+    <select name="rating" required>
+      <option value="5">★★★★★</option>
+      <option value="4">★★★★</option>
+      <option value="3">★★★</option>
+      <option value="2">★★</option>
+      <option value="1">★</option>
+    </select>
+    <br><br>
+    <label>Comment:</label>
+    <textarea name="comment" rows="3" required></textarea>
+    <button type="submit">Submit Review</button>
+  </form>
+</div>
+
+<!-- Recommended Products -->
+<div class="container recommended">
+  <h4>Recommended Products</h4>
+  <div class="recommended-row">
+    <% recommendedProducts.forEach(p=> { %>
+      <div class="recommended-card">
+        <a href="/product/<%= p._id %>">
+          <img src="<%= p.images[0] %>" alt="<%= p.name %>">
+        </a>
+        <h6><%= p.name %></h6>
+        <div class="stars">
+          <% for(let i=1; i<=5; i++){ %>
+            <i class="fa <%= i <= Math.floor(p.rating || 0) ? 'fa-star' : 'fa-star-o' %>"></i>
+          <% } %>
+        </div>
+        <div class="price">
+          ₹<%= (p.price * (1 - (p.discount || 0)/100)).toFixed(2) %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<script>
+function changeImage(src, el) {
+  document.getElementById('mainImage').src = src;
+  document.querySelectorAll('.thumbnail-row img').forEach(img => img.classList.remove('active'));
+  el.classList.add('active');
+}
+function openZoomModal(src) {
+  const modal = document.createElement('div');
+  modal.classList.add('zoom-modal');
+  modal.innerHTML = `<img src="${src}" />`;
+  modal.onclick = () => modal.remove();
+  document.body.appendChild(modal);
+}
+</script>
+
+<%- include("../../views/partials/userFooter.ejs") %>

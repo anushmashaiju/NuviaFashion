@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuvia Admin</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<!-- ✅ Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  integrity="sha512-KyZXEAg3QhqLMpG8r+Knujsl5+5hb7bM4N+OeQKzVvYFj7kZl5tVEZ4u7ZpZCzkUqz8Z8XkJrP3uWVpXzYG0Fg=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
+
+  <style>
+    body {
+      background-color: #fdf2f5;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Fixed Navbar */
+    .navbar {
+      background-color: #fafafa;
+      padding: 12px 20px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000; /* Keeps it above sidebar */
+    }
+
+    .navbar h3 {
+      color: #a04c74;
+      font-weight: 600;
+    }
+
+    .navbar input {
+      border-radius: 20px;
+      border: 1px solid #f0a8b9;
+    }
+
+    .navbar .btn {
+      background-color: #ff7faa;
+      border: none;
+      color: white;
+      border-radius: 20px;
+      padding: 5px 15px;
+    }
+
+    .navbar .btn:hover {
+      background-color: #ff6797;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background-color: #ffe6eb;
+      width: 230px;
+      min-height: 100vh;
+      padding: 25px 15px;
+      position: fixed;
+      top: 64px; /* below the navbar */
+      left: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar h4 {
+      color: #a04c74;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .sidebar img {
+      display: block;
+      margin: 0 auto 8px;
+    }
+
+    .sidebar p {
+      color: #a04c74;
+      margin-bottom: 20px;
+    }
+
+    .sidebar .nav-link {
+      color: #a04c74;
+      font-weight: 500;
+      padding: 10px 15px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar .nav-link:hover {
+      background-color: #ffadc5;
+      color: white;
+    }
+
+    .sidebar .nav-link.active {
+      background-color: #ff9bb8;
+      color: white;
+    }
+
+   
+
+    .logout-link {
+      color: #dc3545 !important;
+      font-weight: bold;
+    }
+
+    .logout-link:hover {
+      color: white !important;
+      background-color: #dc3545;
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="navbar d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center">
+    <img src="/img/Nuvia.png" alt="Logo" width="60" class="me-2">
+  </div>
+
+  <!-- ✅ Dynamic admin name -->
+  <div class="d-flex align-items-center">
+    <i class="bi bi-person-circle me-2 fs-5 text-dark"></i>
+    <span class="fw-semibold text-dark">
+      <%= admin ? admin.name : "Admin" %>
+    </span>
+  </div>
+</header>
+
+
+<%- include('./adminSidebar') %>
+
+
+  <div class="main-content">

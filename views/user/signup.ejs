@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Signup Page</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: url('/img/backimg.png');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding-left: 5%;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 24px;
+      color: #f76f8f;
+    }
+
+    .form-outline {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #f0ecec;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #f76f8f;
+    }
+
+    .btn {
+      width: 50%;
+      padding: 12px;
+      background-color: #f76f8f;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .btn:hover {
+      background-color: #e1a87c;
+    }
+
+    .alert {
+      color: red;
+      font-size: 14px;
+      margin-top: -15px;
+      margin-bottom: 10px;
+    }
+
+    .login-link {
+      text-align: center;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .login-link a {
+      color: #f76f8f;
+      text-decoration: none;
+    }
+
+    .social-login {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+
+    .social-login button {
+      display: flex;
+      align-items: center;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      background-color: white;
+    }
+
+    .social-login img {
+      width: 12px;
+      height: 12px;
+      margin-right: 8px;
+    }
+
+    .or {
+      text-align: center;
+    }
+
+    .agree-label {
+      font-size: 12px;
+      padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>Create Account</h2>
+    <form action="/signup" method="POST" onsubmit="return validateForm()">
+      <div class="form-outline">
+        <input type="text" id="name" name="name" placeholder="Name" required minlength="3"
+          pattern="^[A-Za-z\s]+$" title="Enter a valid name (only letters and spaces)" />
+      </div>
+      <div class="form-outline">
+        <input type="email" id="email" name="email" placeholder="Email Address" required />
+      </div>
+      <div class="form-outline">
+        <input type="text" id="mobile" name="mobile" placeholder="Mobile Number" required pattern="^\d{10}$"
+          title="Enter a 10-digit mobile number" />
+      </div>
+      <div class="form-outline">
+        <input type="password" id="password" name="password" placeholder="Password" required minlength="6"
+          pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}"
+          title="Must contain uppercase, lowercase, number, and special character" />
+      </div>
+      <div id="password-rule-error" class="alert" style="display: none;"></div>
+
+      <div class="form-outline">
+        <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirm Password"
+          required minlength="6" />
+      </div>
+      <div id="password-error" class="alert" style="display: none;"></div>
+
+      <label class="agree-label">
+        <input type="checkbox" required />
+        <span>I have read and agreed to the Terms of Service and Privacy Policy</span>
+      </label>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div id="error-message" class="alert">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <div class="pt-1 mb-4">
+        <button class="btn" type="submit">Sign Up</button>
+      </div>
+    </form>
+
+    <p class="or">or</p>
+    <div class="social-login">
+     <button type="button" onclick="window.location.href='/auth/google'" class="btn-google">
+  <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google">
+  Signup with Google
+</button>
+
+      <!-- <button><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Signup with Facebook</button> -->
+    </div>
+
+    <div class="login-link">
+      Already have an account? <a href="/userLogin">Login</a>
+    </div>
+  </div>
+
+  <script>
+    function validateForm() {
+      const password = document.getElementById('password').value.trim();
+      const confirm = document.getElementById('confirm-password').value.trim();
+      const passwordError = document.getElementById('password-rule-error');
+      const confirmError = document.getElementById('password-error');
+
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+
+      // Hide messages
+      passwordError.style.display = 'none';
+      confirmError.style.display = 'none';
+
+      // Check password strength
+      if (!strongPasswordRegex.test(password)) {
+        passwordError.innerText = "Password must contain uppercase, lowercase, number, and special character!";
+        passwordError.style.display = 'block';
+        return false;
+      }
+
+      // Check confirm password
+      if (!confirm) {
+        confirmError.innerText = "Please confirm your password!";
+        confirmError.style.display = 'block';
+        return false;
+      }
+
+      // Match check
+      if (password !== confirm) {
+        confirmError.innerText = "Passwords do not match!";
+        confirmError.style.display = 'block';
+        return false;
+      }
+
+      return true;
+    }
+
+    // Clear errors on focus
+    document.getElementById('password').addEventListener('focus', function () {
+      document.getElementById('password-rule-error').style.display = 'none';
+    });
+
+    document.getElementById('confirm-password').addEventListener('focus', function () {
+      document.getElementById('password-error').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
