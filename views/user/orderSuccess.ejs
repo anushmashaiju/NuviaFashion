@@ -1,0 +1,46 @@
+<%- include("../partials/userHeader", { title: "Order Success" }) %>
+
+<style>
+  .success-wrapper {
+    max-width: 650px;
+    margin: 120px auto 40px;
+    background: #fff;
+    padding: 30px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-family: "Poppins", sans-serif;
+  }
+
+  .success-wrapper img {
+    width: 180px;
+    margin-top: 20px;
+  }
+
+  .success-wrapper a {
+    display: inline-block;
+    margin: 12px;
+    padding: 10px 20px;
+    background: #f76f8f;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s;
+  }
+
+  .success-wrapper a:hover {
+    background: #d14a78;
+  }
+</style>
+
+<div class="success-wrapper">
+    <h2>🎉 Order Placed Successfully!</h2>
+
+    <div style="margin-top: 25px;">
+        <a href="/order/<%= order.orderID %>">View Order</a>
+        <a href="/products">Continue Shopping</a>
+    </div>
+</div>
+
+<%- include("../partials/userFooter") %>

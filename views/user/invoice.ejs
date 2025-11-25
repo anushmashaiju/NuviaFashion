@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice - <%= order.orderID %></title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 20px;
+      color: #333;
+    }
+    .invoice-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f76f8f;
+      padding-bottom: 10px;
+    }
+    .invoice-header img {
+      height: 50px;
+    }
+    h1 {
+      font-size: 22px;
+      color: #f76f8f;
+      font-family: "Dancing Script", cursive;
+      margin: 0;
+    }
+    .section-card {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    table th {
+      background-color: #f7c4d4;
+      color: #fff;
+    }
+    .bill-box {
+      padding: 10px;
+      background: #f7f7f7;
+      border-radius: 8px;
+    }
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+    }
+    .total {
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="invoice-header">
+    <div>
+      <h1>Nuvia Fashion</h1>
+    </div>
+
+  </div>
+
+  <div class="section-card">
+    <h3>Customer Details</h3>
+    <% if(order.shippingAddressId) { %>
+      <p><strong>Name:</strong> <%= order.shippingAddressId.name %></p>
+      <p><strong>Address:</strong> <%= order.shippingAddressId.addressLine %>, <%= order.shippingAddressId.area %>, <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %></p>
+      <p><strong>Phone:</strong> <%= order.shippingAddressId.phone %></p>
+    <% } else { %>
+      <p style="color:red;">No shipping address found.</p>
+    <% } %>
+    <p><strong>Order ID:</strong> <%= order.orderID %></p>
+    <p><strong>Order Date:</strong> <%= order.createdAt.toDateString() %></p>
+  </div>
+
+  <div class="section-card">
+    <h3>Ordered Items</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(item => { %>
+          <tr>
+            <td><%= item.productName %></td>
+            <td><%= item.quantity %></td>
+            <td>Rs.<%= item.finalPrice %></td>
+            <td>Rs.<%= item.subtotal %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-card">
+    <h3>Price Details</h3>
+    <div class="bill-box">
+      <div class="bill-row">
+        <span>Subtotal</span>
+        <span>Rs.<%= order.subtotal %></span>
+      </div>
+
+      <% if(order.discount > 0) { %>
+        <div class="bill-row">
+          <span>Discount</span>
+          <span>- Rs.<%= order.discount %></span>
+        </div>
+      <% } %>
+
+      <% if(order.tax > 0) { %>
+        <div class="bill-row">
+          <span>GST (18%)</span>
+          <span>Rs.<%= order.tax %></span>
+        </div>
+      <% } %>
+
+      <% if(order.couponCode && order.couponDiscount) { %>
+        <div class="bill-row">
+          <span>Coupon (<%= order.couponCode %>)</span>
+          <span>- Rs.<%= order.couponDiscount %></span>
+        </div>
+      <% } %>
+
+      <div class="bill-row">
+        <span>Delivery Charge</span>
+        <span>Rs.<%= order.deliveryCharge || 0 %></span>
+      </div>
+
+      <hr>
+      <div class="bill-row total">
+        <span>Total Amount</span>
+        <span>Rs.<%= order.totalPrice %></span>
+      </div>
+
+      <p style="margin-top:10px;">Paid by: <strong><%= order.paymentMethod %></strong></p>
+    </div>
+  </div>
+
+</body>
+</html>

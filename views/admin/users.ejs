@@ -4,6 +4,8 @@
   body {
     background-color: #fdf2f5;
     font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
   }
 
   .admin-layout {
@@ -23,7 +25,7 @@
     background: #ffe6eb;
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
   }
 
@@ -34,7 +36,6 @@
     margin-bottom: 25px;
   }
 
-  /* 🔍 Search */
   .search-section {
     display: flex;
     justify-content: center;
@@ -71,7 +72,6 @@
     background-color: #ffd4dd;
   }
 
-  /* 🧾 Table */
   .table {
     border-radius: 12px;
     overflow: hidden;
@@ -129,21 +129,35 @@
     border-radius: 6px;
   }
 
-  /* 📄 Pagination */
-  .pagination .page-link {
-    color: #f08da4;
-    border: 1px solid #f08da4;
+  .pagination-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 8px;
   }
 
-  .pagination .page-item.active .page-link {
+  .page-btn {
     background-color: #f08da4;
-    border-color: #f08da4;
     color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
   }
 
-  .pagination .page-link:hover {
-    background-color: #ffd4dd;
-    border-color: #f08da4;
+  .page-btn.active {
+    background-color: #a04c74;
+    font-weight: 600;
+  }
+
+  .page-btn:disabled {
+    background-color: #ffc4d6;
+    cursor: not-allowed;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background-color: #e96c8b;
   }
 </style>
 
@@ -154,16 +168,10 @@
     <div class="card">
       <h3>Users</h3>
 
-      <!-- 🔍 Search Section -->
       <div class="search-section">
         <form action="/admin/users" method="get" class="d-flex gap-2">
-          <input
-            name="search"
-            value="<%= search || '' %>"
-            type="text"
-            class="form-control"
-            placeholder="Search users..."
-          />
+          <input name="search" value="<%= search || '' %>" type="text" class="form-control"
+            placeholder="Search users..." />
           <button type="submit" class="btn btn-primary">
             <i class="bi bi-search"></i>
           </button>
@@ -175,7 +183,6 @@
         </form>
       </div>
 
-      <!-- 🧾 Users Table -->
       <table class="table table-hover align-middle text-center">
         <thead>
           <tr>
@@ -212,12 +219,12 @@
                   <% } %>
                 </td>
                 <td>
-                  <a href="/admin/user/<%= c._id %>/toggle"
+                  <button type="button"
                     class="btn btn-sm <%= c.isActive ? 'btn-secondary' : 'btn-success' %>"
-                    title="<%= c.isActive ? 'Block user' : 'Unblock user' %>"
-                    onclick="return confirm('Are you sure you want to <%= c.isActive ? 'block' : 'unblock' %> this user?')">
+                    onclick="confirmToggle('<%= c._id %>', <%= c.isActive %>)"
+                    title="<%= c.isActive ? 'Block user' : 'Unblock user' %>">
                     <i class="bi <%= c.isActive ? 'bi-lock' : 'bi-unlock' %>"></i>
-                  </a>
+                  </button>
                 </td>
               </tr>
             <% }) %>
@@ -225,23 +232,53 @@
         </tbody>
       </table>
 
-      <!-- 📄 Pagination -->
-      <% if (totalPages > 1) { %>
-        <nav aria-label="Page navigation" class="mt-4">
-          <ul class="pagination justify-content-center">
-            <% for (let i = 1; i <= totalPages; i++) { %>
-              <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                <a class="page-link"
-                   href="/admin/users?page=<%= i %><%= search ? '&search=' + search : '' %>">
-                   <%= i %>
-                </a>
-              </li>
-            <% } %>
-          </ul>
-        </nav>
-      <% } %>
+      <div class="pagination-wrap">
+        <% if (currentPage > 1) { %>
+          <button class="page-btn" onclick="changePage(<%= currentPage - 1 %>)">&laquo; Prev</button>
+        <% } else { %>
+          <button class="page-btn" disabled>&laquo; Prev</button>
+        <% } %>
+
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <button class="page-btn <%= i === currentPage ? 'active' : '' %>"
+            onclick="changePage(<%= i %>)">
+            <%= i %>
+          </button>
+        <% } %>
+
+        <% if (currentPage < totalPages) { %>
+          <button class="page-btn" onclick="changePage(<%= currentPage + 1 %>)">Next &raquo;</button>
+        <% } else { %>
+          <button class="page-btn" disabled>Next &raquo;</button>
+        <% } %>
+      </div>
     </div>
   </main>
 </div>
 
 <%- include("../partials/adminFooter") %>
+
+<script>
+  function confirmToggle(userId, isActive) {
+    const action = isActive ? "block" : "unblock";
+    const confirmColor = isActive ? "#e74c3c" : "#28a745";
+
+    Swal.fire({
+      title: `Are you sure you want to ${action} this user?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: confirmColor,
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: `Yes, ${action}`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/admin/user/${userId}/toggle`;
+      }
+    });
+  }
+
+  function changePage(page) {
+    const search = new URLSearchParams(window.location.search).get("search") || "";
+    window.location.href = `/admin/users?page=${page}${search ? `&search=${search}` : ""}`;
+  }
+</script>

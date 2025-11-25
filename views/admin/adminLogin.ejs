@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
     <title>Admin Login Page</title>
     <style>
-        /* General styles for body */
         body {
             font-family: 'Open Sans', sans-serif;
             margin: 0;
@@ -32,23 +33,24 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-
         h2 {
             text-align: center;
             margin-bottom: 30px;
             font-size: 24px;
-            color:#f76f8f;
+            color: #f76f8f;
         }
 
-        /* Form styles */
         .form-outline {
             margin-bottom: 20px;
+            position: relative;
         }
 
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
             padding: 12px;
+            padding-right: 45px;
             font-family: 'Open Sans', sans-serif;
             font-size: 14px;
             border-radius: 5px;
@@ -56,17 +58,27 @@
             box-sizing: border-box;
         }
 
-
-        input[type="email"]:focus,
-        input[type="password"]:focus {
+        input:focus {
             outline: none;
-            border-color:#f76f8f;
+            border-color: #f76f8f;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 18px;
+            color: #f76f8f;
+            user-select: none;
+            padding: 0;
         }
 
         .btn {
             width: 50%;
             padding: 12px;
-            background-color:#f76f8f;
+            background-color: #f76f8f;
             color: #fff;
             border: none;
             font-size: 12px;
@@ -76,7 +88,6 @@
             margin: 0 auto;
         }
 
-
         .btn:hover {
             background-color: #e1a87c;
         }
@@ -84,14 +95,11 @@
         .forgot {
             text-align: center;
             margin: 15px 0;
-
         }
 
         .forgot a {
-            text-align: center;
-            margin: 15px 0;
             font-size: 14px;
-            color:#f76f8f;
+            color: #f76f8f;
             text-decoration: none;
         }
 
@@ -105,7 +113,6 @@
             display: flex;
             align-items: center;
             border: none;
-            border-radius: none;
             padding: 8px 12px;
             cursor: pointer;
             font-size: 12px;
@@ -121,53 +128,80 @@
         .register {
             text-align: center;
             font-size: 13px;
-            color: #aaa;
         }
 
         .register a {
-            color:#f76f8f;
+            color: #f76f8f;
             text-decoration: none;
         }
 
         .alert {
-            color:#f76f8f;
+            color: #f76f8f;
             text-align: center;
             font-size: 14px;
             margin-bottom: 10px;
         }
 
-        .footer-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-
         .or {
             text-align: center;
         }
+        .input-error {
+    border: 1px solid red !important;
+}
+
+.error-text {
+    font-size: 13px;
+    color: red;
+    margin-top: 5px;
+}
+
     </style>
 </head>
 
 <body>
- 
+
     <div class="card">
         <h2>Admin Login Page</h2>
-         <form action="/admin/login" method="POST">
+
+        <form action="/admin/login" method="POST">
             <div class="form-outline">
+    <input 
+        type="email" 
+        id="email" 
+        placeholder="Email" 
+        name="email" 
+        value="<%= typeof email !== 'undefined' ? email : '' %>"
+        class="<%= errorField === 'email' ? 'input-error' : '' %>"
+        required
+    />
+    <% if (errorField === 'email') { %>
+        <p class="error-text"><%= errorMessage %></p>
+    <% } %>
+</div>
 
-                <input type="email" id="email" placeholder="Email" name="email" required />
-            </div>
+<div class="form-outline">
+    <input 
+        type="password" 
+        id="password" 
+        placeholder="Password" 
+        name="password" 
+        class="<%= errorField === 'password' ? 'input-error' : '' %>"
+        required
+    />
+    <span class="toggle-password" onclick="togglePassword()">
+        <i id="eyeIcon" class="fa-solid fa-eye fa-xs"></i>
+    </span>
 
-            <div class="form-outline">
-
-                <input type="password" id="password" placeholder="Password" name="password" required />
-            </div>
+    <% if (errorField === 'password') { %>
+        <p class="error-text"><%= errorMessage %></p>
+    <% } %>
+</div>
 
             <div class="pt-1 mb-4">
                 <button class="btn" type="submit">Login</button>
             </div>
         </form>
 
-        <!-- Error message -->
         <% if (typeof error !=='undefined' && error) { %>
             <div id="error-message" class="alert">
                 <%= error %>
@@ -175,14 +209,14 @@
             <% } %>
 
                 <div class="forgot">
-                    <a href="/forgot-password">Forgot password?</a>
+                    <a href="/admin/forgot-password">Forgot password?</a>
                 </div>
+
                 <p class="or">or</p>
+
                 <div class="social-login">
                     <button><img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google"> Signup with
                         Google</button>
-                    <!-- <button><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Signup with
-                        Facebook</button> -->
                 </div>
 
                 <div class="register">
@@ -191,26 +225,36 @@
     </div>
 
     <script>
+        function togglePassword() {
+            const pass = document.getElementById("password");
+            const icon = document.getElementById("eyeIcon");
+
+            if (pass.type === "password") {
+                pass.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                pass.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
-            // Automatically hide error after 3 seconds
             setTimeout(() => {
                 const errorBox = document.getElementById("error-message");
-                if (errorBox) {
-                    errorBox.style.display = "none";
-                }
+                if (errorBox) errorBox.style.display = "none";
             }, 3000);
 
-            // Clear error message when user starts typing
             document.querySelectorAll("input").forEach(input => {
                 input.addEventListener("input", () => {
                     const errorBox = document.getElementById("error-message");
-                    if (errorBox) {
-                        errorBox.style.display = "none";
-                    }
+                    if (errorBox) errorBox.style.display = "none";
                 });
             });
         });
     </script>
+
 </body>
 
 </html>

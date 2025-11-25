@@ -2,12 +2,12 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// ✅ Generate OTP (4 digits)
+// Generate OTP (4 digits)
 export function generateOtp() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-// ✅ Send OTP via Email
+// Send OTP via Email
 export async function sendVerificationEmail(email, otp) {
   try {
     const transporter = nodemailer.createTransport({

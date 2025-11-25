@@ -3,40 +3,94 @@ import bcrypt from "bcrypt";
 
 // Admin Login Page
 export const getAdminLoginPage = (req, res) => {
-  res.render("admin/adminLogin", { title: "Admin Login", error: null });
+  res.render("admin/adminLogin", { 
+    title: "Admin Login",
+    email: "",
+    errorField: null,
+    errorMessage: null
+  });
 };
 
 // Admin Login
 export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email });
-    if (!user || user.role !== "admin") {
-      return res.render("admin/adminLogin", { title: "Admin Login", error: "Invalid credentials or not admin" });
+
+    if (!email) {
+      return res.render("admin/adminLogin", {
+        title: "Admin Login",
+        errorField: "email",
+        errorMessage: "Email is required"
+      });
     }
 
+    if (!password) {
+      return res.render("admin/adminLogin", {
+        title: "Admin Login",
+        errorField: "password",
+        errorMessage: "Password is required"
+      });
+    }
+
+    if (!user || user.role !== "admin") {
+      return res.render("admin/adminLogin", {
+  title: "Admin Login",
+  email,
+  errorField: "email",
+  errorMessage: "Email is required"
+});
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.render("admin/adminLogin", { title: "Admin Login", error: "Invalid credentials or not admin" });
+      return res.render("admin/adminLogin", {
+  title: "Admin Login",
+  email,
+  errorField: "password",
+  errorMessage: "Incorrect password"
+});
     }
+    req.session.user = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
 
-    req.session.user = { id: user._id, name: user.name, email: user.email, role: user.role };
     req.session.save(err => {
-      if (err) return res.render("admin/adminLogin", { title: "Admin Login", error: "Session error" });
+      if (err) {
+       return res.render("admin/adminLogin", {
+  title: "Admin Login",
+  email,
+  errorField: null,
+  errorMessage: "Something went wrong"
+});
+      }
       res.redirect("/admin/dashboard");
     });
+
   } catch (error) {
     console.error(error);
-    res.render("admin/adminLogin", { title: "Admin Login", error: "Something went wrong" });
+    res.render("admin/adminLogin", {
+      title: "Admin Login",
+      errorField: "",
+      errorMessage: "Something went wrong"
+    });
   }
 };
 
 // Admin Dashboard
 export const getAdminDashboard = async (req, res) => {
   try {
-    res.render("admin/dashboard", { title: "Admin Dashboard", admin: req.session.user });
+    const totalUsers = await User.countDocuments({ role: "user", isDeleted: false });
+    res.render("admin/dashboard", {
+      title: "Admin Dashboard",
+      admin: req.session.user,
+      totalUsers   
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Dashboard Error:", error);
     res.redirect("/error");
   }
 };
@@ -46,8 +100,7 @@ export const adminLogout = (req, res) => {
   req.session.destroy(err => res.redirect("/admin/login"));
 };
 
-
-// Get All Users (search + pagination + sort)
+// Get All Users 
 export const getAllUsers = async (req, res) => {
   try {
     const search = req.query.search?.trim() || "";
@@ -56,7 +109,7 @@ export const getAllUsers = async (req, res) => {
 
     const query = {
       role: "user",
-      isDeleted: false, // ✅ exclude deleted users
+      isDeleted: false, 
       ...(search && {
         $or: [
           { name: { $regex: search, $options: "i" } },
@@ -69,7 +122,7 @@ export const getAllUsers = async (req, res) => {
     const totalPages = Math.ceil(totalUsers / limit);
 
     const users = await User.find(query)
-      .sort({ createdAt: -1 }) // ✅ latest first
+      .sort({ createdAt: -1 }) 
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -103,18 +156,49 @@ export const toggleUserStatus = async (req, res) => {
   }
 };
 
-
-// --------------------- Forgot Password ---------------------
+// Forgot Password 
 export const getAdminForgotPassword = (req, res) => {
-  res.render("admin/forgotPassword", { message: null });
+  res.render("admin/adminForgotPassword", { 
+    email: "",
+    errorField: null,
+    errorMessage: null,
+    message: null
+  });
 };
 
+// postAdminForgotPassword
 export const postAdminForgotPassword = async (req, res) => {
   const { email } = req.body;
+
+ if (!email || email.trim() === "") {
+    return res.render("admin/adminForgotPassword", {
+      email,
+      errorField: "email",
+      errorMessage: "Email address is required.",
+      message: null
+    });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.render("admin/adminForgotPassword", {
+      email,
+      errorField: "email",
+      errorMessage: "Email address is invalid.",
+      message: null
+    });
+  }
+
   try {
     const admin = await User.findOne({ email, role: "admin" });
+
     if (!admin) {
-      return res.render("admin/forgotPassword", { message: "Admin account not found." });
+      return res.render("admin/adminForgotPassword", {
+        email,
+        errorField: "email",
+        errorMessage: "Admin account not found.",
+        message: null
+      });
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000);
@@ -122,25 +206,38 @@ export const postAdminForgotPassword = async (req, res) => {
     req.session.adminResetEmail = email;
 
     const emailSent = await sendVerificationEmail(email, otp);
+
     if (!emailSent) {
-      return res.render("admin/forgotPassword", { message: "Failed to send OTP. Try again." });
+      return res.render("admin/adminForgotPassword", {
+        email,
+        errorField: "email",
+        errorMessage: "Failed to send OTP. Try again.",
+        message: null
+      });
     }
 
     console.log("Admin Forgot OTP:", otp);
     res.redirect(`/admin/verify-forgot-otp?email=${email}`);
+
   } catch (error) {
-    console.error("Admin Forgot Password Error:", error);
-    res.render("admin/forgotPassword", { message: "Something went wrong. Try again." });
+    console.error("Forgot Password Error:", error);
+    return res.render("admin/adminForgotPassword", {
+      email,
+      errorField: "email",
+      errorMessage: "Something went wrong. Try again.",
+      message: null
+    });
   }
 };
 
-// --------------------- Verify OTP ---------------------
+//Verify OTP 
 export const getAdminForgotOtpPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
   if (!email) return res.redirect("/admin/forgot-password");
-  res.render("admin/otpForgotPassword", { email, message: null });
+  res.render("admin/otpForgotPassword", { email, errorMessage: null });
 };
 
+//Verify AdminForgotOtp
 export const verifyAdminForgotOtp = async (req, res) => {
   const { otp1, otp2, otp3, otp4, email } = req.body;
   const enteredOtp = `${otp1}${otp2}${otp3}${otp4}`;
@@ -149,11 +246,11 @@ export const verifyAdminForgotOtp = async (req, res) => {
     req.session.adminOtpVerified = true;
     res.redirect(`/admin/reset-password?email=${email}`);
   } else {
-    res.render("admin/otpForgotPassword", { email, message: "Invalid OTP. Try again." });
+    res.render("admin/otpForgotPassword", { email, errorMessage: "Invalid OTP. Try again." });
   }
 };
 
-// --------------------- Resend OTP ---------------------
+//Resend OTP 
 export const resendAdminForgotOtp = async (req, res) => {
   try {
     const email = req.query.email || req.session.adminResetEmail;
@@ -164,28 +261,42 @@ export const resendAdminForgotOtp = async (req, res) => {
 
     const emailSent = await sendVerificationEmail(email, newOtp);
     if (!emailSent) {
-      return res.render("admin/otpForgotPassword", { email, message: "Failed to resend OTP." });
+      return res.render("admin/otpForgotPassword", { email, errorMessage: "Failed to resend OTP." });
     }
 
     console.log("Resent Admin OTP:", newOtp);
-    res.render("admin/otpForgotPassword", { email, message: "New OTP sent successfully." });
+    res.render("admin/otpForgotPassword", { email, errorMessage: "New OTP sent successfully." });
   } catch (error) {
     console.error("Resend Admin OTP Error:", error);
-    res.render("admin/otpForgotPassword", { email: req.session.adminResetEmail, message: "Something went wrong." });
+    res.render("admin/otpForgotPassword", { email: req.session.adminResetEmail, errorMessage: "Something went wrong." });
   }
 };
 
-// --------------------- Reset Password ---------------------
+// admin reset Password page
 export const getAdminResetPasswordPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
-  if (!req.session.adminOtpVerified) return res.redirect("/admin/forgot-password");
-  res.render("admin/resetPassword", { email, message: null });
+  if (!req.session.adminOtpVerified) 
+    return res.redirect("/admin/forgot-password");
+  res.render("admin/resetPassword", { email, errorMessage: null });
 };
 
+//Reset adminPassword 
 export const resetAdminPassword = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
+
   if (password !== confirmPassword) {
-    return res.render("admin/resetPassword", { email, message: "Passwords do not match." });
+    return res.render("admin/resetPassword", { 
+      email,
+      errorField: "confirmPassword",
+      errorMessage: "Passwords do not match." 
+    });
+  }
+  if (password.length < 6) {
+    return res.render("admin/resetPassword", { 
+      email,
+      errorField: "password",
+      errorMessage: "Password must be at least 6 characters." 
+    });
   }
 
   try {
@@ -195,9 +306,17 @@ export const resetAdminPassword = async (req, res) => {
     req.session.adminOtpVerified = false;
     req.session.adminResetEmail = null;
 
-    res.render("admin/adminLogin", { title: "Admin Login", error: "Password reset successful. Please login." });
+    res.render("admin/adminLogin", { 
+      title: "Admin Login", 
+      errorMessage: "Password reset successful. Please login." 
+    });
+
   } catch (error) {
     console.error("Admin Reset Password Error:", error);
-    res.render("admin/resetPassword", { email, message: "Something went wrong. Try again." });
+    res.render("admin/resetPassword", { 
+      email,
+      errorField: "password",
+      errorMessage: "Something went wrong. Try again." 
+    });
   }
 };

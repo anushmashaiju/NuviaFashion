@@ -1,0 +1,126 @@
+<%- include("../partials/userHeader", { title: "Edit Address" }) %>
+
+<style>
+  .edit-container {
+    max-width: 700px;
+    margin: 100px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .edit-container input, .edit-container select {
+    width: 100%;
+    margin-bottom: 6px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    background-color: #f76f8f;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .error-alert {
+    background: #ffdddd;
+    color: #b30000;
+    padding: 10px;
+    border-left: 5px solid #b30000;
+    margin-bottom: 15px;
+    border-radius: 5px;
+  }
+
+  .error-text {
+    color: red;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+</style>
+
+<div class="breadcrumb">
+  <% if (redirect === 'checkout') { %>
+      <a href="/checkout">Back to Checkout</a> &gt; <span>Edit Address</span>
+  <% } else { %>
+      <a href="/home">Home</a> &gt; 
+      <a href="/userProfile">My Profile</a> &gt; 
+      <span>Edit Address</span>
+  <% } %>
+</div>
+
+<div class="edit-container">
+  <h3>Edit Address</h3>
+
+  <% if (error) { %>
+    <div class="error-alert">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <form action="/user/addresses/edit/<%= address._id %>?redirect=<%= redirect %>" method="POST">
+
+    <div>
+      <input type="text" name="name" value="<%= name %>" placeholder="Full Name" required>
+      <% if (nameError) { %>
+        <div class="error-text"><%= nameError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="text" name="phone" value="<%= phone %>" placeholder="Mobile Number" required>
+      <% if (phoneError) { %>
+        <div class="error-text"><%= phoneError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="text" name="addressLine" value="<%= addressLine %>" placeholder="Address Line" required>
+      <% if (addressLineError) { %>
+        <div class="error-text"><%= addressLineError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="text" name="landmark" value="<%= landmark %>" placeholder="Landmark (optional)">
+    </div>
+
+    <div>
+      <input type="text" name="area" value="<%= area %>" placeholder="Area" required>
+      <% if (areaError) { %>
+        <div class="error-text"><%= areaError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="text" name="state" value="<%= state %>" placeholder="State" required>
+      <% if (stateError) { %>
+        <div class="error-text"><%= stateError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="number" name="pincode" value="<%= pincode %>" placeholder="Pincode" required>
+      <% if (pincodeError) { %>
+        <div class="error-text"><%= pincodeError %></div>
+      <% } %>
+    </div>
+
+    <div>
+      <select name="addressType" required>
+        <option value="home" <%= addressType === "home" ? "selected" : "" %>>Home</option>
+        <option value="work" <%= addressType === "work" ? "selected" : "" %>>Work</option>
+        <option value="other" <%= addressType === "other" ? "selected" : "" %>>Other</option>
+      </select>
+    </div>
+
+    <button type="submit">Update Address</button>
+  </form>
+</div>
+
+<%- include("../partials/userFooter") %>

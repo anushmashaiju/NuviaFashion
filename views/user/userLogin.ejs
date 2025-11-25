@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
     <title>User Login Page</title>
     <style>
-        /* General styles for body */
         body {
             font-family: 'Open Sans', sans-serif;
             margin: 0;
@@ -32,41 +32,53 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-
         h2 {
             text-align: center;
             margin-bottom: 30px;
             font-size: 24px;
-            color:#f76f8f;
+            color: #f76f8f;
         }
 
-        /* Form styles */
         .form-outline {
             margin-bottom: 20px;
+            position: relative; 
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 18px;
+            color: #f76f8f;
+            user-select: none;
         }
 
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"]  {
             width: 100%;
             padding: 12px;
-            font-family: 'Open Sans', sans-serif;
             font-size: 14px;
             border-radius: 5px;
             border: 1px solid #f0ecec;
             box-sizing: border-box;
         }
 
+        .password-wrapper input {
+            padding-right: 45px;
+        }
 
-        input[type="email"]:focus,
-        input[type="password"]:focus {
+        input:focus {
             outline: none;
-            border-color:#f76f8f;
+            border-color: #f76f8f;
         }
 
         .btn {
             width: 50%;
             padding: 12px;
-            background-color:#f76f8f;
+            background-color: #f76f8f;
             color: #fff;
             border: none;
             font-size: 12px;
@@ -76,22 +88,18 @@
             margin: 0 auto;
         }
 
-
         .btn:hover {
-            background-color: #f76f8f;
+            background-color: #e1a87c;
         }
 
-        .forgot {
+        .forgot,
+        .register {
             text-align: center;
-            margin: 15px 0;
-
         }
 
-        .forgot a {
-            text-align: center;
-            margin: 15px 0;
-            font-size: 14px;
-            color:#f76f8f;
+        .forgot a,
+        .register a {
+            color: #f76f8f;
             text-decoration: none;
         }
 
@@ -105,7 +113,6 @@
             display: flex;
             align-items: center;
             border: none;
-            border-radius: none;
             padding: 8px 12px;
             cursor: pointer;
             font-size: 12px;
@@ -118,102 +125,87 @@
             margin-right: 8px;
         }
 
-        .register {
-            text-align: center;
+        .error-text {
+            color: red;
             font-size: 13px;
-            color: #aaa;
-        }
-
-        .register a {
-            color:#f76f8f;
-            text-decoration: none;
+            margin-top: 5px;
         }
 
         .alert {
-            color:#f76f8f;
             text-align: center;
             font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .footer-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .or {
-            text-align: center;
+            color: red;
+            margin: 10px 0;
         }
     </style>
 </head>
 
 <body>
+
     <div class="card">
         <h2>User Login Page</h2>
-       <form action="/userLogin" method="POST">
+
+        <form action="/login" method="POST">
 
             <div class="form-outline">
-
-                <input type="email" id="email" placeholder="Email" name="email" required />
+                <input type="email" id="email" placeholder="Email" name="email">
+                <% if (errorField==='email') { %>
+                    <p class="error-text"><%= errorMessage %></p>
+                <% } %>
             </div>
 
-            <div class="form-outline">
-
-                <input type="password" id="password" placeholder="Password" name="password" required />
+            <div class="form-outline password-wrapper">
+                <input type="password" id="password" placeholder="Password" name="password">
+                <span class="toggle-password" onclick="togglePassword('password', 'eyeIcon')">
+                    <i id="eyeIcon" class="fa-solid fa-eye fa-xs"></i>
+                </span>
+                <% if (errorField==='password') { %>
+                    <p class="error-text"><%= errorMessage %></p>
+                <% } %>
             </div>
 
-            <div class="pt-1 mb-4">
-                <button class="btn" type="submit">Login</button>
-            </div>
+            <button class="btn" type="submit">Login</button>
         </form>
 
-        <!-- Error message -->
-        <% if (typeof error !=='undefined' && error) { %>
-            <div id="error-message" class="alert">
-                <%= error %>
-            </div>
-            <% } %>
+        <% if (error && !errorField) { %>
+            <div class="alert"><%= error %></div>
+        <% } %>
 
-                <div class="forgot">
-                   <a href="/forgot-password">Forgot password?</a>
+        <div class="forgot">
+            <a href="/forgot-password">Forgot password?</a>
+        </div>
 
-                </div>
-                <p class="or">or</p>
-                <div class="social-login">
-                  <button type="button" onclick="window.location.href='/auth/google'" class="btn-google">
-  <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google">
-  Signup with Google
-</button>
-                    <!-- <button><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Signup with
-                        Facebook</button> -->
-                </div>
+        <p class="or" style="text-align:center;">or</p>
 
-                <div class="register">
-                    Create an account? <a href="/signup">Register</a>
-                </div>
+        <div class="social-login">
+            <button type="button" onclick="window.location.href='/auth/google'">
+                <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google">
+                Signup with Google
+            </button>
+        </div>
+
+        <div class="register">
+            Create an account? <a href="/signup">Register</a>
+        </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Automatically hide error after 3 seconds
-            setTimeout(() => {
-                const errorBox = document.getElementById("error-message");
-                if (errorBox) {
-                    errorBox.style.display = "none";
-                }
-            }, 3000);
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
 
-            // Clear error message when user starts typing
-            document.querySelectorAll("input").forEach(input => {
-                input.addEventListener("input", () => {
-                    const errorBox = document.getElementById("error-message");
-                    if (errorBox) {
-                        errorBox.style.display = "none";
-                    }
-                });
-            });
-        });
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
     </script>
+
 </body>
 
 </html>

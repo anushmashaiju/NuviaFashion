@@ -2,61 +2,114 @@ import User from "../../models/userModel.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import { generateOtp, sendVerificationEmail } from "../../utils/otpHelper.js";
+import Address from "../../models/addressModel.js";
+import cloudinary from "../../config/cloudinary.js";
 
-
-// 🟢 1. Welcome Page
+//  Welcome Page
 export const getWelcomePage = (req, res) => {
   res.render("user/welcome", { title: "Welcome" });
 };
 
-// 🟢 2. Signup Page
+// Signup Page
 export const getSignupPage = (req, res) => {
-  res.render("user/signup", { message: null });
+  res.render("user/signup", {
+    errorField: null,
+    errorMessage: null,
+    name: "",
+    email: "",
+    mobile: ""
+  });
 };
 
-// 🟢 3. Register User (with OTP)
+
+//  Register User (with OTP)
 export const registerUser = async (req, res) => {
   try {
     const { name, email, mobile, password, confirmPassword } = req.body;
 
-    if (password !== confirmPassword) {
-      return res.render("user/signup", { message: "Passwords do not match" });
+    if (!name || !/^[A-Za-z\s]+$/.test(name)) {
+      return res.render("user/signup", {
+        errorField: "name",
+        errorMessage: "Enter a valid name",
+        name, email, mobile
+      });
+    }
+
+    if (!email) {
+      return res.render("user/signup", {
+        errorField: "email",
+        errorMessage: "Email is required",
+        name, email, mobile
+      });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.render("user/signup", { message: "User already exists" });
+      return res.render("user/signup", {
+        errorField: "email",
+        errorMessage: "User already exists",
+        name, email, mobile
+      });
+    }
+
+    if (!/^\d{10}$/.test(mobile)) {
+      return res.render("user/signup", {
+        errorField: "mobile",
+        errorMessage: "Enter a valid 10-digit mobile number",
+        name, email, mobile
+      });
+    }
+
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+    if (!strongRegex.test(password)) {
+      return res.render("user/signup", {
+        errorField: "password",
+        errorMessage: "Password must contain uppercase, lowercase, number and special character",
+        name, email, mobile
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.render("user/signup", {
+        errorField: "confirmPassword",
+        errorMessage: "Passwords do not match",
+        name, email, mobile
+      });
     }
 
     const otp = generateOtp();
-    console.log("Generated OTP for signup:", otp);
-
     const emailSent = await sendVerificationEmail(email, otp);
+
     if (!emailSent) {
-      return res.render("user/signup", { message: "Failed to send OTP. Try again." });
+      return res.render("user/signup", {
+        errorField: "email",
+        errorMessage: "Failed to send OTP. Try again.",
+        name, email, mobile
+      });
     }
 
     req.session.userOtp = otp;
     req.session.userData = { name, email, mobile, password };
 
-    res.render("user/verifyOtp", { email, message: "OTP sent to your email" });
+    res.render("user/verifyOtp", { email, errorMessage: "OTP sent to your email" });
+
   } catch (error) {
     console.error("Signup error:", error);
     res.redirect("/error");
   }
 };
 
-// 🟢 4. Verify OTP
+// Verify OTP
 export const verifyOtp = async (req, res) => {
   const otp = `${req.body.otp1}${req.body.otp2}${req.body.otp3}${req.body.otp4}`;
   const { userOtp, userData } = req.session;
 
   if (!userOtp || !userData) {
-    return res.render("user/signup", { message: "Session expired. Please sign up again." });
+    return res.render("user/signup", { errorMessage: "Session expired. Please sign up again." });
   }
 
   if (otp !== userOtp) {
-    return res.render("user/verifyOtp", { email: userData.email, message: "Invalid OTP" });
+    return res.render("user/verifyOtp", { email: userData.email, errorMessage: "Invalid OTP" });
   }
 
   try {
@@ -67,7 +120,7 @@ export const verifyOtp = async (req, res) => {
       mobile: userData.mobile,
       password: hashedPassword,
       isVerified: true,
-      role: "user", // default role
+      role: "user",
     });
 
     await newUser.save();
@@ -83,12 +136,12 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// 🟢 5. RESEND OTP
+//  RESEND OTP
 export const resendOtp = async (req, res) => {
   try {
     const { userData } = req.session;
     if (!userData) {
-      return res.render("user/signup", { message: "Session expired. Please sign up again." });
+      return res.render("user/signup", { errorMessage: "Session expired. Please sign up again." });
     }
 
     const newOtp = generateOtp();
@@ -96,76 +149,139 @@ export const resendOtp = async (req, res) => {
 
     const emailSent = await sendVerificationEmail(userData.email, newOtp);
     if (!emailSent) {
-      return res.render("user/verifyOtp", { email: userData.email, message: "Failed to resend OTP. Try again." });
+      return res.render("user/verifyOtp", { email: userData.email, errorMessage: "Failed to resend OTP. Try again." });
     }
 
     req.session.userOtp = newOtp;
-    res.render("user/verifyOtp", { email: userData.email, message: "A new OTP has been sent to your email." });
+    res.render("user/verifyOtp", { email: userData.email, errorMessage: "A new OTP has been sent to your email." });
   } catch (error) {
     console.error("Resend OTP Error:", error);
     res.redirect("/error");
   }
 };
 
-// 🟢 6. Login Page
+// Login Page
 export const getLoginPage = (req, res) => {
-  res.render("user/userLogin", { title: "Login", error: null });
+  res.render("user/userLogin", {
+    title: "Login",
+    errorField: null,
+    errorMessage: null,
+    error: null
+  });
 };
 
-// 🟢 7. Login User (Check Admin/User)
+
+// Login User (Check Admin/User)
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "Email is required",
+        error: null
+      });
+    }
+
+    if (!password) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "password",
+        errorMessage: "Password is required",
+        error: null
+      });
+    }
+
     const user = await User.findOne({ email });
 
-    if (!user)
-      return res.render("user/userLogin", { title: "Login", error: "User not found." });
-
-    if (!user.isVerified)
-      return res.render("user/userLogin", { title: "Login", error: "Please verify your account first." });
-
-if (!user.isActive) {
-  return res.render("user/userLogin", { error: "Your account is blocked. Contact support." });
-}
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.render("user/userLogin", { title: "Login", error: "Incorrect password." });
-
-    // Save session
-    req.session.user = { id: user._id, name: user.name, email: user.email, role: user.role };
-
-    // ✅ Check role and redirect accordingly
-    if (user.role === "admin") {
-      console.log("🛠 Admin logged in:", user.email);
-      return res.redirect("/admin/dashboard");
-    } else {
-      console.log("User logged in:", user.email);
-      return res.redirect("/home");
-    }
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.render("user/userLogin", { title: "Login", error: "Something went wrong." });
-  }
-};
-
-// 🟢 8. Google Auth Success (Check Role + Blocked)
-export const googleAuthSuccess = async (req, res) => {
-  try {
-    if (!req.user) return res.redirect("/userLogin");
-
-    // Fetch full user from DB using email
-    const user = await User.findOne({ email: req.user.email });
-
     if (!user) {
-      return res.render("user/userLogin", { title: "Login", error: "User not found." });
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "User not found.",
+        error: null
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "Please verify your account first.",
+        error: null
+      });
     }
 
     if (!user.isActive) {
-      return res.render("user/userLogin", { title: "Login", error: "Your account is blocked. Contact support." });
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "Your account is blocked. Contact support.",
+        error: null
+      });
     }
 
-    // Save session
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "password",
+        errorMessage: "Incorrect password.",
+        error: null
+      });
+    }
+
+    req.session.user = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    if (user.role === "admin") {
+      return res.redirect("/admin/dashboard");
+    }
+
+    return res.redirect("/home");
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.render("user/userLogin", {
+      title: "Login",
+      errorField: null,
+      errorMessage: null,
+      error: "Something went wrong. Please try again."
+    });
+  }
+};
+
+// Google Auth Success (Check Role + Blocked)
+export const googleAuthSuccess = async (req, res) => {
+  try {
+    if (!req.user) return res.redirect("/login");
+
+    const user = await User.findOne({ email: req.user.email });
+
+    if (!user) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "User not found.",
+        error: null
+      });
+    }
+
+    if (!user.isActive) {
+      return res.render("user/userLogin", {
+        title: "Login",
+        errorField: "email",
+        errorMessage: "Your account is blocked. Contact support.",
+        error: null
+      });
+    }
+
     req.session.user = {
       id: user._id,
       name: user.name,
@@ -174,42 +290,41 @@ export const googleAuthSuccess = async (req, res) => {
     };
 
     if (user.role === "admin") {
-      console.log("🛠 Admin logged in via Google:", user.email);
       return res.redirect("/admin/dashboard");
     } else {
-      console.log("User logged in via Google:", user.email);
       return res.redirect("/home");
     }
+
   } catch (error) {
     console.error("Google Auth Error:", error);
-    res.render("user/userLogin", { title: "Login", error: "Something went wrong." });
+    return res.render("user/userLogin", {
+      title: "Login",
+      errorField: null,
+      errorMessage: null,
+      error: "Something went wrong."
+    });
   }
 };
-// 🟢 9. Home Page
-export const getHomePage = (req, res) => {
-  if (!req.session.user) return res.redirect("/userLogin");
-  res.render("user/userHome", { title: "Home", user: req.session.user });
-};
 
-// 🟢 10. Logout
+// Logout
 export const logoutUser = (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error("Logout Error:", err);
-    res.redirect("/userLogin");
+    res.redirect("/login");
   });
 };
 
-// 🟢 11. Google Auth Controllers
+// Google Auth Controllers
 export const googleLogin = passport.authenticate("google", {
   scope: ["profile", "email"],
 });
 
 export const googleCallback = passport.authenticate("google", {
-  failureRedirect: "/userLogin",
+  failureRedirect: "/login",
 });
 
 export const googleRedirectSuccess = (req, res) => {
-  if (!req.user) return res.redirect("/userLogin");
+  if (!req.user) return res.redirect("/login");
 
   req.session.user = {
     id: req.user._id,
@@ -225,19 +340,43 @@ export const googleRedirectSuccess = (req, res) => {
   }
 };
 
-// 🟢 12. Forgot Password Page
+//  Forgot Password Page
 export const getForgotPasswordPage = (req, res) => {
-  res.render("user/forgotPassword", { message: null });
+  res.render("user/forgotPassword", {
+    email: "",
+    errorField: null,
+    errorMessage: null
+  });
 };
 
-// 🟢 13. Handle Forgot Password (send OTP)
+//  Handle Forgot Password (send OTP)
 export const sendForgotPasswordOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
 
+    if (!email || email.trim() === "") {
+      return res.render("user/forgotPassword", {
+        email: "",
+        errorField: "email",
+        errorMessage: "Email address is required."
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.render("user/forgotPassword", {
+        email,
+        errorField: "email",
+        errorMessage: "Email address is invalid."
+      });
+    }
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.render("user/forgotPassword", { message: "No user found with this email." });
+      return res.render("user/forgotPassword", {
+        email,
+        errorField: "email",
+        errorMessage: "No user found with this email."
+      });
     }
 
     const otp = generateOtp();
@@ -245,50 +384,67 @@ export const sendForgotPasswordOtp = async (req, res) => {
 
     const emailSent = await sendVerificationEmail(email, otp);
     if (!emailSent) {
-      return res.render("user/forgotPassword", { message: "Failed to send OTP. Try again." });
+      return res.render("user/forgotPassword", { errorMessage: "Failed to send OTP. Try again." });
     }
 
     req.session.resetOtp = otp;
     req.session.resetEmail = email;
 
-    res.render("user/otpForgotPassword", { email, message: "OTP sent to your email" });
+    res.render("user/otpForgotPassword", { email, errorMessage: "OTP sent to your email" });
   } catch (error) {
     console.error("Forgot Password Error:", error);
     res.redirect("/error");
   }
 };
 
-// 🟢 14. Verify OTP for Forgot Password
+// Verify OTP for Forgot Password
 export const verifyForgotOtp = async (req, res) => {
-  const otp = `${req.body.otp1}${req.body.otp2}${req.body.otp3}${req.body.otp4}`;
-  const { resetOtp, resetEmail } = req.session;
+  try {
+    const otp = `${req.body.otp1}${req.body.otp2}${req.body.otp3}${req.body.otp4}`;
+    const { resetOtp, resetEmail } = req.session;
 
-  if (!resetOtp || !resetEmail) {
-    return res.render("user/forgotPassword", { message: "Session expired. Try again." });
+    if (!resetOtp || !resetEmail) {
+      return res.render("user/forgotPassword", {
+        errorMessage: "Session expired. Try again."
+      });
+    }
+
+    if (otp !== resetOtp) {
+      return res.render("user/otpForgotPassword", {
+        email: resetEmail,
+        errorMessage: "Invalid OTP"
+      });
+    }
+
+    req.session.resetOtp = null;
+    req.session.otpVerified = true;
+
+    return res.render("user/resetPassword", {
+      email: resetEmail,
+      errorField: null,
+      errorMessage: null
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.render("user/otpForgotPassword", {
+      email: req.session.resetEmail,
+      errorMessage: "Something went wrong. Try again."
+    });
   }
-
-  if (otp !== resetOtp) {
-    return res.render("user/otpForgotPassword", { email: resetEmail, message: "Invalid OTP" });
-  }
-
-  // OTP verified
-  req.session.resetOtp = null;
-  req.session.otpVerified = true;
-
-  res.render("user/changePassword", { email: resetEmail, message: null });
 };
 
-// 🟢 16. Resend Forgot Password OTP (Fixed)
+// Resend Forgot Password OTP
 export const resendForgotOtp = async (req, res) => {
   try {
-    const email = req.query.email || req.session.resetEmail; // get saved email
+    const email = req.query.email || req.session.resetEmail;
 
     if (!email) {
       return res.redirect("/forgot-password");
     }
 
     const newOtp = Math.floor(1000 + Math.random() * 9000);
-    req.session.resetOtp = newOtp; // use the same session key used in verifyForgotOtp
+    req.session.resetOtp = newOtp;
 
     console.log(`Resent forgot password OTP for ${email}: ${newOtp}`);
 
@@ -296,42 +452,76 @@ export const resendForgotOtp = async (req, res) => {
     if (!emailSent) {
       return res.render("user/otpForgotPassword", {
         email,
-        message: "Failed to resend OTP. Please try again.",
+        errorMessage: "Failed to resend OTP. Please try again.",
       });
     }
 
     res.render("user/otpForgotPassword", {
       email,
-      message: "A new OTP has been sent to your email.",
+      errorMessage: "A new OTP has been sent to your email.",
     });
   } catch (error) {
     console.error("Resend Forgot OTP Error:", error);
     res.render("user/otpForgotPassword", {
       email: req.session.resetEmail,
-      message: "Something went wrong. Please try again.",
+      errorMessage: "Something went wrong. Please try again.",
     });
   }
 };
 
 
-// 🟢 16. Reset Password (Final Step)
+// Reset Password 
 export const resetPassword = async (req, res) => {
   try {
     const { password, confirmPassword, email } = req.body;
-
-    if (password !== confirmPassword) {
-      return res.render("user/changePassword", { email, message: "Passwords do not match" });
+    if (!password) {
+      return res.render("user/resetPassword", {
+        email,
+        errorField: "password",
+        errorMessage: "Password is required"
+      });
     }
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+    if (!strongRegex.test(password)) {
+      return res.render("user/resetPassword", {
+        email,
+        errorField: "password",
+        errorMessage: "Password must contain uppercase, lowercase, number & special character"
+      });
+    }
+    if (!confirmPassword) {
+      return res.render("user/resetPassword", {
+        email,
+        errorField: "confirmPassword",
+        errorMessage: "Please confirm your password"
+      });
+    }
+    if (password !== confirmPassword) {
+      res.render("user/resetPassword", {
+        email,
+        errorField: "password",
+        errorMessage: "Password is required"
+      });
 
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     await User.findOneAndUpdate({ email }, { password: hashedPassword });
 
     req.session.resetEmail = null;
     req.session.otpVerified = null;
 
-    res.render("user/userLogin", { title: "Login", error: "Password reset successful. Please login." });
+    res.render("user/userLogin", {
+      title: "Login",
+      errorField: null,
+      errorMessage: null,
+      error: null
+    });
+
+
   } catch (error) {
     console.error("Reset Password Error:", error);
     res.redirect("/error");
   }
 };
+
+

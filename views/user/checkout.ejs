@@ -1,0 +1,523 @@
+<%- include("../partials/userHeader", { title: "Checkout" }) %>
+
+  <style>
+    body {
+      background: #fafafa;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .checkout-container {
+      max-width: 1250px;
+      margin: 120px auto 40px;
+      display: flex;
+      gap: 25px;
+      position: relative;
+    }
+
+    .left-section {
+      width: 70%;
+      max-height: 80vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .left-section::-webkit-scrollbar {
+      display: none
+    }
+
+    .right-section {
+      width: 30%;
+      position: sticky;
+      top: 100px;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      height: fit-content;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .step-box {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border-left: 6px solid #d14a78;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .change-profile {
+      background: #d14a78;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .address-card {
+      border: 2px solid #ddd;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 12px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .address-card.selected {
+      background: #fff0f6;
+      border-color: #f76f8f;
+    }
+
+    .deliver-btn {
+      background: #ffc107;
+      padding: 6px 12px;
+      border-radius: 5px;
+      border: none;
+      margin-top: 35px;
+      cursor: pointer;
+      font-weight: 600;
+      display: none;
+      position: absolute;
+      right: 15px;
+      top: 15px;
+    }
+
+    .add-address-btn {
+      width: 100%;
+      background: #d14a78;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 15px;
+      text-align: center;
+      display: block;
+    }
+
+    .item-box {
+      display: flex;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+      gap: 15px;
+    }
+
+    .item-box img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    .bill-box {
+      background: #fff3f7;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
+
+    .payment-btn {
+      width: 100%;
+      background: #d14a78;
+      padding: 12px;
+      margin-top: 20px;
+      border-radius: 10px;
+      text-align: center;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+    }
+
+    #orderSummarySection {
+      display: none;
+    }
+
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #f76f8f;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      min-width: 200px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(50px);
+      animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
+    }
+
+    .toast.success {
+      background: #4BB543;
+    }
+
+    .toast.error {
+      background: #FF4C4C;
+    }
+    .edit-address-icon {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: #333;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.edit-address-icon i {
+  pointer-events: none;
+}
+    @keyframes slideIn {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+    }
+  </style>
+
+  <div id="toastContainer"></div>
+
+  <div class="checkout-container">
+    <div class="left-section">
+
+      <% if (isBuyNow) { %>
+    <input type="hidden" id="buyNowProduct" value="<%= cart.items[0].productId._id %>">
+  <% } %>
+      <div class="step-box">
+        <h3 class="step-title">1 &nbsp; LOGIN</h3>
+        <p style="display: flex; justify-content: space-between; align-items: center; margin: 0;">
+          <span>
+            <%= user.name %>
+          </span>
+          <button class="change-profile" onclick="window.location.href='/userProfile'">Change</button>
+        </p>
+      </div>
+
+      <div class="step-box">
+        <h3 class="step-title">2 &nbsp; DELIVERY ADDRESS</h3>
+        <form id="addressForm">
+          <% addresses.forEach(addr=> { %>
+   <label class="address-card <%= addr.isDefault ? 'selected' : '' %>">
+  <input type="radio" name="address" value="<%= addr._id %>" 
+         <%= addr.isDefault ? "checked" : "" %> />
+
+  <a href="/user/addresses/edit/<%= addr._id %>?redirect=checkout" class="edit-address-icon">
+      <i class="fas fa-edit"></i>
+  </a>
+
+  <div>
+    <strong><%= addr.addressType %></strong><br>
+    <%= addr.name %><br>
+    <%= addr.phone %><br>
+    <%= addr.addressLine %>, <%= addr.area %>, <%= addr.state %> - <%= addr.pincode %>
+  </div>
+
+  <button type="button" class="deliver-btn" 
+          style="<%= addr.isDefault ? 'display:block;' : 'display:none;' %>"
+          onclick="deliverHere('<%= addr._id %>')">
+    DELIVER HERE
+  </button>
+</label>
+            <% }) %>
+        </form>
+        <a href="/user/addresses?redirect=checkout" class="add-address-btn">ADD ADDRESS</a>
+      </div>
+
+      <div class="step-box" id="orderSummarySection">
+        <h3 class="step-title">3 &nbsp; ORDER SUMMARY</h3>
+   <% cart.items.forEach(item => { %>
+
+
+          <div class="item-box" data-id="<%= item.productId._id %>">
+            <img src="<%= item.productId.images[0] %>" />
+            <div style="flex:1;">
+              <h4>
+                <%= item.productId.name %>
+              </h4>
+              <p>Price: ₹<%= item.productId.salePrice || item.productId.price %>
+              </p>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>', 'dec')">−</button>
+                <span class="item-quantity">
+                  <%= item.quantity %>
+                </span>
+                <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>', 'inc')">+</button>
+              </div>
+              <button style="margin-top:10px; color:red; background:none; border:none; cursor:pointer;"
+                onclick="removeItem('<%= item.productId._id %>')">Remove</button>
+            </div>
+            <strong class="item-total">₹<%= (item.productId.salePrice || item.productId.price) * item.quantity %>
+            </strong>
+          </div>
+          <% }) %>
+      </div>
+
+    </div>
+
+    <div class="right-section">
+      <h3 style="text-align:center; margin-bottom:20px;">Bill Details</h3>
+      <div class="bill-box">
+        <div class="bill-row"><span>Items total</span><strong id="subtotal">Rs.<%= summary.subtotal %></strong></div>
+        <div class="bill-row"><span>GST (18%)</span><strong id="tax">Rs.<%= summary.tax %></strong></div>
+        <div class="bill-row"><span>Delivery</span><strong>FREE</strong></div>
+        <hr>
+        <div class="bill-row"><strong>Grand Total</strong><strong id="finalAmount">Rs.<%= summary.finalAmount %>
+          </strong></div>   
+     </div>
+
+      <button class="payment-btn" id="selectPaymentBtn">SELECT PAYMENT</button>
+
+      <div id="paymentSection" style="display:none; margin-top:20px;">
+
+        <button class="payment-btn" id="codBtn">Cash on Delivery</button>
+
+        <!-- <div style="margin-top:20px;">
+          <h4 style="margin-bottom:10px;">Apply Coupon</h4>
+          <input type="text" id="couponInput" placeholder="Enter coupon"
+            style="width:70%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+
+          <button class="payment-btn" style="width:25%; padding:10px;" id="applyCouponBtn">
+            Apply
+          </button>
+
+          <p id="couponMessage" style="margin-top:10px; font-weight:600;"></p>
+        </div> -->
+
+      </div>
+    </div>
+  </div>
+  <%- include("../partials/userFooter") %>
+
+    <script>
+      function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.classList.add('toast', type);
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 3000);
+      }
+      
+      const radios = document.querySelectorAll("input[name='address']");
+      radios.forEach(radio => {
+        radio.addEventListener("change", () => {
+          document.querySelectorAll(".address-card").forEach(card => {
+            card.classList.remove("selected");
+            card.querySelector(".deliver-btn").style.display = "none";
+          });
+          const card = radio.closest(".address-card");
+          card.classList.add("selected");
+          card.querySelector(".deliver-btn").style.display = "block";
+        });
+      });
+
+      function deliverHere(addressId) {
+        document.getElementById("orderSummarySection").style.display = "block";
+        localStorage.setItem("selectedAddress", addressId);
+        showToast("Address selected! Now check order summary and proceed to payment.", "success");
+        document.getElementById("orderSummarySection").scrollIntoView({ behavior: "smooth" });
+      }
+
+      function goToPayment() {
+        const selectedAddress = localStorage.getItem("selectedAddress");
+        if (!selectedAddress) {
+          showToast("Please select delivery address first!", "error");
+          return;
+        }
+        window.location.href = `/payment?address=${selectedAddress}`;
+      }
+
+      async function updateQty(productId, type) {
+  try {
+    const res = await fetch(`/cart/${type === "inc" ? "increment" : "decrement"}/${productId}`, {
+      method: "POST"
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+      showToast(data.message || "Failed to update cart", "error");
+      return;
+    }
+
+    showToast(data.message, "success");
+
+    const itemBox = document.querySelector(`.item-box[data-id="${productId}"]`);
+    const quantitySpan = itemBox.querySelector(".item-quantity");
+    const price = parseFloat(itemBox.querySelector("p").textContent.replace(/[^0-9]/g, ""));
+
+    let currentQty = parseInt(quantitySpan.textContent);
+    let newQty = type === "inc" ? currentQty + 1 : currentQty - 1;
+
+    if (newQty < 1) {
+      itemBox.remove();
+      updateTotals(data.total);
+      return;
+    }
+
+    quantitySpan.textContent = newQty;
+    itemBox.querySelector(".item-total").textContent = "₹" + (price * newQty);
+
+    updateTotals(data.total);
+
+  } catch (err) {
+    console.error(err);
+    showToast("Something went wrong", "error");
+  }
+}
+      async function removeItem(productId) {
+        try {
+          const res = await fetch("/cart/remove", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId })
+          });
+          const data = await res.json();
+          if (!data.success) return showToast(data.message || "Failed to remove item", "error");
+          showToast(data.message, "success");
+          const itemBox = document.querySelector(`.item-box[data-id="${productId}"]`);
+          if (itemBox) itemBox.remove();
+          updateTotals(data.total);
+        } catch (err) { showToast("Something went wrong", "error"); console.error(err); }
+      }
+
+      function updateTotals(totalFromServer = null) {
+        let subtotal = 0;
+        const items = document.querySelectorAll(".item-box");
+        items.forEach(itemBox => {
+          const price = parseFloat(itemBox.querySelector("p").textContent.replace(/[^0-9]/g, ""));
+          const qty = parseInt(itemBox.querySelector(".item-quantity").textContent);
+          subtotal += price * qty;
+        });
+        if (totalFromServer !== null) subtotal = totalFromServer;
+        document.getElementById("subtotal").textContent = "Rs." + subtotal;
+        const tax = parseFloat(document.getElementById("tax").textContent.replace(/[^0-9]/g, ""));
+        document.getElementById("finalAmount").textContent = "Rs." + (subtotal + tax);
+      }
+
+      document.getElementById('selectPaymentBtn').addEventListener('click', () => {
+        const selectedAddress = localStorage.getItem("selectedAddress");
+
+        if (!selectedAddress) {
+          showToast("Please select delivery address first!", "error");
+          return;
+        }
+
+        document.getElementById("paymentSection").style.display = "block";
+
+        showToast("Select a payment method and apply coupon if available.", "success");
+      });
+
+      document.getElementById('codBtn').addEventListener('click', () => {
+  const selectedAddress = localStorage.getItem("selectedAddress");
+  if (!selectedAddress) return showToast("Please select delivery address first!", "error");
+
+  const payload = { selectedAddress };
+  fetch("/checkout/cod", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast("Order placed successfully!", "success");
+      window.location.href = `/order-success/${data.orderId}`;
+    } else {
+      showToast(data.message || "Failed to place order", "error");
+    }
+  })
+  .catch(err => { console.error(err); showToast("Something went wrong", "error"); });
+});
+
+      document.getElementById("applyCouponBtn").addEventListener("click", async () => {
+        const coupon = document.getElementById("couponInput").value.trim();
+
+        if (!coupon) {
+          showToast("Please enter a coupon code!", "error");
+          return;
+        }
+        try {
+          const res = await fetch("/apply-coupon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ coupon })
+          });
+
+          const data = await res.json();
+
+          const msgEl = document.getElementById("couponMessage");
+
+          if (data.success) {
+            msgEl.textContent = `Coupon Applied: -₹${data.discount}`;
+            msgEl.style.color = "green";
+            
+            document.getElementById("finalAmount").textContent = "Rs." + data.newTotal;
+
+            showToast("Coupon applied successfully!", "success");
+          } else {
+            msgEl.textContent = data.message;
+            msgEl.style.color = "red";
+            showToast(data.message, "error");
+          }
+
+        } catch (err) {
+          showToast("Error applying coupon", "error");
+        }
+      });
+
+    </script>

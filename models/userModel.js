@@ -11,12 +11,17 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String },
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
-    isDeleted: { type: Boolean, default: false }, // ✅ soft delete
+    isDeleted: { type: Boolean, default: false }, 
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
+    profileImage: {
+  type: String,   
+  default: ""
+}
+
   },
   { timestamps: true }
 );

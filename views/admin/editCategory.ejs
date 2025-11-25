@@ -56,14 +56,24 @@
     font-size: 15px;
   }
 
-  .image-preview {
+  .image-preview img {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #ffd4dd;
+    padding: 4px;
     margin-top: 10px;
   }
 
-  .image-preview img {
-    max-width: 150px;
+  #newThumbnailPreview img {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    border: 1px solid #ccc;
     border-radius: 8px;
-    border: 1px solid #ffd4dd;
+    padding: 4px;
+    margin-top: 10px;
   }
 
   .form-buttons {
@@ -111,6 +121,7 @@
     <div class="card">
       <h3>Edit Category</h3>
       <form action="/admin/categories/edit/<%= category._id %>" method="POST" enctype="multipart/form-data">
+
         <div class="form-group">
           <label for="categoryName">Category Name</label>
           <input type="text" id="categoryName" name="categoryName" value="<%= category.categoryName %>" required>
@@ -129,12 +140,15 @@
         <div class="form-group">
           <label for="thumbnail">Thumbnail Image</label>
           <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+
           <% if (category.thumbnail) { %>
             <div class="image-preview">
               <p>Current Image:</p>
               <img src="<%= category.thumbnail %>" alt="Category Image">
             </div>
           <% } %>
+
+          <div id="newThumbnailPreview"></div>
         </div>
 
         <div class="form-buttons">
@@ -147,3 +161,46 @@
 </div>
 
 <%- include("../partials/adminFooter") %>
+<% if (typeof errorMessage !== 'undefined') { %>
+<script>
+  Swal.fire({
+    icon: "error",
+    title: "<%= errorMessage %>",
+    showConfirmButton: true
+  });
+</script>
+<% } %>
+
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("success") === "true") {
+    Swal.fire({
+      icon: "success",
+      title: "Category updated successfully!",
+      showConfirmButton: false,
+      timer: 2000
+    });
+  }
+</script>
+
+<script>
+  const thumbnailInput = document.getElementById("thumbnail");
+  const previewBox = document.getElementById("newThumbnailPreview");
+
+  thumbnailInput.addEventListener("change", function () {
+    previewBox.innerHTML = "";
+
+    if (this.files && this.files[0]) {
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const img = document.createElement("img");
+        img.src = event.target.result;
+        previewBox.appendChild(img);
+      };
+
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+</script>

@@ -6,7 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
-    /* Prevent scrollbars or layout shift */
+
     html, body {
       margin: 0;
       padding: 0;
@@ -27,7 +27,7 @@
       align-items: center;
       padding-left: 5%;
       height: 100vh;
-      position: fixed; /* ✅ prevents reflow when SweetAlert changes body overflow */
+      position: fixed; 
       top: 0;
       left: 0;
       right: 0;
@@ -124,20 +124,20 @@
     </div>
   </div>
 
-  <% if (message) { %>
+  <% if (errorMessage) { %>
     <script>
-      // Save original overflow
+
       const originalOverflow = document.body.style.overflow;
 
       Swal.fire({
-        icon: "<%= message.includes('Failed') || message.includes('Invalid') ? 'error' : 'success' %>",
-        title: "<%= message.includes('Failed') || message.includes('Invalid') ? 'Error' : 'Success' %>",
-        text: "<%= message %>",
+        icon: "<%= errorMessage.includes('Failed') || errorMessage.includes('Invalid') ? 'error' : 'success' %>",
+        title: "<%= errorMessage.includes('Failed') || errorMessage.includes('Invalid') ? 'Error' : 'Success' %>",
+        text: "<%= errorMessage %>",
         scrollbarPadding: false,
         backdrop: true,
         allowOutsideClick: true,
         didOpen: () => {
-          // Restore overflow immediately (prevents layout reflow)
+
           document.body.style.overflow = originalOverflow;
         },
         didClose: () => {
@@ -148,7 +148,7 @@
   <% } %>
 
   <script>
-    // Countdown Timer
+
     let timer = 59;
     const timerDisplay = document.getElementById('timer');
     const resendBtn = document.getElementById('resendBtn');
@@ -167,7 +167,6 @@
       }
     }, 1000);
 
-    // Auto move between inputs
     const inputs = document.querySelectorAll('.otp-inputs input');
     inputs.forEach((input, i) => {
       input.addEventListener('input', () => {

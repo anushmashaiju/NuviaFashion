@@ -1,0 +1,211 @@
+<%- include("../partials/adminHeader", { title: "Order Details" }) %>
+
+<style>
+  .container {
+    margin: 100px 20px 40px 240px;
+    font-family: "Poppins";
+    width: 1000px;
+  }
+
+  .order-box {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #ff3b85;
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .order-id {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ff1476;
+  }
+
+  select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-size: 14px;
+  }
+
+  .section-title {
+    margin-top: 25px;
+    font-size: 20px;
+    color: #333;
+    border-bottom: 2px solid #ffe7ef;
+    padding-bottom: 5px;
+    font-weight: 600;
+  }
+
+  .items {
+    margin-top: 15px;
+  }
+
+  .item {
+    display: flex;
+    gap: 15px;
+    padding: 12px;
+    background: #fff7f9;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+  }
+
+  .item img {
+    width: 85px;
+    height: 85px;
+    border-radius: 10px;
+     object-fit: contain;
+  }
+
+  .price-box {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 25px;
+  }
+
+  .box {
+    width: 50%;
+    background: #fff7f9;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .box h4 {
+    margin-bottom: 12px;
+    color: #ff1476;
+    font-size: 18px;
+  }
+
+  .date-box {
+    background: #fff7f9;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid #ff3b85;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    font-size: 15px;
+  }
+
+  .date-box strong {
+    color: #ff1476;
+  }
+</style>
+
+<div class="container">
+
+  <div class="order-box">
+
+    <div class="order-header">
+      <h3 class="order-id">Order #<%= order.orderID %></h3>
+
+      <select id="orderStatus" onchange="updateStatus('<%= order._id %>')">
+        <option <%= order.orderStatus==="Pending" ? "selected" :"" %>>Pending</option>
+        <option <%= order.orderStatus==="Shipped" ? "selected" :"" %>>Shipped</option>
+        <option <%= order.orderStatus==="Out for Delivery" ? "selected" :"" %>>Out for Delivery</option>
+        <option <%= order.orderStatus==="Delivered" ? "selected" :"" %>>Delivered</option>
+        <option <%= order.orderStatus==="Cancelled" ? "selected" :"" %>>Cancelled</option>
+        <option <%= order.orderStatus==="Returned" ?  'selected' : "" %>>Returned</option>
+
+      </select>
+    </div>
+
+    <p><strong>User:</strong> <%= order.user_id?.name || "Unknown User" %> (<%= order.user_id?.email || "" %>)</p>
+
+    <h4 class="section-title">Items</h4>
+    <div class="items">
+      <% order.items.forEach(item => { %>
+      <div class="item">
+        <img src="<%= item.productId?.images?.[0] %>" />
+        <div>
+          <p><strong><%= item.productName %></strong></p>
+          <p>Qty: <%= item.quantity %></p>
+          <p>Price: Rs.<%= item.finalPrice %></p>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+
+    <!-- DATES -->
+    <div class="date-box">
+      <p><strong>Purchased On:</strong> <%= purchasedDate.toDateString() %></p>
+      <p><strong>Estimated Delivery:</strong> <%= approxStart.toDateString() %> - <%= approxEnd.toDateString() %></p>
+    </div>
+
+    <h4 class="section-title">Order Summary</h4>
+    <div class="price-box">
+
+      <div class="box">
+        <h4>Shipping Details</h4>
+
+        <% if(order.shippingAddressId) { %>
+        <p><strong><%= order.shippingAddressId.name %></strong></p>
+        <p><%= order.shippingAddressId.addressLine %></p>
+        <p><%= order.shippingAddressId.city %>, <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %></p>
+        <p>Phone: <%= order.shippingAddressId.phone %></p>
+        <% } else { %>
+        <p>No Address Found</p>
+        <% } %>
+      </div>
+
+      <div class="box">
+        <h4>Price Details</h4>
+        <p class="price-line">Items Total: Rs.<%= order.subtotal %></p>
+        <p class="price-line">Delivery Charge: Rs.<%= order.deliveryCharge || 0 %></p>
+        <p class="price-line">Tax: Rs.<%= order.tax || 0 %></p>
+        <p class="grand-total">Grand Total: Rs.<%= order.totalPrice %></p>
+      </div>
+
+    </div>
+
+
+<% if (order.orderStatus === "Returned") { %>
+  <h4 class="section-title">Return Information</h4>
+  <p><strong>Returned Reason:</strong> <%= order.returnReason %></p>
+
+  <% if (order.returnImages && order.returnImages.length > 0) { %>
+    <div class="return-images">
+      <% order.returnImages.forEach(img => { %>
+        <img src="/uploads/returns/<%= img %>" alt="Return Image">
+      <% }) %>
+    </div>
+  <% } %>
+<% } %>
+
+
+  </div>
+
+</div>
+
+<script>
+function updateStatus(id) {
+  const status = document.getElementById("orderStatus").value;
+
+  fetch(`/admin/orders/${id}/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status })
+  })
+    .then(res => {
+      if (res.redirected) {
+        Swal.fire("Updated!", "Order status updated.", "success");
+        window.location.href = res.url;
+        return;
+      }
+    })
+    .catch(err => console.error("Error:", err));
+}
+</script>
+
+<%- include("../partials/adminFooter") %>

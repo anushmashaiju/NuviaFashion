@@ -1,0 +1,263 @@
+<%- include("../partials/adminHeader", { title: "Orders" }) %>
+
+<style>
+  .page-container {
+    margin: 100px 20px 40px 260px;
+    font-family: "Poppins", sans-serif;
+  }
+
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .filters input,
+  .filters select {
+    padding: 8px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    min-width: 160px;
+  }
+
+  .filters button,
+  .filters a {
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: #ff3b85;
+    color: #fff;
+    border: none;
+  }
+
+  .btn-secondary {
+    background: #ddd;
+    color: #333;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  th {
+    background: #ffe7ef;
+    padding: 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #444;
+    font-size: 15px;
+    border-bottom: 1px solid #f4c7d9;
+  }
+
+  td {
+    padding: 10px 10px;
+    font-size: 14px;
+    color: #333;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  tr:hover {
+    background: #fff8fb;
+  }
+
+  select[name="status"] {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+  }
+
+  .btn-sm { padding: 6px 12px; }
+
+  .btn-danger {
+    background: #ff6b6b;
+    color: #fff;
+  }
+
+  .btn-danger:hover { background: #e24a4a; }
+
+  
+    .pagination-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 15px;
+      gap: 8px;
+    }
+
+    .page-btn {
+      background-color: #ff6fa5;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .page-btn.active {
+      background-color: #a04c74;
+      font-weight: 600;
+    }
+
+    .page-btn:disabled {
+      background-color: #ffc4d6;
+      cursor: not-allowed;
+    }
+</style>
+
+<div class="page-container">
+  <h2>Orders</h2>
+  <div class="filters">
+    <form method="GET">
+      <input type="text" name="search" placeholder="Search Order ID / User / Phone"
+             value="<%= search || '' %>" />
+
+      <select name="sort">
+        <option value="-createdAt">Newest First</option>
+        <option value="createdAt">Oldest First</option>
+        <option value="-totalPrice">Price High → Low</option>
+        <option value="totalPrice">Price Low → High</option>
+      </select>
+
+      <select name="status">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Shipped">Shipped</option>
+        <option value="Out for Delivery">Out for Delivery</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
+         <option value="Returned">Returned</option>
+      </select>
+
+      <button type="submit" class="btn btn-primary">Apply</button>
+      <a href="/admin/orders" class="btn btn-secondary">Clear</a>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Items</th>
+        <th>Date</th>
+        <th>Total</th>
+        <th>Payment</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% orders.forEach(order => { %>
+        <tr>
+          <td>#<%= order.orderID %></td>
+
+          <td>
+            <%= order.user_id ? order.user_id.name : "Unknown User" %><br>
+            <small><%= order.user_id ? order.user_id.email : "" %></small>
+          </td>
+
+          <td><%= order.items.length %> items</td>
+
+          <td><%= order.createdAt.toDateString() %></td>
+
+          <td>₹<%= order.totalPrice %></td>
+
+          <td>
+            <%= order.paymentMethod %><br>
+            <small style="color:<%= order.paymentStatus === 'Paid' ? 'green' : 'red' %>;">
+              <%= order.paymentStatus %>
+            </small>
+          </td>
+
+          <td>
+            <form action="/admin/orders/update-status/<%= order._id %>" method="POST">
+              <select name="status" onchange="this.form.submit()">
+                <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Out for Delivery" <%= order.orderStatus === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Cancelled" <%= order.orderStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+              <option value="Returned" <%= order.orderStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
+
+              </select>
+            </form>
+          </td>
+          <td>
+            <a href="/admin/orders/<%= order._id %>" class="btn btn-primary btn-sm">View</a>
+
+            <% if(order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered'){ %>
+            <a href="/admin/orders/cancel/<%= order._id %>"
+               class="btn btn-danger btn-sm"
+               <a href="javascript:void(0)"
+   class="btn btn-danger btn-sm"
+   onclick="confirmCancel('<%= order._id %>')">
+   Cancel
+</a>
+
+            
+            <% } %>
+          </td>
+
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <div class="pagination-wrap">
+                <button class="page-btn" <%=currentPage> 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
+                  &laquo; Prev
+                </button>
+
+                <% for (let i=1; i <=totalPages; i++) { %>
+                  <button class="page-btn <%= i === currentPage ? 'active' : '' %>" onclick="changePage(<%= i %>)">
+                    <%= i %>
+                  </button>
+                  <% } %>
+
+                    <button class="page-btn" <%=currentPage < totalPages ? `onclick="changePage(${currentPage + 1})" `
+                      : "disabled" %>>
+                      Next &raquo;
+                    </button>
+              </div>
+</div>
+
+<%- include("../partials/adminFooter") %>
+<script>
+  function confirmCancel(orderId) {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to cancel this order?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e24a4a",
+      cancelButtonColor: "#d3d3d3",
+      confirmButtonText: "Yes, Cancel it",
+      cancelButtonText: "No"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/admin/orders/cancel/${orderId}`;
+      }
+    });
+  }
+</script>

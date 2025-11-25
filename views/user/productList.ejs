@@ -1,467 +1,524 @@
-<%- include("../partials/userHeader", { title: "Product List" }) %>
+<%- include("../partials/userHeader", { title: "Product List" , activePage: activePage, cartCount: typeof cartCount
+  !=='undefined' ? cartCount : 0, wishlistCount: typeof wishlistCount !=='undefined' ? wishlistCount : 0 }) %>
 
-<style>
-  body {
-    background-color: #ffffff;
-    font-family: 'Poppins', sans-serif;
-  }
+  <style>
+    body {
+      background-color: #ffffff;
+      font-family: 'Poppins', sans-serif;
+    }
 
-  h2 {
-    font-weight: 600;
-    color: #a04c74;
-  }
+    h2 {
+      font-weight: 600;
+      color: #a04c74;
+    }
 
-  /* ===== Search Bar ===== */
-  .search-row {
-    display: flex;
-    gap: 10px;
-    justify-content: right;
-    margin-bottom: 20px;
-  }
-
-  .search-row input {
-    width: 60%;
-    border: 2px solid #a04c74;
-    border-radius: 8px;
-    padding: 8px 12px;
-  }
-
-  .btn-add {
-    background-color: #a04c74;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .btn-add:hover {
-    background-color: #ff4f8a;
-    transform: scale(1.05);
-  }
-
-  .reset-btn {
-    color: #a04c74;
-    border: 1px solid #a04c74;
-    border-radius: 8px;
-    padding: 8px 16px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-  }
-
-  .reset-btn:hover {
-    background-color: #ff4f8a;
-    color: white;
-  }
-
-  /* ===== Sidebar Filter ===== */
-  .filter-sidebar {
-    background-color: #ffe6f0;
-    border-right: 1px solid #ddd;
-    min-height: 100vh;
-    padding-top: 30px;
-    padding-left: 20px;
-    padding-right: 20px;
-    margin: 0;
-    position: sticky;
-    top: 90px;
-  }
-
-  .filter-section {
-    margin-bottom: 25px;
-  }
-
-  .filter-title {
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 6px;
-  }
-
-  .form-check {
-    margin-bottom: 6px;
-  }
-
-  .form-check-input:checked {
-    background-color: #a04c74;
-    border-color: #a04c74;
-  }
-
-  .filter-footer {
-    position: sticky;
-    bottom: 10px;
-    background-color: #ffe6f0;
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-  }
-
-  .price-range-container {
-    position: relative;
-    width: 100%;
-    margin-top: 30px;
-    height: 50px;
-  }
-
-  /* Base Track */
-  .slider-track {
-    width: 100%;
-    height: 5px;
-    position: absolute;
-    background: #ddd;
-    border-radius: 5px;
-    top: 30px;
-  }
-
-  /* Active Range */
-  .slider-range {
-    position: absolute;
-    height: 5px;
-    background: #a04c74;
-    border-radius: 5px;
-    top: 30px;
-  }
-
-  /* Slider Handles */
-  .price-range {
-    position: absolute;
-    pointer-events: none;
-    -webkit-appearance: none;
-    width: 100%;
-    height: 5px;
-    background: none;
-    top: 30px;
-    outline: none;
-  }
-
-  .price-range::-webkit-slider-thumb {
-    pointer-events: all;
-    -webkit-appearance: none;
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    background: #a04c74;
-    border: 2px solid #fff;
-    box-shadow: 0 0 3px rgba(0,0,0,0.3);
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .price-range::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-  }
-
-  .price-values {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 28px;
-    font-size: 0.95rem;
-    color: #444;
-    font-weight: 500;
-  }
-
-  /* ===== Product Section ===== */
-  .product-listing {
-    padding: 10px 20px;
-  }
-
-  .product-card {
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-
-  .product-card:hover {
-    box-shadow: 0 4px 12px rgba(160, 76, 116, 0.2);
-    transform: translateY(-3px);
-  }
-
-  .product-card img {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-  }
-
-  .card-body {
-    padding: 12px;
-    text-align: center;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    color: #333;
-    font-weight: 500;
-    margin-bottom: 6px;
-  }
-
-  .brand {
-    font-size: 0.9rem;
-    color: #777;
-    margin-bottom: 6px;
-  }
-
-  .product-price {
-    color: #ff4f8a;
-    font-weight: 600;
-  }
-
-  .old-price {
-    text-decoration: line-through;
-    color: #999;
-    margin-left: 4px;
-  }
-
-  .discount {
-    color: #28a745;
-    font-size: 0.9rem;
-    margin-left: 3px;
-  }
-
-  .rating-stars {
-    color: #ffcc00;
-    margin: 6px 0;
-  }
-
-  .filter-section .fa-star {
-    color: #ffcc00;
-    margin-right: 2px;
-    font-size: 1rem;
-  }
-
-  .filter-section .fa-star-o {
-    color: #ccc;
-    margin-right: 2px;
-    font-size: 1rem;
-  }
-
-  .pagination-wrap {
-    text-align: center;
-    margin-top: 25px;
-  }
-
-  .page-btn {
-    display: inline-block;
-    margin: 0 5px;
-    padding: 6px 12px;
-    border: 1px solid #a04c74;
-    border-radius: 8px;
-    color: #a04c74;
-    text-decoration: none;
-    transition: all 0.3s ease;
-  }
-
-  .page-btn:hover,
-  .page-btn.active {
-    background-color: #a04c74;
-    color: white;
-  }
-
-  @media (max-width: 992px) {
-    .filter-sidebar {
-      position: relative;
-      min-height: auto;
-      border-right: none;
-      border-bottom: 1px solid #ddd;
+    .search-row {
+      display: flex;
+      gap: 10px;
+      justify-content: right;
       margin-bottom: 20px;
     }
-  }
-</style>
 
-<div class="container-fluid mt-4 mb-5">
-  <h2 class="text-center mb-4">Products</h2>
+    .search-row input {
+      width: 60%;
+      border: 2px solid #a04c74;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
 
-  <!-- ===== Search Bar ===== -->
-  <form method="GET" action="/products" class="search-row mb-4">
-    <input type="text" name="search" class="form-control" placeholder="Search for products, brands and more..." value="<%= currentFilters.search || '' %>">
-    <button type="submit" class="btn-add">Search</button>
-    <a href="/products" class="reset-btn">Clear</a>
-  </form>
+    .btn-add {
+      background-color: #a04c74;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
 
-  <div class="row">
-    <!-- ===== Sidebar Filters ===== -->
-    <div class="col-lg-3 filter-sidebar">
-      <form method="GET" action="/products">
-        <input type="hidden" name="search" value="<%= currentFilters.search || '' %>">
+    .btn-add:hover {
+      background-color: #ff4f8a;
+      transform: scale(1.05);
+    }
 
-        <!-- Sort -->
-        <div class="filter-section">
-          <div class="filter-title">Sort by:</div>
-          <% const sortOptions = [
-               {value: 'priceAsc', label: 'Price: low to high'},
-               {value: 'priceDesc', label: 'Price: high to low'},
-               {value: 'aToZ', label: 'Alphabetical A→Z'},
-               {value: 'zToA', label: 'Alphabetical Z→A'},
-               {value: 'popularity', label: 'Popularity'},
-               {value: 'averageRating', label: 'Average Ratings'},
-               {value: 'newArrivals', label: 'New Arrivals'},
-               {value: 'featured', label: 'Featured'}
-             ]; %>
-          <% sortOptions.forEach((opt, idx) => { %>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="sort" value="<%= opt.value %>" <%= currentFilters.sort === opt.value ? 'checked' : '' %> id="sort<%= idx %>">
-              <label class="form-check-label" for="sort<%= idx %>"><%= opt.label %></label>
-            </div>
-          <% }) %>
-        </div>
+    .reset-btn {
+      color: #a04c74;
+      border: 1px solid #a04c74;
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
 
-        <!-- Category -->
-        <div class="filter-section">
-          <div class="filter-title">Category</div>
-          <% categories.forEach((cat, idx) => { %>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="category" value="<%= cat.categoryName %>" <%= currentFilters.category === cat.categoryName ? 'checked' : '' %> id="cat<%= idx %>">
-              <label class="form-check-label" for="cat<%= idx %>"><%= cat.categoryName %></label>
-            </div>
-          <% }) %>
-        </div>
+    .reset-btn:hover {
+      background-color: #ff4f8a;
+      color: white;
+    }
 
-        <!-- Brand Filter -->
-        <div class="filter-section">
-          <div class="filter-title">Brand</div>
-          <% brands.forEach((b, idx) => { %>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="brand" value="<%= b %>" <%= currentFilters.brand === b ? 'checked' : '' %> id="brand<%= idx %>">
-              <label class="form-check-label" for="brand<%= idx %>"><%= b %></label>
-            </div>
-          <% }) %>
-        </div>
+    .filter-sidebar {
+      background-color: #ffe6f0;
+      border-right: 1px solid #ddd;
+      min-height: 100vh;
+      padding: 30px 20px 0;
+      position: sticky;
+      top: 90px;
+    }
 
-        <!-- Price Range Filter -->
-        <div class="filter-section">
-          <div class="filter-title">Price Range (₹)</div>
+    .filter-section {
+      margin-bottom: 25px;
+    }
 
-          <div class="price-range-container">
-            <div class="slider-track"></div>
-            <div class="slider-range" id="sliderRange"></div>
+    .filter-title {
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
 
-            <input type="range" class="price-range" id="minPrice" name="minPrice"
-              min="0" max="10000" step="100"
-              value="<%= currentFilters.minPrice || 0 %>">
-            <input type="range" class="price-range" id="maxPrice" name="maxPrice"
-              min="0" max="10000" step="100"
-              value="<%= currentFilters.maxPrice || 10000 %>">
+    .form-check {
+      margin-bottom: 6px;
+    }
 
-            <div class="price-values">
-              <span id="minPriceLabel">₹<%= currentFilters.minPrice || 0 %></span>
-              <span id="maxPriceLabel">₹<%= currentFilters.maxPrice || 10000 %></span>
-            </div>
-          </div>
-        </div>
+    .form-check-input:checked {
+      background-color: #a04c74;
+      border-color: #a04c74;
+    }
 
-        <!-- Rating Filter -->
-        <div class="filter-section">
-          <div class="filter-title">Minimum Rating</div>
-          <% for (let r = 5; r >= 1; r--) { %>
-            <div class="form-check d-flex align-items-center">
-              <input 
-                class="form-check-input me-2" 
-                type="radio" 
-                name="minRating" 
-                value="<%= r %>" 
-                <%= parseFloat(currentFilters.minRating || 0) === r ? 'checked' : '' %> 
-                id="rating<%= r %>">
-              <label class="form-check-label" for="rating<%= r %>">
-                <% for (let i = 1; i <= r; i++) { %>
-                  <i class="fa fa-star" style="color: #FFD700;"></i>
-                <% } %>
-              </label>
-            </div>
-          <% } %>
-        </div>
+    .filter-footer {
+      position: sticky;
+      bottom: 10px;
+      background-color: #ffe6f0;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
 
-        <div class="filter-footer mt-3">
-          <button type="submit" class="btn-add">Apply</button>
-          <a href="/products" class="reset-btn">Clear</a>
-        </div>
-      </form>
-    </div>
+    .price-range-container {
+      position: relative;
+      width: 100%;
+      margin-top: 30px;
+      height: 50px;
+    }
 
-    <!-- ===== Product Cards ===== -->
-    <div class="col-lg-9 product-listing">
-      <div class="row g-4">
-        <% if (products.length === 0) { %>
-          <p class="text-center">No products found.</p>
-        <% } else { %>
-          <% products.forEach(product => { %>
-            <div class="col-md-4">
-              <div class="product-card">
-                <img src="<%= product.images && product.images.length > 0 ? product.images[0] : '/images/placeholder.png' %>" alt="<%= product.name %>">
+    .slider-track {
+      width: 100%;
+      height: 5px;
+      position: absolute;
+      background: #ddd;
+      border-radius: 5px;
+      top: 30px;
+    }
 
-                <div class="card-body text-center">
-                  <h5 class="card-title"><%= product.name %></h5>
-                  <p class="brand"><%= product.brand || 'No Brand' %></p>
-                  <div class="rating-stars">
-                    <% let rating = product.rating || 0; %>
-                    <% for (let i = 1; i <= 5; i++) { %>
-                      <i class="fa <%= i <= Math.floor(rating) ? 'fa-star' : 'fa-star-o' %>"></i>
-                    <% } %> (<%= rating.toFixed(1) %>)
-                  </div>
-                  <p>
-                    <span class="product-price">₹<%= (product.price * (1 - (product.discount || 0)/100)).toFixed(2) %></span>
-                    <% if (product.discount && product.discount > 0) { %>
-                      <span class="old-price">₹<%= product.price.toFixed(2) %></span>
-                      <span class="discount"><%= product.discount %>% off</span>
-                    <% } %>
-                  </p>
-                  <a href="/product/<%= product._id %>" class="btn-add mt-2">View Details</a>
+    .slider-range {
+      position: absolute;
+      height: 5px;
+      background: #a04c74;
+      border-radius: 5px;
+      top: 30px;
+    }
+
+    .price-range {
+      position: absolute;
+      pointer-events: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 5px;
+      background: none;
+      top: 30px;
+      outline: none;
+    }
+
+    .price-range::-webkit-slider-thumb {
+      pointer-events: all;
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #a04c74;
+      border: 2px solid #fff;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .price-range::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .price-values {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      font-size: 0.95rem;
+      color: #444;
+      font-weight: 500;
+    }
+
+    .product-listing {
+      padding: 10px 20px;
+    }
+
+    .product-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .product-card:hover {
+      box-shadow: 0 4px 12px rgba(160, 76, 116, 0.2);
+      transform: translateY(-3px);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: contain;
+    }
+
+    .card-body {
+      padding: 12px;
+      text-align: center;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      color: #333;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .brand {
+      font-size: 0.9rem;
+      color: #777;
+      margin-bottom: 6px;
+    }
+
+    .product-price {
+      color: #ff4f8a;
+      font-weight: 600;
+    }
+
+    .old-price {
+      text-decoration: line-through;
+      color: #999;
+      margin-left: 4px;
+    }
+
+    .discount {
+      color: #28a745;
+      font-size: 0.9rem;
+      margin-left: 3px;
+    }
+
+    .rating-stars {
+      color: #ffcc00;
+      margin: 6px 0;
+    }
+
+    .pagination-wrap {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    .page-btn {
+      display: inline-block;
+      margin: 0 5px;
+      padding: 6px 12px;
+      border: 1px solid #a04c74;
+      border-radius: 8px;
+      color: #a04c74;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .page-btn:hover,
+    .page-btn.active {
+      background-color: #a04c74;
+      color: white;
+    }
+
+    .wishlist-toast {
+      position: fixed;
+      bottom: 20px;
+      right: -300px;
+      background-color: #060606;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      opacity: 0;
+    }
+
+    .wishlist-toast.show {
+      transform: translateX(-320px);
+      opacity: 1;
+    }
+
+    @media (max-width: 992px) {
+      .filter-sidebar {
+        position: relative;
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+
+  <div class="container-fluid mt-4 mb-5">
+    <h2 class="text-center mb-4">Products</h2>
+
+    <!-- Search Form -->
+    <form method="GET" action="/products" class="search-row mb-4">
+      <input type="text" name="search" class="form-control" placeholder="Search for products, brands and more..."
+        value="<%= currentFilters.search || '' %>">
+      <button type="submit" class="btn-add">Search</button>
+      <a href="/products" class="reset-btn">Clear</a>
+    </form>
+
+    <div class="row">
+      <div class="col-lg-3 filter-sidebar">
+        <form method="GET" action="/products">
+          <input type="hidden" name="search" value="<%= currentFilters.search || '' %>">
+
+          <div class="filter-section">
+            <div class="filter-title">Sort by:</div>
+            <% const sortOptions=[ { value: 'priceAsc' , label: 'Price: low to high' }, { value: 'priceDesc' ,
+              label: 'Price: high to low' }, { value: 'aToZ' , label: 'Alphabetical A→Z' }, { value: 'zToA' ,
+              label: 'Alphabetical Z→A' }, { value: 'popularity' , label: 'Popularity' }, { value: 'averageRating' ,
+              label: 'Average Ratings' }, { value: 'newArrivals' , label: 'New Arrivals' }, { value: 'featured' ,
+              label: 'Featured' } ]; %>
+              <% sortOptions.forEach((opt, idx)=> { %>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="sort" value="<%= opt.value %>"
+                    <%=currentFilters.sort===opt.value ? 'checked' : '' %> id="sort<%= idx %>">
+                    <label class="form-check-label" for="sort<%= idx %>">
+                      <%= opt.label %>
+                    </label>
                 </div>
+                <% }) %>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Category</div>
+            <% categories.forEach((cat, idx)=> { %>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="category" value="<%= cat.categoryName %>"
+                  <%=currentFilters.category===cat.categoryName ? 'checked' : '' %> id="cat<%= idx %>">
+                  <label class="form-check-label" for="cat<%= idx %>">
+                    <%= cat.categoryName %>
+                  </label>
+              </div>
+              <% }) %>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Brand</div>
+            <% brands.forEach((b, idx)=> { %>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="brand" value="<%= b %>" <%=currentFilters.brand===b
+                  ? 'checked' : '' %> id="brand<%= idx %>">
+                  <label class="form-check-label" for="brand<%= idx %>">
+                    <%= b %>
+                  </label>
+              </div>
+              <% }) %>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Price Range (₹)</div>
+            <div class="price-range-container">
+              <div class="slider-track"></div>
+              <div class="slider-range" id="sliderRange"></div>
+
+              <input type="range" class="price-range" id="minPrice" name="minPrice" min="0" max="10000" step="100"
+                value="<%= currentFilters.minPrice || 0 %>">
+              <input type="range" class="price-range" id="maxPrice" name="maxPrice" min="0" max="10000" step="100"
+                value="<%= currentFilters.maxPrice || 10000 %>">
+
+              <div class="price-values">
+                <span id="minPriceLabel">₹<%= currentFilters.minPrice || 0 %></span>
+                <span id="maxPriceLabel">₹<%= currentFilters.maxPrice || 10000 %></span>
               </div>
             </div>
-          <% }) %>
-        <% } %>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Minimum Rating</div>
+            <% for (let r=5; r>= 1; r--) { %>
+              <div class="form-check d-flex align-items-center">
+                <input class="form-check-input me-2" type="radio" name="minRating" value="<%= r %>"
+                  <%=parseFloat(currentFilters.minRating || 0)===r ? 'checked' : '' %> id="rating<%= r %>">
+                  <label class="form-check-label" for="rating<%= r %>">
+                    <% for (let i=1; i <=r; i++) { %>
+                      <i class="fa fa-star" style="color: #FFD700;"></i>
+                      <% } %>
+                  </label>
+              </div>
+              <% } %>
+          </div>
+
+          <div class="filter-footer mt-3">
+            <button type="submit" class="btn-add">Apply</button>
+            <a href="/products" class="reset-btn">Clear</a>
+          </div>
+        </form>
       </div>
 
-      <!-- ===== Pagination ===== -->
-      <div class="pagination-wrap mt-4 text-center">
-        <% for(let i = 1; i <= totalPages; i++) { %>
-          <a class="page-btn <%= currentPage === i ? 'active' : '' %>" href="?<%= Object.entries(currentFilters).map(([k,v]) => k+'='+v).join('&') %>&page=<%= i %>"><%= i %></a>
-        <% } %>
+      <div class="col-lg-9 product-listing">
+        <div class="row g-4">
+          <% if (products.length===0) { %>
+            <p class="text-center">No products found.</p>
+            <% } else { %>
+              <% products.forEach(product=> { %>
+                <div class="col-md-4">
+                  <div class="product-card">
+                    <img
+                      src="<%= product.images && product.images.length ? product.images[0] : '/images/placeholder.png' %>"
+                      alt="<%= product.name %>">
+                    <div class="card-body text-center">
+                      <h5 class="card-title">
+                        <%= product.name %>
+                      </h5>
+                      <p class="brand">
+                        <%= product.brand || 'No Brand' %>
+                      </p>
+                      <div class="rating-stars">
+                        <% let rating=product.rating || 0; %>
+                          <% for (let i=1; i <=5; i++) { %>
+                            <i class="fa <%= i <= Math.floor(rating) ? 'fa-star' : 'fa-star-o' %>"></i>
+                            <% } %> (<%= rating.toFixed(1) %>)
+                      </div>
+                      <p>
+                        <span class="product-price">
+                          ₹<%= (product.price * (1 - (product.discount || 0) / 100)).toFixed(2) %>
+                        </span>
+                        <% if (product.discount && product.discount> 0) { %>
+                          <span class="old-price">₹<%= product.price.toFixed(2) %></span>
+                          <span class="discount">
+                            <%= product.discount %>% off
+                          </span>
+                          <% } %>
+                      </p>
+                      <div class="product-actions mt-2 d-flex justify-content-center" style="gap: 10px;">
+                        <a href="/product/<%= product._id %>" class="btn-add">View Details</a>
+                        <button class="btn-add wishlist-btn" data-product-id="<%= product._id %>">
+                          <i class="fa fa-heart"></i>
+                        </button>
+                        <button class="btn-add cart-btn" data-product-id="<%= product._id %>">
+                          <i class="fa fa-shopping-cart"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <% }) %>
+                  <% } %>
+        </div>
+
+        <div class="pagination-wrap mt-4 text-center">
+          <% for (let i=1; i <=totalPages; i++) { %>
+            <a class="page-btn <%= currentPage === i ? 'active' : '' %>"
+              href="?<%= Object.entries(currentFilters).map(([k,v]) => k+'='+v).join('&') %>&page=<%= i %>">
+              <%= i %>
+            </a>
+            <% } %>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<%- include("../../views/partials/userFooter.ejs") %>
-<script>
-  const minSlider = document.getElementById('minPrice');
-  const maxSlider = document.getElementById('maxPrice');
-  const minLabel = document.getElementById('minPriceLabel');
-  const maxLabel = document.getElementById('maxPriceLabel');
-  const sliderRange = document.getElementById('sliderRange');
 
-  const minGap = 500;
-  const sliderMax = parseInt(maxSlider.max);
+  <div id="action-toast" class="wishlist-toast"></div>
 
-  function updateSlider(event) {
-    let minVal = parseInt(minSlider.value);
-    let maxVal = parseInt(maxSlider.value);
+  <%- include("../../views/partials/userFooter.ejs") %>
 
-    if (maxVal - minVal <= minGap) {
-      if (event.target === minSlider) {
-        minSlider.value = maxVal - minGap;
-      } else {
-        maxSlider.value = minVal + minGap;
+    <script>
+      const minSlider = document.getElementById('minPrice');
+      const maxSlider = document.getElementById('maxPrice');
+      const minLabel = document.getElementById('minPriceLabel');
+      const maxLabel = document.getElementById('maxPriceLabel');
+      const sliderRange = document.getElementById('sliderRange');
+      const minGap = 500;
+      const sliderMax = parseInt(maxSlider.max);
+
+      function updateSlider(event) {
+        let minVal = parseInt(minSlider.value);
+        let maxVal = parseInt(maxSlider.value);
+
+        if (maxVal - minVal <= minGap) {
+          if (event.target === minSlider) minSlider.value = maxVal - minGap;
+          else maxSlider.value = minVal + minGap;
+        }
+
+        minVal = parseInt(minSlider.value);
+        maxVal = parseInt(maxSlider.value);
+        minLabel.textContent = `₹${minVal}`;
+        maxLabel.textContent = `₹${maxVal}`;
+
+        const percent1 = (minVal / sliderMax) * 100;
+        const percent2 = (maxVal / sliderMax) * 100;
+
+        sliderRange.style.left = percent1 + "%";
+        sliderRange.style.width = (percent2 - percent1) + "%";
       }
-    }
 
-    minVal = parseInt(minSlider.value);
-    maxVal = parseInt(maxSlider.value);
+      minSlider.addEventListener("input", updateSlider);
+      maxSlider.addEventListener("input", updateSlider);
+      updateSlider();
 
-    minLabel.textContent = `₹${minVal}`;
-    maxLabel.textContent = `₹${maxVal}`;
+      document.addEventListener("DOMContentLoaded", () => {
+        const toast = document.getElementById("action-toast");
 
-    const percent1 = (minVal / sliderMax) * 100;
-    const percent2 = (maxVal / sliderMax) * 100;
+        const showToast = (message, error = false) => {
+          toast.innerText = message;
+          toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+          toast.classList.add("show");
+          if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+          toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
+        };
 
-    sliderRange.style.left = percent1 + "%";
-    sliderRange.style.width = (percent2 - percent1) + "%";
-  }
+        document.querySelectorAll(".wishlist-btn").forEach(btn => {
+          btn.addEventListener("click", async e => {
+            e.preventDefault();
+            const productId = btn.dataset.productId;
+            try {
+              const res = await fetch(`/add-to-wishlist/${productId}`, { method: "POST" });
+              const data = await res.json();
+              showToast(data.success ? "Added to Wishlist!" : data.message || "Could not add to wishlist", !data.success);
+            } catch {
+              showToast("Something went wrong", true);
+            }
+          });
+        });
 
-  minSlider.addEventListener("input", updateSlider);
-  maxSlider.addEventListener("input", updateSlider);
-  updateSlider();
-</script>
+
+        document.querySelectorAll(".cart-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const productId = btn.dataset.productId;
+
+            try {
+              const res = await fetch(`/cart/add-ajax/${productId}`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Accept": "application/json"
+                }
+              });
+              const data = await res.json();
+              showToast(data.message, !data.success);
+            } catch (err) {
+              console.error(err);
+              showToast("Something went wrong", true);
+            }
+          });
+        });
+
+      });
+    </script>

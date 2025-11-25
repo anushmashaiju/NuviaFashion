@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Signup Page</title>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
   <style>
     body {
       font-family: 'Open Sans', sans-serif;
@@ -36,8 +39,9 @@
       color: #f76f8f;
     }
 
-    .form-outline {
+    .form-group {
       margin-bottom: 20px;
+      position: relative; 
     }
 
     input[type="text"],
@@ -55,6 +59,17 @@
     input:focus {
       outline: none;
       border-color: #f76f8f;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #f76f8f;
+      user-select: none;
     }
 
     .btn {
@@ -118,120 +133,107 @@
       text-align: center;
     }
 
-    .agree-label {
-      font-size: 12px;
-      padding-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .error-text {
+      color: red;
+      font-size: 13px;
+      margin-top: 5px;
     }
+
   </style>
 </head>
 
 <body>
   <div class="card">
     <h2>Create Account</h2>
-    <form action="/signup" method="POST" onsubmit="return validateForm()">
-      <div class="form-outline">
-        <input type="text" id="name" name="name" placeholder="Name" required minlength="3"
-          pattern="^[A-Za-z\s]+$" title="Enter a valid name (only letters and spaces)" />
-      </div>
-      <div class="form-outline">
-        <input type="email" id="email" name="email" placeholder="Email Address" required />
-      </div>
-      <div class="form-outline">
-        <input type="text" id="mobile" name="mobile" placeholder="Mobile Number" required pattern="^\d{10}$"
-          title="Enter a 10-digit mobile number" />
-      </div>
-      <div class="form-outline">
-        <input type="password" id="password" name="password" placeholder="Password" required minlength="6"
-          pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}"
-          title="Must contain uppercase, lowercase, number, and special character" />
-      </div>
-      <div id="password-rule-error" class="alert" style="display: none;"></div>
 
-      <div class="form-outline">
-        <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirm Password"
-          required minlength="6" />
+    <% if (errorMessage && !errorField) { %>
+      <div class="alert alert-danger">
+        <%= errorMessage %>
       </div>
-      <div id="password-error" class="alert" style="display: none;"></div>
+    <% } %>
 
-      <label class="agree-label">
-        <input type="checkbox" required />
-        <span>I have read and agreed to the Terms of Service and Privacy Policy</span>
-      </label>
+    <form action="/signup" method="POST">
 
-      <% if (typeof error !== 'undefined' && error) { %>
-        <div id="error-message" class="alert">
-          <%= error %>
-        </div>
-      <% } %>
-
-      <div class="pt-1 mb-4">
-        <button class="btn" type="submit">Sign Up</button>
+      <div class="form-group">
+        <input type="text" name="name" placeholder="Enter Name" value="<%= name %>"
+          class="<%= errorField === 'name' ? 'input-error' : '' %>">
+        <% if (errorField==='name' ) { %>
+          <p class="error-text"><%= errorMessage %></p>
+        <% } %>
       </div>
+
+      <div class="form-group">
+        <input type="email" name="email" placeholder="Enter Email" value="<%= email %>"
+          class="<%= errorField === 'email' ? 'input-error' : '' %>">
+        <% if (errorField==='email' ) { %>
+          <p class="error-text"><%= errorMessage %></p>
+        <% } %>
+      </div>
+
+      <div class="form-group">
+        <input type="text" name="mobile" placeholder="Enter Mobile number" value="<%= mobile %>"
+          class="<%= errorField === 'mobile' ? 'input-error' : '' %>">
+        <% if (errorField==='mobile' ) { %>
+          <p class="error-text"><%= errorMessage %></p>
+        <% } %>
+      </div>
+
+      <div class="form-group">
+        <input type="password" id="password" name="password" placeholder="Enter Password"
+          class="<%= errorField === 'password' ? 'input-error' : '' %>">
+        <span class="toggle-password" onclick="togglePassword('password', 'eyeIcon')">
+          <i id="eyeIcon" class="fa-solid fa-eye fa-xs"></i>
+        </span>
+        <% if (errorField==='password' ) { %>
+          <p class="error-text"><%= errorMessage %></p>
+        <% } %>
+      </div>
+
+      <div class="form-group">
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password"
+          class="<%= errorField === 'confirmPassword' ? 'input-error' : '' %>">
+        <span class="toggle-password" onclick="togglePassword('confirmPassword', 'eyeIconConfirm')">
+          <i id="eyeIconConfirm" class="fa-solid fa-eye fa-xs"></i>
+        </span>
+        <% if (errorField==='confirmPassword' ) { %>
+          <p class="error-text"><%= errorMessage %></p>
+        <% } %>
+      </div>
+
+      <button class="btn" type="submit">Sign Up</button>
     </form>
 
     <p class="or">or</p>
-    <div class="social-login">
-     <button type="button" onclick="window.location.href='/auth/google'" class="btn-google">
-  <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google">
-  Signup with Google
-</button>
 
-      <!-- <button><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Signup with Facebook</button> -->
+    <div class="social-login">
+      <button type="button" onclick="window.location.href='/auth/google'" class="btn-google">
+        <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google">
+        Signup with Google
+      </button>
     </div>
 
     <div class="login-link">
-      Already have an account? <a href="/userLogin">Login</a>
+      Already have an account? <a href="/login">Login</a>
     </div>
+
   </div>
 
   <script>
-    function validateForm() {
-      const password = document.getElementById('password').value.trim();
-      const confirm = document.getElementById('confirm-password').value.trim();
-      const passwordError = document.getElementById('password-rule-error');
-      const confirmError = document.getElementById('password-error');
+    function togglePassword(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
 
-      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
-
-      // Hide messages
-      passwordError.style.display = 'none';
-      confirmError.style.display = 'none';
-
-      // Check password strength
-      if (!strongPasswordRegex.test(password)) {
-        passwordError.innerText = "Password must contain uppercase, lowercase, number, and special character!";
-        passwordError.style.display = 'block';
-        return false;
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
       }
-
-      // Check confirm password
-      if (!confirm) {
-        confirmError.innerText = "Please confirm your password!";
-        confirmError.style.display = 'block';
-        return false;
-      }
-
-      // Match check
-      if (password !== confirm) {
-        confirmError.innerText = "Passwords do not match!";
-        confirmError.style.display = 'block';
-        return false;
-      }
-
-      return true;
     }
-
-    // Clear errors on focus
-    document.getElementById('password').addEventListener('focus', function () {
-      document.getElementById('password-rule-error').style.display = 'none';
-    });
-
-    document.getElementById('confirm-password').addEventListener('focus', function () {
-      document.getElementById('password-error').style.display = 'none';
-    });
   </script>
 </body>
+
 </html>

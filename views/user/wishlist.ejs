@@ -1,0 +1,223 @@
+<%- include("../partials/userHeader", { title: "My Wishlist" }) %>
+<div id="toastBox">
+</div>
+
+<style>
+  body {
+    font-family: "Poppins", sans-serif;
+    background-color: #fafafa;
+  }
+
+  .wishlist-container {
+    max-width: 1100px;
+    margin: 120px auto 50px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .wishlist-item {
+    display: grid;
+    grid-template-columns: 120px 1fr 160px;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+  }
+
+  .wishlist-item img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #f8f8f8;
+  }
+
+  .wishlist-item h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+
+  .wishlist-item p {
+    margin: 5px 0;
+    color: #777;
+    font-size: 14px;
+  }
+
+  .wishlist-actions button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+  }
+
+  .btn-cart {
+    background-color: #f76f8f;
+    color: #fff;
+  }
+  .btn-cart:hover {
+    background-color: #e2577a;
+  }
+
+  .btn-remove {
+    background-color: #fff;
+    border: 2px solid #f76f8f;
+    color: #f76f8f;
+  }
+  .btn-remove:hover {
+    background-color: #f76f8f;
+    color: white;
+  }
+
+  .empty-box {
+    text-align: center;
+    padding: 50px 0;
+  }
+
+  .empty-box img {
+    width: 200px;
+    margin-bottom: 20px;
+  }
+
+  .empty-box h3 {
+    font-weight: 600;
+    color: #444;
+  }
+
+  .empty-box a {
+    background: #f76f8f;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 20px;
+    display: inline-block;
+  }
+  .empty-box a:hover {
+    background-color: #e2577a;
+  }
+    #toastBox {
+    position: fixed;
+    bottom: 20px;
+    right: -300px;
+    background-color: #000;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    z-index: 9999;
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+  }
+
+  #toastBox.show {
+    transform: translateX(-320px);
+    opacity: 1;
+  }
+</style>
+
+<div class="wishlist-container">   
+  <h2>My Wishlist</h2>
+  <hr>
+
+  <% if (!wishlist || wishlist.products.length === 0) { %>
+    <div class="empty-box">
+      <img src="/img/empty-wishlist.png" alt="">
+      <h3>Your wishlist is empty</h3>
+      <a href="/shop">Continue Shopping</a>
+    </div>
+  <% } else { %>
+
+    <% wishlist.products.forEach(item => { %>
+      <div class="wishlist-item" id="wish-<%= item.productId._id %>">
+
+        <img src="<%= item.productId.images[0] %>" alt="">
+
+        <div>
+          <h4><%= item.productId.name %></h4>
+          <p>₹ <%= item.productId.salePrice || item.productId.price %></p>
+
+          <% if (item.productId.stock > 0) { %>
+            <p style="color:green;">In Stock</p>
+          <% } else { %>
+            <p style="color:red;">Out of Stock</p>
+          <% } %>
+        </div>
+
+        <div class="wishlist-actions">
+
+          <button class="btn-cart" onclick="moveToCart('<%= item.productId._id %>')">
+            Move to Cart
+          </button>
+
+          <button class="btn-remove" onclick="removeWishlist('<%= item.productId._id %>')">
+            Remove
+          </button>
+
+        </div>
+
+      </div>
+    <% }) %>
+
+  <% } %>
+
+</div>
+
+<script>
+   function showToast(message, error = false) {
+    const toast = document.getElementById("toastBox");
+
+    toast.innerText = message;
+    toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+
+    toast.classList.add("show");
+
+    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+
+    toast.hideTimeout = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2000);
+  }
+
+  function removeWishlist(productId) {
+    fetch('/wishlist/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("wish-" + productId).remove();
+      }
+    });
+  }
+
+  function moveToCart(productId) {
+  fetch(`/cart/add-ajax/${productId}`, {
+    method: 'POST',
+    credentials: "include",
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    showToast(data.message);
+
+    if (data.success) {
+      removeWishlist(productId);
+    }
+});
+
+}
+</script>
+
+<%- include("../partials/userFooter") %>

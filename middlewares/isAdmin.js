@@ -5,8 +5,12 @@ export const isAdmin = (req, res, next) => {
     return next();
   }
 
-  console.log("⛔ Unauthorized access attempt");
+  console.log("Unauthorized access attempt");
   return res.redirect("/error");
 };
 
 
+export const setCurrentPath = (req, res, next) => {
+  res.locals.currentPath = req.path;
+  next();
+};

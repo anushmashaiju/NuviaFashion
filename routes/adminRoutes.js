@@ -1,5 +1,5 @@
 import express from "express";
-import { isAdmin } from "../middlewares/isAdmin.js";
+
 
 import {
   getAdminLoginPage,
@@ -19,23 +19,23 @@ import {
 
 import {
   getCategories,
-  renderAddCategoryPage,
   addCategory,
-  renderEditCategoryPage,
   editCategory,
   deleteCategory,
   toggleCategory,
+  getEditCategoryPage,
+  getAddCategoryPage,
 } from "../controllers/admin/categoryController.js";
 
 import {
   showAllProducts,
-  renderAddProductPage,
   addProduct,
-  renderEditProductPage,
   updateProduct,
   deleteProduct,
   toggleBlockProduct,
   toggleListProduct,
+  getAddProductPage,
+  getEditProductPage,
 } from "../controllers/admin/productController.js";
 
 import {
@@ -45,10 +45,14 @@ import {
   processProductImages,
   processProductImagesForEdit,
 } from "../utils/imageHelper.js";
+import { validateProduct } from "../middlewares/categoryProductMiddleware.js";
+
+import { isAdmin, setCurrentPath } from "../middlewares/isAdmin.js"; 
+import { adminCancelOrder,getOrdersPage, updateOrderStatus, viewSingleOrder } from "../controllers/admin/orderController.js";
 
 const router = express.Router();
 
-// Admin Authentication
+// Admin Authentication (Login & Forgot Password)
 router.get("/login", getAdminLoginPage);
 router.post("/login", adminLogin);
 router.get("/logout", adminLogout);
@@ -62,31 +66,41 @@ router.get("/resend-forgot-otp", resendAdminForgotOtp);
 router.get("/reset-password", getAdminResetPasswordPage);
 router.post("/reset-password", resetAdminPassword);
 
+router.use(isAdmin);          
+router.use(setCurrentPath);   
+
 // Dashboard
-router.get("/dashboard", isAdmin, getAdminDashboard);
+router.get("/dashboard", getAdminDashboard);
 
 // Users
-router.get("/users", isAdmin, getAllUsers);
-router.get("/user/:id/toggle", isAdmin, toggleUserStatus);
-
+router.get("/users", getAllUsers);
+router.get("/user/:id/toggle", toggleUserStatus);
 
 // Categories
-router.get("/categories", isAdmin, getCategories);
-router.get("/categories/add", isAdmin, renderAddCategoryPage);
-router.post("/categories/add", isAdmin, uploadSingleImage, processCategoryImage, addCategory);
-router.get("/categories/edit/:id", isAdmin, renderEditCategoryPage);
-router.post("/categories/edit/:id", isAdmin, uploadSingleImage, processCategoryImage, editCategory);
-router.get("/categories/delete/:id", isAdmin, deleteCategory);
-router.post("/categories/toggle/:id", isAdmin, toggleCategory);
+router.get("/categories", getCategories);
+router.get("/categories/add", getAddCategoryPage);
+router.post("/categories/add", uploadSingleImage, processCategoryImage, addCategory);
+router.get("/categories/edit/:id", getEditCategoryPage);
+router.post("/categories/edit/:id", uploadSingleImage, processCategoryImage, editCategory);
+router.delete("/categories/delete/:id", deleteCategory);
+router.post("/categories/toggle/:id", toggleCategory);
 
 // Products
-router.get("/products", isAdmin, showAllProducts);
-router.get("/products/add", isAdmin, renderAddProductPage);
-router.post("/products/add", isAdmin, uploadProductImages, processProductImages, addProduct);
-router.get("/products/edit/:id", isAdmin, renderEditProductPage);
-router.post("/products/edit/:id", isAdmin, uploadProductImages, processProductImagesForEdit, updateProduct);
-router.get("/products/delete/:id", isAdmin, deleteProduct);
-router.get("/products/:id/toggle-block", isAdmin, toggleBlockProduct);
-router.get("/products/:id/toggle-list", isAdmin, toggleListProduct);
+router.get("/products", showAllProducts);
+router.get("/products/add", getAddProductPage);
+router.post("/products/add", uploadProductImages, processProductImages, validateProduct, addProduct);
+router.get("/products/edit/:id", getEditProductPage);
+router.post("/products/edit/:id", uploadProductImages, processProductImagesForEdit, validateProduct, updateProduct);
+router.get("/products/delete/:id", deleteProduct);
+router.get("/products/:id/toggle-block", toggleBlockProduct);
+router.get("/products/:id/toggle-list", toggleListProduct);
+
+// Orders
+router.get("/orders", getOrdersPage);                            
+router.get("/orders/:id", viewSingleOrder);                      
+router.post("/orders/update-status/:id", updateOrderStatus);     
+router.get("/orders/cancel/:id", adminCancelOrder);                  
+
+
 
 export default router;

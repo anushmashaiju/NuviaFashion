@@ -8,12 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Nuvia</title>
-
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
         rel="stylesheet">
-
-    <!-- Css Styles -->
     <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="/css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="/css/elegant-icons.css" type="text/css">
@@ -23,176 +19,181 @@
     <link rel="stylesheet" href="/css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="/css/style.css" type="text/css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-       /* === Profile Section === */
-.profile-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-}
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
 
-/* === Profile Dropdown === */
-.profile-dropdown {
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-dropdown .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f76f8f;
+            border-radius: 6px;
+            list-style: none;
+            padding: 8px 0;
+            min-width: 180px;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-dropdown:hover .dropdown,
+        .profile-dropdown .dropdown:hover {
+            display: block;
+        }
+
+        .profile-dropdown .dropdown li {
+            width: 100%;
+        }
+
+        .profile-dropdown .dropdown li a {
+            display: block;
+            width: 100%;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .profile-dropdown .dropdown li a:hover {
+            background-color: #ffadc5;
+        }
+
+        .profile-icon {
+            font-size: 18px;
+            color: #111;
+            cursor: pointer;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f76f8f;
+        }
+
+        .header__nav__option {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 25px;
+        }
+
+        .header__menu li {
+            position: relative;
+        }
+
+
+        .header__menu li .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #f76f8f;
+            border-radius: 6px;
+            list-style: none;
+            padding: 8px 0;
+            min-width: 180px;
+            z-index: 9999;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            margin-top: 2px;
+        }
+
+        .header__menu li:hover .dropdown {
+            display: block;
+        }
+
+        .header__menu li .dropdown li {
+            width: 100%;
+        }
+
+        .header__menu li .dropdown li a {
+            display: block;
+            width: 100%;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .header__menu li .dropdown li a:hover {
+            background-color: #ffadc5;
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        #searchInput {
+            padding: 6px 30px 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        #searchBtn,
+        #clearBtn {
+            background: none;
+            border: none;
+            position: absolute;
+            cursor: pointer;
+        }
+
+        #clearBtn {
+            right: 30px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        #searchBtn {
+            right: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        #searchBtn:hover,
+        #clearBtn:hover {
+            color: #5a2a00;
+        }
+        .icon-with-badge {
     position: relative;
     display: inline-block;
 }
 
-/* Dropdown menu for profile */
-.profile-dropdown .dropdown {
+.icon-with-badge .badge {
     position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #f76f8f;
-    border-radius: 6px;
-    list-style: none;
-    padding: 8px 0;
-    min-width: 180px;
-    display: none;
-    z-index: 9999;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-/* Show profile dropdown on hover */
-.profile-dropdown:hover .dropdown,
-.profile-dropdown .dropdown:hover {
-    display: block;
-}
-
-/* Profile dropdown links */
-.profile-dropdown .dropdown li {
-    width: 100%;
-}
-
-.profile-dropdown .dropdown li a {
-    display: block;
-    width: 100%;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-.profile-dropdown .dropdown li a:hover {
-    background-color: #ffadc5;
-}
-
-/* Profile icon and username */
-.profile-icon {
-    font-size: 18px;
-    color: #111;
-    cursor: pointer;
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #f76f8f;
-}
-
-/* === Header Navigation Options === */
-.header__nav__option {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 25px;
-}
-
-/* === Categories Dropdown === */
-.header__menu li {
-    position: relative;
-}
-
-/* Dropdown menu for categories */
-.header__menu li .dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #f76f8f;
-    border-radius: 6px;
-    list-style: none;
-    padding: 8px 0;
-    min-width: 180px; /* match profile dropdown */
-    z-index: 9999;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    margin-top: 2px;
-}
-
-/* Show categories dropdown on hover */
-.header__menu li:hover .dropdown {
-    display: block;
-}
-
-/* Category dropdown links */
-.header__menu li .dropdown li {
-    width: 100%;
-}
-
-.header__menu li .dropdown li a {
-    display: block;
-    width: 100%;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-.header__menu li .dropdown li a:hover {
-    background-color: #ffadc5;
-}
-
-/* === Search Bar === */
-.search-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-right: 10px;
-}
-
-#searchInput {
-    padding: 6px 30px 6px 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-}
-
-#searchBtn,
-#clearBtn {
-    background: none;
-    border: none;
-    position: absolute;
-    cursor: pointer;
-}
-
-#clearBtn {
-    right: 30px;
-    font-size: 12px;
-    color: #999;
-}
-
-#searchBtn {
-    right: 5px;
-    font-size: 14px;
-    color: #333;
-}
-
-#searchBtn:hover,
-#clearBtn:hover {
-    color: #5a2a00;
+    top: -12px;
+    right: -10px;
+    background: #f76f8f;
+    color: white;
+    font-size: 10px;
+    padding: 5px 5px;
+    border-radius: 50%;
+    font-weight: bold;
 }
 
     </style>
 </head>
 
 <body>
-
     <header class="header">
         <div class="container">
             <div class="row align-items-center">
@@ -206,42 +207,55 @@
                 <div class="col-lg-4 col-md-4">
                     <nav class="header__menu mobile-menu">
                         <ul>
-                            <li class="active"><a href="/home">Home</a></li>
-                            <li><a href="/products">Shop</a></li>
-                            <li>
+                            <li class="<%= activePage === 'home' ? 'active' : '' %>">
+                                <a href="/home">Home</a>
+                            </li>
+
+                            <li class="<%= activePage === 'shop' ? 'active' : '' %>">
+                                <a href="/products">Shop</a>
+                            </li>
+
+                            <li class="<%= activePage === 'categories' ? 'active' : '' %>">
                                 <a href="#">Categories</a>
                                 <ul class="dropdown">
                                     <% if (headerCategories && headerCategories.length> 0) { %>
                                         <% headerCategories.forEach(category=> { %>
-                                            <li><a href="/products?category=<%= category.categoryName %>">
+                                            <li>
+                                                <a href="/products?category=<%= category.categoryName %>">
                                                     <%= category.categoryName %>
-                                                </a></li>
+                                                </a>
+                                            </li>
                                             <% }) %>
-
                                                 <% } else { %>
                                                     <li><a href="#">No Categories</a></li>
                                                     <% } %>
                                 </ul>
                             </li>
-
+                            </li>
                         </ul>
+
                     </nav>
                 </div>
 
                 <div class="col-lg-7 col-md-7">
                     <div class="header__nav__option">
 
-                        <!-- ✅ Search Bar -->
-                        <!-- <div class="search-container">
-                            <input type="text" id="searchInput" placeholder="Search here..." />
-                            <button id="clearBtn" title="Clear search">&#10006;</button>
-                            <button id="searchBtn" title="Search"><i class="fa fa-search"></i></button>
-                        </div> -->
 
-                        <a href="#"><i class="fas fa-heart"></i></a>
-                        <a href="#"><i class="fas fa-shopping-cart"></i></a>
+                       <a href="/wishlist" class="icon-with-badge">
+    <i class="fas fa-heart"></i>
+    <% if (wishlistCount > 0) { %>
+        <span class="badge"><%= wishlistCount %></span>
+    <% } %>
+</a>
 
-                        <!-- ✅ Profile Dropdown -->
+<a href="/cart" class="icon-with-badge">
+    <i class="fas fa-shopping-cart"></i>
+    <% if (cartCount > 0) { %>
+        <span class="badge"><%= cartCount %></span>
+    <% } %>
+</a>
+
+
                         <div class="profile-section">
                             <div class="profile-dropdown">
                                 <a href="#" id="profileIcon" class="profile-icon" title="Profile">
@@ -249,11 +263,10 @@
                                 </a>
                                 <ul class="dropdown">
                                     <li><a href="/userProfile">User Info</a></li>
-                                    <li><a href="/orders">Orders</a></li>
+                                    <li><a href="/user/addresses">Address</a></li>
+                                    <li><a href="/order/list">Orders</a></li>
                                     <li><a href="/coupon">Coupon</a></li>
-                                    <li><a href="/address">Address</a></li>
                                     <li><a href="/wallet">Wallet</a></li>
-                                    <li><a href="/wishlist">Wishlist</a></li>
                                     <li><a href="/support">Support</a></li>
                                     <li><a href="/refer">Refer & Earn</a></li>
                                     <li><a href="/logout">Logout</a></li>
@@ -266,14 +279,11 @@
                                 </span>
                                 <% } %>
                         </div>
-
                     </div>
                 </div>
             </div>
         </div>
     </header>
-
-
 </body>
 
 </html>

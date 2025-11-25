@@ -1,0 +1,151 @@
+<%- include("../partials/userHeader", { title: "Edit Profile", activePage: "profile" }) %>
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #fafafa;
+  }
+
+  .breadcrumb {
+    margin: 100px auto 20px auto;
+    width: 90%;
+    max-width: 900px;
+    font-size: 14px;
+    color: #666;
+  }
+
+  .breadcrumb a {
+    color: #f76f8f;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .breadcrumb span {
+    color: #333;
+  }
+
+  .profile-container {
+    max-width: 900px;
+    margin: 20px auto 60px auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+  }
+
+  .profile-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .profile-header img {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border: 3px solid #f7c4d4;
+  }
+
+  .profile-form label {
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .form-control {
+    height: 45px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+  }
+
+  .btn-pink {
+    background-color: #f76f8f;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s ease;
+  }
+
+  .btn-pink:hover {
+    background-color: #e2577a;
+  }
+
+  .error-msg {
+    color: #e2577a;
+    font-weight: 600;
+    margin-bottom: 10px;
+    margin-top: -8px;
+  }
+
+  .input-error {
+    border: 2px solid #e2577a !important;
+  }
+</style>
+
+<div class="breadcrumb">
+  <a href="/home">Home</a> &gt;
+  <a href="/userProfile">My Profile</a> &gt;
+  <span>Edit Profile</span>
+</div>
+
+<div class="profile-container">
+
+  <h3 style="color:#a04c74; margin-bottom: 20px;">Edit Profile</h3>
+
+  <form action="/user/edit-profile" method="POST" enctype="multipart/form-data">
+
+    <div class="profile-header">
+      <img src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+           id="previewImage" 
+           alt="Profile Image">
+    </div>
+
+    <!-- PROFILE IMAGE -->
+    <label>Profile Image</label>
+    <input type="file" name="profileImage" class="form-control" accept="image/*" onchange="previewFile()">
+    
+    <!-- NAME -->
+    <label>Name</label>
+    <input type="text" name="name" value="<%= user.name %>" 
+      class="form-control <%= errorField === 'name' ? 'input-error' : '' %>">
+    <% if (errorField === 'name') { %>
+      <p class="error-msg"><%= errorMessage %></p>
+    <% } %>
+
+    <!-- EMAIL -->
+    <label>Email</label>
+    <input type="email" name="email" value="<%= user.email %>"
+      class="form-control <%= errorField === 'email' ? 'input-error' : '' %>">
+    <% if (errorField === 'email') { %>
+      <p class="error-msg"><%= errorMessage %></p>
+    <% } %>
+
+    <!-- MOBILE -->
+    <label>Mobile</label>
+    <input type="text" name="mobile" value="<%= user.mobile %>"
+      class="form-control <%= errorField === 'mobile' ? 'input-error' : '' %>">
+    <% if (errorField === 'mobile') { %>
+      <p class="error-msg"><%= errorMessage %></p>
+    <% } %>
+
+    <button type="submit" class="btn-pink" style="margin-top: 10px;">Update Profile</button>
+  </form>
+
+</div>
+
+<script>
+  function previewFile() {
+    const file = document.querySelector('input[name="profileImage"]').files[0];
+    const preview = document.getElementById("previewImage");
+    if (file) preview.src = URL.createObjectURL(file);
+  }
+</script>
+
+<%- include("../partials/userFooter") %>

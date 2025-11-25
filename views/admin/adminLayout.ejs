@@ -1,7 +1,6 @@
 <%- include("../../views/partials/adminHeader", { pageTitle: pageTitle }) %>
 
 <style>
-  /* 🌸 GLOBAL ADMIN LAYOUT */
   body {
     background-color: #fff5f7;
     font-family: "Poppins", sans-serif;
@@ -11,12 +10,12 @@
 
   .admin-layout {
     display: flex;
-    margin-top: 60px; /* Fixed header height */
+    margin-top: 60px; 
   }
 
   .admin-main {
     flex: 1;
-    margin-left: 230px; /* Sidebar width */
+    margin-left: 230px; 
     padding: 40px;
     background-color: #fff;
     min-height: calc(100vh - 100px);
@@ -24,7 +23,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
-  /* 🌺 CARD STYLE */
   .card {
     background: #ffe6eb;
     border-radius: 12px;
@@ -32,13 +30,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  /* 🌼 PAGE HEADINGS */
   h1, h2, h3 {
     color: #a04c74;
     font-weight: 600;
   }
 
-  /* 🌷 BUTTON STYLES */
   .btn-pink {
     background-color: #f08da4;
     color: white;
@@ -53,7 +49,6 @@
     background-color: #e26689;
   }
 
-  /* 🌻 TABLE STYLING */
   .table-custom {
     width: 100%;
     border-collapse: collapse;
@@ -79,7 +74,6 @@
     background-color: #ffe6eb;
   }
 
-  /* 🌸 PAGINATION */
   .pagination-wrap {
     display: flex;
     justify-content: center;
@@ -106,9 +100,7 @@
   <%- include("../../views/partials/adminSidebar") %>
 
   <main class="admin-main">
-    <!-- 🌟 MAIN CONTENT AREA STARTS -->
     <%- body %>
-    <!-- 🌟 MAIN CONTENT AREA ENDS -->
   </main>
 </div>
 

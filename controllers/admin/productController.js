@@ -1,26 +1,7 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/categoryModel.js";
 
-// ======================
-// Render Add Product Page
-// ======================
-export const renderAddProductPage = async (req, res) => {
-  try {
-    const categories = await Category.find({ isActive: true, isListed: true });
-    res.render("admin/addProduct", {
-      title: "Add Product",
-      admin: req.session.user,
-      categories,
-    });
-  } catch (error) {
-    console.error("Render Add Product Page Error:", error);
-    res.redirect("/error");
-  }
-};
-
-// ======================
-// Show All Products (with Search + Pagination)
-// ======================
+// Show All Products 
 export const showAllProducts = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -53,7 +34,7 @@ export const showAllProducts = async (req, res) => {
       title: "All Products",
       products,
       admin: req.session.user,
-      search,        // ✅ Prevents "search is not defined"
+      search,
       currentPage: page,
       totalPages,
       limit,
@@ -64,21 +45,43 @@ export const showAllProducts = async (req, res) => {
   }
 };
 
-// ======================
+// Render Add Product Page
+export const getAddProductPage = async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true, isListed: true });
+  res.render("admin/addProduct", {
+  title: "Add Product",
+  admin: req.session.user,
+  categories,
+  errorMessage: req.query.error || null
+});
+  } catch (error) {
+    console.error("Render Add Product Page Error:", error);
+    res.redirect("/error");
+  }
+};
+
 // Add Product
-// ======================
 export const addProduct = async (req, res) => {
   try {
-    const { name, category, brand, price, discount, description } = req.body;
+    const {
+      name,
+      category,
+      brand,
+      price,
+      discount,
+      description,
+      color,
+      size,
+      sku,
+      stock,
+    } = req.body;
+
     const imageUrls = req.imageUrls || [];
-
-    if (!category || !/^[0-9a-fA-F]{24}$/.test(category)) {
-      return res.status(400).send("Invalid category ID");
-    }
-
-    if (imageUrls.length < 3) {
-      return res.status(400).send("Please upload at least 3 product images");
-    }
+    if (!price || price <= 0) return res.status(400).json({ errorMessage: "Price must be > 0" });
+    if (!category || !/^[0-9a-fA-F]{24}$/.test(category))
+      return res.status(400).json({ errorMessage: "Invalid category ID" });
+    if (imageUrls.length < 3) return res.status(400).json({ errorMessage: "Upload at least 3 images" });
 
     const finalPrice = discount ? price - (price * discount) / 100 : price;
 
@@ -87,10 +90,12 @@ export const addProduct = async (req, res) => {
           color,
           size: req.body.variantSize[i],
           sku: req.body.variantSKU[i],
-          stock: req.body.variantStock[i],
+          stock: parseInt(req.body.variantStock[i]),
           image: req.variantImageUrls?.[i] || null,
         }))
       : [];
+
+    const totalStock = (parseInt(stock) || 0) + variants.reduce((sum, v) => sum + v.stock, 0);
 
     await Product.create({
       name,
@@ -100,21 +105,25 @@ export const addProduct = async (req, res) => {
       discount,
       finalPrice,
       description,
+      color,
+      size,
+      sku,
+      stock: parseInt(stock),
+      totalStock,
       images: imageUrls,
       variants,
     });
 
-    res.redirect("/admin/products");
+    return res.status(200).json({ success: true, errorMessage: "Product added successfully" });
+
   } catch (error) {
     console.error("Add Product Error:", error);
-    res.redirect("/error");
+    return res.status(500).json({ errorMessage: "Server Error", error: error.message });
   }
 };
 
-// ======================
 // Render Edit Product Page
-// ======================
-export const renderEditProductPage = async (req, res) => {
+export const getEditProductPage = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category");
     if (!product || product.isDeleted) return res.redirect("/error");
@@ -133,84 +142,55 @@ export const renderEditProductPage = async (req, res) => {
   }
 };
 
-// ======================
 // Update Product
-// ======================
 export const updateProduct = async (req, res) => {
   try {
-    const { name, category, brand, price, discount, description, imageFilenames } = req.body;
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ errorMessage: "Product not found" });
 
-    let updatedImages = imageFilenames ? imageFilenames.split(",") : [];
-    if (req.imageUrls?.length) updatedImages.push(...req.imageUrls);
+    const { name, brand, price, discount, finalPrice, description, category, stock } = req.body;
 
-    if (updatedImages.length < 3) {
-      return res.status(400).send("Product must have at least 3 images");
+    product.name = name;
+    product.brand = brand;
+    product.price = parseFloat(price);
+    product.discount = parseFloat(discount || 0);
+    product.finalPrice = parseFloat(finalPrice);
+    product.description = description;
+    product.category = category;
+    product.stock = parseInt(stock);
+
+    let existingImages = req.body.imageFilenames?.split(",") || [];
+    const newImages = req.imageUrls || [];
+    product.images = [...existingImages, ...newImages];
+
+    let variants = [];
+    if (req.body.variantColor) {
+      const colors = Array.isArray(req.body.variantColor) ? req.body.variantColor : [req.body.variantColor];
+      const sizes = Array.isArray(req.body.variantSize) ? req.body.variantSize : [req.body.variantSize];
+      const skus = Array.isArray(req.body.variantSKU) ? req.body.variantSKU : [req.body.variantSKU];
+      const stocks = Array.isArray(req.body.variantStock) ? req.body.variantStock : [req.body.variantStock];
+      const existingVariantImages = Array.isArray(req.body.variantExistingImage) ? req.body.variantExistingImage : [req.body.variantExistingImage];
+      const variantFiles = req.variantImageUrls || [];
+
+      variants = colors.map((c, i) => {
+        let img = existingVariantImages[i] || "";
+        if (variantFiles[i]) img = variantFiles[i];
+        return { color: c, size: sizes[i], sku: skus[i], stock: parseInt(stocks[i]), image: img };
+      });
     }
 
-    const finalPrice = discount ? price - (price * discount) / 100 : price;
+    product.variants = variants;
+    product.totalStock = parseInt(stock) + variants.reduce((sum, v) => sum + v.stock, 0);
 
-    const variantColors = Array.isArray(req.body.variantColor)
-      ? req.body.variantColor
-      : req.body.variantColor
-      ? [req.body.variantColor]
-      : [];
-
-    const variantSizes = Array.isArray(req.body.variantSize)
-      ? req.body.variantSize
-      : req.body.variantSize
-      ? [req.body.variantSize]
-      : [];
-
-    const variantSKUs = Array.isArray(req.body.variantSKU)
-      ? req.body.variantSKU
-      : req.body.variantSKU
-      ? [req.body.variantSKU]
-      : [];
-
-    const variantStocks = Array.isArray(req.body.variantStock)
-      ? req.body.variantStock
-      : req.body.variantStock
-      ? [req.body.variantStock]
-      : [];
-
-    const existingVariantImages = Array.isArray(req.body.variantExistingImage)
-      ? req.body.variantExistingImage
-      : req.body.variantExistingImage
-      ? [req.body.variantExistingImage]
-      : [];
-
-    const newVariantImages = req.variantImageUrls || [];
-
-    const variants = variantColors.map((color, i) => ({
-      color,
-      size: variantSizes[i] || "",
-      sku: variantSKUs[i] || "",
-      stock: variantStocks[i] || 0,
-      image: newVariantImages[i] || existingVariantImages[i] || null,
-    }));
-
-    await Product.findByIdAndUpdate(req.params.id, {
-      name,
-      category,
-      brand,
-      price,
-      discount,
-      finalPrice,
-      description,
-      images: updatedImages,
-      variants,
-    });
-
-    res.redirect("/admin/products");
-  } catch (error) {
-    console.error("Update Product Error:", error);
-    res.redirect("/error");
+    await product.save();
+    res.json({ success: true, errorMessage: "Product updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ errorMessage: "Server Error", error: err.message });
   }
 };
 
-// ======================
 // Soft Delete Product
-// ======================
 export const deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndUpdate(req.params.id, { isDeleted: true });
@@ -221,9 +201,7 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// ======================
 // Toggle Block / Unblock Product
-// ======================
 export const toggleBlockProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -239,9 +217,7 @@ export const toggleBlockProduct = async (req, res) => {
   }
 };
 
-// ======================
 // Toggle List / Unlist Product
-// ======================
 export const toggleListProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -256,3 +232,4 @@ export const toggleListProduct = async (req, res) => {
     res.redirect("/error");
   }
 };
+

@@ -1,0 +1,332 @@
+<%- include("../partials/userHeader", { title: "Order Details" }) %>
+
+  <style>
+    .order-page {
+      max-width: 1200px;
+      margin: 10px auto 40px;
+      display: flex;
+      gap: 25px;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .left-section {
+      flex: 2;
+    }
+
+    .right-section {
+      flex: 1;
+      background: #fff5f7;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .section-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .items-table th,
+    .items-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .items-table img {
+      width: 80px;
+      height: 80px;
+       object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .btn-cancel {
+      background: #FF4C4C;
+    }
+
+    .btn-return {
+      background: #a04c74;
+      color: #ffffff;
+    }
+
+    .btn-download {
+      background: #f76f8f;
+    }
+
+    .timeline {
+      border-left: 2px solid #ff4c8b;
+      padding-left: 15px;
+      margin-top: 10px;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .active-step {
+      color: #ff4c8b;
+      font-weight: 700;
+      position: relative;
+    }
+
+    .active-step::before {
+      content: "●";
+      color: #ff4c8b;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+
+    .breadcrumb {
+      max-width: 1200px;
+      margin: 90px 0 0 30px;
+      font-family: "Poppins", sans-serif;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .breadcrumb a {
+      color: #ff4c8b;
+      text-decoration: none;
+    }
+  </style>
+
+  <div class="breadcrumb">
+    <a href="/home">Home</a> &gt;
+    <a href="/order/list">My Orders</a> &gt;
+    <span>Order <%= order.orderID %></span>
+  </div>
+
+
+  <div class="order-page">
+
+    <div class="left-section">
+
+      <div class="section-card order-header">
+        <h2>Order Details - <%= order.orderID %>
+        </h2>
+
+        <% if(order.orderStatus==="Cancelled" ) { %>
+          <button class="btn btn-cancel" disabled style="background:#ccc;">Cancelled</button>
+          <% } else if(order.orderStatus !=="Returned" && order.orderStatus !=="Delivered" ) { %>
+            <button class="btn btn-cancel" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
+            <% } %>
+      </div>
+
+      <div class="section-card">
+        <h3>Ordered Items</h3>
+
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Name</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(item=> { %>
+              <tr>
+                <td><img src="<%= item.image %>" alt="<%= item.productName %>"></td>
+                <td>
+                  <%= item.productName %>
+                </td>
+                <td>
+                  <%= item.quantity %>
+                </td>
+                <td>Rs.<%= item.finalPrice %>
+                </td>
+                <td>Rs.<%= item.subtotal %>
+                </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-card">
+        <h3>Shipping Details</h3>
+
+        <div class="timeline">
+
+          <p class="<%= order.statusTimeline.orderPlaced ? 'active-step' : '' %>">Order Placed</p>
+
+          <p class="<%= order.statusTimeline.processing ? 'active-step' : '' %>">Pending</p>
+
+          <p class="<%= order.statusTimeline.shipped ? 'active-step' : '' %>">Shipped</p>
+
+          <p class="<%= order.statusTimeline.outForDelivery ? 'active-step' : '' %>">Out for Delivery</p>
+
+          <p class="<%= order.statusTimeline.delivered ? 'active-step' : '' %>">Delivered</p>
+        </div>
+
+        <% if(order.returnEndDate) { %>
+          <p style="margin-top:12px; color:#ff4c8b;">
+            Return policy ends on <strong>
+              <%= order.returnEndDate %>
+            </strong>
+          </p>
+          <% } %>
+      </div>
+
+      <div class="section-card">
+        <a href="/order/<%= order.orderID %>/invoice" class="btn btn-download">Download Invoice</a>
+
+        <% if(order.orderStatus !=="Cancelled" && order.orderStatus !=="Returned" && order.orderStatus !=="Delivered" )
+          { %>
+          <button class="btn btn-cancel" onclick="cancelOrder('<%= order.orderID %>')">Cancel</button>
+          <% } %>
+
+            <% if(order.orderStatus==="Delivered" ) { %>
+              <button class="btn btn-return" onclick="returnOrder('<%= order.orderID %>')">Return</button>
+              <% } %>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <h3>Delivery Details</h3>
+        <hr>
+      <% if(order.shippingAddressId) { %>
+        <p><strong>
+            <%= order.shippingAddressId.name %>
+          </strong></p>
+        <p>
+          <%= order.shippingAddressId.addressLine %>, <%= order.shippingAddressId.area %>
+        </p>
+        <p>
+          <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %>
+        </p>
+        <p style="margin-top:15px;"><strong>
+            <%= order.shippingAddressId.phone %>
+          </strong></p>
+        <% } else { %>
+          <p style="color:red;">No shipping address found for this order.</p>
+          <% } %>
+
+            <hr>
+
+            <h3>Price Details</h3>
+
+            <div class="bill-box">
+
+              <div class="bill-row">
+                <span>Subtotal</span>
+                <span style="float:right;">Rs.<%= order.subtotal %></span>
+              </div>
+
+              <% if(order.discount> 0) { %>
+                <div class="bill-row">
+                  <span>Discount</span>
+                  <span style="float:right;">- Rs.<%= order.discount %></span>
+                </div>
+                <% } %>
+
+                  <% if(order.tax> 0) { %>
+                    <div class="bill-row">
+                      <span>GST (18%)</span>
+                      <span style="float:right;">Rs.<%= order.tax %></span>
+                    </div>
+                    <% } %>
+
+                      <% if(order.couponCode && order.couponDiscount) { %>
+                        <div class="bill-row">
+                          <span>Coupon (<%= order.couponCode %>)</span>
+                          <span style="float:right;">- Rs.<%= order.couponDiscount %></span>
+                        </div>
+                        <% } %>
+
+                          <div class="bill-row">
+                            <span>Delivery Charge</span>
+                            <span style="float:right;">Rs.<%= order.deliveryCharge || 0 %></span>
+                          </div>
+
+                          <hr>
+
+                          <div class="bill-row">
+                            <strong>Total Amount</strong>
+                            <strong style="float:right;">Rs.<%= order.totalPrice %></strong>
+                          </div>
+
+                          <p style="margin-top:10px;">Paid by: <strong>
+                              <%= order.paymentMethod %>
+                            </strong></p>
+            </div>
+
+
+    </div>
+  </div>
+
+  <%- include("../partials/userFooter") %>
+
+    <script>
+      function cancelOrder(orderID) {
+        Swal.fire({
+          title: "Cancel Order",
+          input: "text",
+          inputLabel: "Reason (optional)",
+          showCancelButton: true,
+          confirmButtonText: "Cancel Order",
+          confirmButtonColor: "#FF4C4C",
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/cancel`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason: result.value || "" })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  Swal.fire("Cancelled", "Your order has been cancelled.", "success");
+                  location.reload();
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              });
+          }
+        });
+      }
+
+      function returnOrder(orderID) {
+        Swal.fire({
+          title: "Return Order",
+          input: "text",
+          inputLabel: "Reason (required)",
+          inputValidator: v => !v && "Reason is required!",
+          showCancelButton: true,
+          confirmButtonText: "Return Order",
+          confirmButtonColor: "#ffc107",
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/return`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason: result.value })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) location.reload();
+                else Swal.fire("Error", data.message, "error");
+              });
+          }
+        });
+      }
+    </script>

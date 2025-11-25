@@ -1,8 +1,88 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/categoryModel.js";
 import Coupon from "../../models/couponModel.js"; 
+import Cart from "../../models/cartModel.js";
+import Wishlist from "../../models/wishlistModel.js";
 
-// ===== User Product List Page =====
+// HOME PAGE
+export const getHomePage = async (req, res) => {
+  try {
+    const categories = await Category.find({ isListed: true });
+    const categoryId = req.query.category;
+
+    let maxOfferProduct = null;
+    if (categoryId) {
+      maxOfferProduct = await Product.findOne({
+        category: categoryId,
+        isDeleted: false,
+        isBlocked: false,
+        isListed: true,
+      })
+        .sort({ discount: -1, createdAt: -1 })
+        .populate("category");
+    } else {
+      maxOfferProduct = await Product.findOne({
+        isDeleted: false,
+        isBlocked: false,
+        isListed: true,
+        discount: { $gt: 0 },
+      })
+        .sort({ discount: -1, createdAt: -1 })
+        .populate("category");
+    }
+
+    const newArrivals = await Product.find({
+      isDeleted: false,
+      isBlocked: false,
+      isListed: true,
+    })
+      .sort({ createdAt: -1 })
+      .limit(4);
+
+    const products = await Product.find({
+      isDeleted: false,
+      isBlocked: false,
+      isListed: true,
+    })
+      .sort({ createdAt: -1 })
+      .limit(8); 
+
+    const topBrands = await Product.aggregate([
+      { $match: { isDeleted: false, isBlocked: false, isListed: true } },
+      {
+        $group: {
+          _id: "$brand",
+          image: { $first: "$images" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 3 },
+    ]);
+
+    const offerExpiry = new Date();
+    offerExpiry.setDate(offerExpiry.getDate() + 3);
+
+    res.render("user/userHome", {
+      title: "Home",
+      activePage: "home",
+      products,        
+      newArrivals,
+      categories,
+      maxOfferProduct,
+      topBrands,
+      offerExpiry,
+      selectedCategory: categoryId || null,
+    });
+
+  } catch (error) {
+    console.error("HomePage Error:", error);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+// User Product List Page 
 export const getUserProductListPage = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -60,7 +140,23 @@ export const getUserProductListPage = async (req, res) => {
     const categories = await Category.find({ isListed: true });
     const brands = await Product.distinct("brand", { isDeleted: false, isBlocked: false, isListed: true });
 
+const userId = req.session.user?.id;
+
+let cartCount = 0;
+let wishlistCount = 0;
+
+if (userId) {
+    const cart = await Cart.findOne({ userId });
+    const wishlist = await Wishlist.findOne({ userId });
+
+    cartCount = cart ? cart.items.length : 0;
+    wishlistCount = wishlist ? wishlist.products.length : 0;
+}
+
     res.render("user/productList", {
+      activePage: "shop",
+      cartCount,
+   wishlistCount,
       products,
       categories,
       brands,
@@ -75,12 +171,16 @@ export const getUserProductListPage = async (req, res) => {
   }
 };
 
-// ===== Product Details Page =====
+//  Product Details Page 
 export const getProductDetailsPage = async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // Fetch product with category and active coupons
+  if (!productId || productId === "undefined") {
+      req.flash("error", "Invalid product ID");
+      return res.redirect("/products");
+    }
+
     const product = await Product.findById(productId)
       .populate("category")
       .populate({
@@ -93,7 +193,6 @@ export const getProductDetailsPage = async (req, res) => {
       return res.redirect("/products");
     }
 
-    // Compute average rating
     if (product.reviews?.length) {
       const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0);
       product.rating = sum / product.reviews.length;
@@ -103,7 +202,6 @@ export const getProductDetailsPage = async (req, res) => {
       product.reviewCount = 0;
     }
 
-    // Recommended products: same category, fallback to newest products
     let recommendedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: product._id },
@@ -123,6 +221,7 @@ export const getProductDetailsPage = async (req, res) => {
 
     res.render("user/productDetails", {
       title: product.name,
+       activePage:"product.name",
       product,
       recommendedProducts,
       flash: req.flash(),
@@ -134,49 +233,12 @@ export const getProductDetailsPage = async (req, res) => {
   }
 };
 
-// ===== Add to Cart =====
-export const addToCart = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product || product.isDeleted || product.isBlocked || !product.isListed || product.stock <= 0) {
-      req.flash("error", "Product unavailable");
-      return res.redirect(`/product/${req.params.id}`);
-    }
 
-    // TODO: actual cart logic here
-    req.flash("success", "Product added to cart");
-    res.redirect("/cart");
-  } catch (err) {
-    console.error(err);
-    req.flash("error", "Error adding to cart");
-    res.redirect(`/product/${req.params.id}`);
-  }
-};
-
-// ===== Buy Now =====
-export const buyNow = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product || product.isDeleted || product.isBlocked || !product.isListed || product.stock <= 0) {
-      req.flash("error", "Product unavailable");
-      return res.redirect("/products");
-    }
-
-    // TODO: Implement checkout logic
-    res.redirect(`/checkout-page/${product._id}`);
-  } catch (err) {
-    console.error(err);
-    req.flash("error", "Error in checkout");
-    res.redirect("/products");
-  }
-};
-
-// ===== Add Product Review =====
+//  Add Product Review 
 export const addProductReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
 
-    // Check login
     if (!req.user) {
       req.flash("error", "You must be logged in to write a review");
       return res.redirect(`/product/${req.params.id}`);
@@ -193,7 +255,6 @@ export const addProductReview = async (req, res) => {
       return res.redirect("/products");
     }
 
-    // Ensure reviews array exists
     if (!Array.isArray(product.reviews)) product.reviews = [];
 
     product.reviews.push({
@@ -204,7 +265,6 @@ export const addProductReview = async (req, res) => {
       date: new Date(),
     });
 
-    // Update average rating
     const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0);
     product.rating = sum / product.reviews.length;
     product.reviewCount = product.reviews.length;

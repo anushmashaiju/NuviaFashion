@@ -7,7 +7,7 @@
   }
 
   .main-content {
-    margin-left: 200px; /* Sidebar width */
+    margin-left: 200px; 
     padding: 30px;
     margin-top: 50px;
   }
@@ -45,12 +45,11 @@
   }
 </style>
 
-<!-- ✅ Dashboard Content -->
 <section class="dashboard-content">
-  <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
     <div class="card" style="flex: 1;">
       <h3>Total Users</h3>
-      <p><strong>1,240</strong></p>
+      <p><strong><%= totalUsers %></strong></p>
     </div>
 
     <div class="card" style="flex: 1;">
@@ -64,30 +63,24 @@
     </div>
   </div>
 
-  <!-- 📊 Graph Section -->
   <div class="charts">
-    <!-- Bar Chart -->
     <div class="chart-container">
       <h3>Monthly Revenue (₹)</h3>
       <canvas id="revenueChart"></canvas>
     </div>
 
-    <!-- Pie Chart -->
     <div class="chart-container">
       <h3>Order Status Distribution</h3>
       <canvas id="orderChart"></canvas>
     </div>
   </div>
 </section>
+</div>
+<%- include("../partials/adminFooter") %>
 
-<%- include("../../views/partials/adminFooter") %>
-
-<!-- ✅ Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- ✅ Chart Script -->
 <script>
-  // Bar Chart - Monthly Revenue
   const revenueCtx = document.getElementById('revenueChart').getContext('2d');
   const revenueChart = new Chart(revenueCtx, {
     type: 'bar',
@@ -121,7 +114,6 @@
     }
   });
 
-  // Pie Chart - Order Status
   const orderCtx = document.getElementById('orderChart').getContext('2d');
   const orderChart = new Chart(orderCtx, {
     type: 'pie',

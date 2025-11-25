@@ -1,0 +1,165 @@
+<%- include("../partials/userHeader", { title: "My Profile" }) %>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #fafafa;
+    }
+
+    .breadcrumb {
+      margin: 100px auto 20px auto;
+      width: 90%;
+      max-width: 900px;
+      font-size: 14px;
+      color: #666;
+
+
+    }
+
+    .breadcrumb a {
+      color: #f76f8f;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .breadcrumb a:hover {
+      text-decoration: underline;
+    }
+
+    .breadcrumb span {
+      color: #333;
+    }
+
+    .profile-container {
+      max-width: 900px;
+      margin: 20px auto 60px auto;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .profile-header img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: contain;
+    }
+
+    .profile-details h3 {
+      margin: 0;
+      color: #a04c74;
+    }
+
+    .btn-group a {
+      margin-right: 10px;
+    }
+
+    .address-box {
+      background: #f6f6f6;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .btn-group a {
+    display: inline-block;
+    padding: 10px 20px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-right: 5px;
+  }
+
+  .btn-pink {
+    background-color: #f76f8f;
+    color: white;
+    border: none;
+  }
+  .btn-pink:hover {
+    background-color: #e2577a;
+   
+  }
+
+  .btn-lightpink {
+    background-color: #fca5b5;
+    color: white;
+    border: none;
+  }
+  .btn-lightpink:hover {
+    background-color: #f77c96;
+   
+  }
+
+  .btn-outline-pink {
+    background-color: white;
+    color: #f76f8f;
+    border: 2px solid #f76f8f;
+  }
+  .btn-outline-pink:hover {
+    background-color: #f76f8f;
+    color: white;
+  
+  }
+  </style>
+
+  <div class="breadcrumb">
+    <a href="/home">Home</a> &gt; <span>My Profile</span>
+  </div>
+
+  <div class="profile-container">
+    <div class="profile-header">
+      <img src="<%= user.profileImage || '/img/avathar.png' %>" alt="Profile Picture">
+      <div class="profile-details">
+        <h3>
+          <%= user.name %>
+        </h3>
+        <p><strong>Email:</strong>
+          <%= user.email %>
+        </p>
+        <p><strong>Phone:</strong>
+          <%= user.mobile || '-' %>
+        </p>
+      </div>
+    </div>
+
+    <hr>
+
+    <h4>Default Address</h4>
+
+    <% if (typeof defaultAddress !=='undefined' && defaultAddress) { %>
+      <div class="address-box">
+        <p><strong>Address:</strong>
+          <%= defaultAddress.addressLine %>
+        </p>
+        <p><strong>Landmark:</strong>
+          <%= defaultAddress.landmark || '-' %>
+        </p>
+        <p><strong>Area:</strong>
+          <%= defaultAddress.area %>
+        </p>
+        <p><strong>State:</strong>
+          <%= defaultAddress.state %>
+        </p>
+        <p><strong>Pincode:</strong>
+          <%= defaultAddress.pincode %>
+        </p>
+      </div>
+      <% } else { %>
+        <p>No default address found.</p>
+        <% } %>
+
+          <div class="btn-group" style="margin-top:20px;">
+            <a href="/user/edit-profile" class="btn-pink">Edit Profile</a>
+            <a href="/user/change-password" class="btn-lightpink">Change Password</a>
+            <a href="/user/addresses" class="btn-outline-pink">Manage Addresses</a>
+          </div>
+  </div>
+
+  <%- include("../partials/userFooter") %>

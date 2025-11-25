@@ -1,0 +1,164 @@
+<%- include("../partials/userHeader", { title: "My Addresses" }) %>
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #fafafa;
+  }
+
+  .breadcrumb {
+    margin: 100px auto 20px auto;
+    width: 90%;
+    max-width: 900px;
+    font-size: 14px;
+  }
+
+  .breadcrumb a {
+    color: #f76f8f;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .address-container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .address-box {
+    background: #f6f6f6;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+
+  .address-actions a {
+    margin-right: 10px;
+  }
+
+  .add-form input, .add-form select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    background: #f76f8f;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #e2577a;
+  }
+</style>
+
+<div class="breadcrumb">
+  <% if (typeof redirect !== 'undefined' && redirect === 'checkout') { %>
+      <a href="/checkout">Back to Checkout</a> &gt; <span>Add Address</span>
+  <% } else { %>
+      <a href="/home">Home</a> &gt; <a href="/userProfile">My Profile</a> &gt; <span>My Addresses</span>
+  <% } %>
+</div>
+
+<div class="address-container">
+  <h3>My Saved Addresses</h3>
+
+  <% if (addresses && addresses.length > 0) { %>
+    <% addresses.forEach(address => { %>
+      <div class="address-box">
+        <p><strong><%= address.addressType.toUpperCase() %></strong></p>
+        <p> <%= address.name %></p>
+        <p> <%= address.phone %></p>
+        <p><%= address.addressLine %>, <%= address.area %>, <%= address.state %> - <%= address.pincode %></p>
+        <% if (address.landmark) { %>
+          <p>Landmark: <%= address.landmark %></p>
+        <% } %>
+        <% if (address.isDefault) { %>
+          <p><span class="badge bg-success">Default</span></p>
+        <% } %>
+        <div class="address-actions">
+          <% if (!address.isDefault) { %>
+            <a href="/user/addresses/set-default/<%= address._id %>" class="btn btn-outline-primary btn-sm">Set Default</a>
+          <% } %>
+          <a href="/user/addresses/edit/<%= address._id %>" class="btn btn-outline-warning btn-sm">Edit</a>
+          <a href="/user/addresses/delete/<%= address._id %>" class="btn btn-outline-danger btn-sm">Delete</a>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No addresses found.</p>
+  <% } %>
+  <hr>
+
+<h4>Add New Address</h4>
+<form class="add-form" action="/user/addresses?redirect=<%= redirect %>" method="POST">
+
+  <div>
+    <input type="text" name="name" placeholder="Full Name" value="<%= name %>">
+    <% if (nameError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= nameError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <input type="text" name="phone" placeholder="Mobile Number" value="<%= phone %>">
+    <% if (phoneError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= phoneError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <input type="text" name="addressLine" placeholder="Address Line" value="<%= addressLine %>">
+    <% if (addressLineError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= addressLineError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <input type="text" name="landmark" placeholder="Landmark (optional)" value="<%= landmark %>">
+  </div>
+
+  <div>
+    <input type="text" name="area" placeholder="Area" value="<%= area %>">
+    <% if (areaError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= areaError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <input type="text" name="state" placeholder="State" value="<%= state %>">
+    <% if (stateError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= stateError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <input type="number" name="pincode" placeholder="Pincode" value="<%= pincode %>">
+    <% if (pincodeError) { %>
+      <div class="error-text" style="color:red; font-size:13px;"><%= pincodeError %></div>
+    <% } %>
+  </div>
+
+  <div>
+    <select name="addressType">
+      <option value="home" <%= addressType === "home" ? "selected" : "" %>>Home</option>
+      <option value="work" <%= addressType === "work" ? "selected" : "" %>>Work</option>
+      <option value="other" <%= addressType === "other" ? "selected" : "" %>>Other</option>
+    </select>
+  </div>
+
+  <button type="submit">Add Address</button>
+</form>
+
+</div>
+
+<%- include("../partials/userFooter") %>

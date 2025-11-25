@@ -1,127 +1,117 @@
-<%- include("../../views/partials/adminHeader", { pageTitle: "Category Management"  }) %>
+<%- include("../../views/partials/adminHeader", { pageTitle: "Category Management" }) %>
 
-  <style>
-    /* =============== LAYOUT =============== */
-    body {
-      background-color: #fdf2f5;
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+  body {
+    background-color: #fdf2f5;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
 
-    /* Container aligning with header + sidebar */
-    .admin-layout {
-      display: flex;
-      margin-top: 60px;
-      /* below fixed navbar */
-    }
+  .admin-layout {
+    display: flex;
+    margin-top: 60px;
+  }
 
-    /* Sidebar is already fixed, so add left margin for main area */
-    .admin-main {
-      flex: 1;
-      margin-left: 230px;
-      /* width of sidebar */
-      padding: 30px;
-      background-color: #fff;
-      min-height: calc(100vh - 80px);
-    }
+  .admin-main {
+    flex: 1;
+    margin-left: 230px;
+    padding: 30px;
+    background-color: #fff;
+    min-height: calc(100vh - 80px);
+  }
 
-    /* =============== CARD STYLE =============== */
-    .card {
-      background: #ffe6eb;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
+  .card {
+    background: #ffe6eb;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
 
-    /* =============== PAGE TOP =============== */
-    .page-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+  .page-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
 
-    .page-top h3 {
-      color: #a04c74;
-      font-weight: 600;
-      margin: 0;
-    }
+  .page-top h3 {
+    color: #a04c74;
+    font-weight: 600;
+    margin: 0;
+  }
 
-    .btn-add {
-      background-color: #ff6fa5;
-      color: white;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 14px;
-    }
+  .btn-add {
+    background-color: #ff6fa5;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+  }
 
-    .btn-add:hover {
-      background-color: #ff4f8a;
-    }
+  .btn-add:hover {
+    background-color: #ff4f8a;
+  }
 
-    /* =============== SEARCH =============== */
-    .search-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      gap: 8px;
-    }
+  .search-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 8px;
+  }
 
-    .search-row input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid #ffb6c1;
-      border-radius: 6px;
-    }
+  .search-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ffb6c1;
+    border-radius: 6px;
+  }
 
-    .reset-btn {
-      background-color: #ff6fa5;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      padding: 8px 10px;
-      cursor: pointer;
-    }
+  .reset-btn {
+    background-color: #ff6fa5;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
 
-    /* =============== TABLE =============== */
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff0f4;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+  .table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff0f4;
+    border-radius: 8px;
+    overflow: hidden;
+  }
 
-    .table-custom th,
-    .table-custom td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #ffd4dd;
-    }
+  .table-custom th,
+  .table-custom td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ffd4dd;
+  }
 
-    .table-custom th {
-      background: #ffc4d6;
-      color: #a04c74;
-      font-weight: 600;
-    }
+  .table-custom th {
+    background: #ffc4d6;
+    color: #a04c74;
+    font-weight: 600;
+  }
 
-    .table-custom tr:nth-child(even) {
-      background-color: #ffe6eb;
-    }
+  .table-custom tr:nth-child(even) {
+    background-color: #ffe6eb;
+  }
 
-    /* =============== IMAGE + ACTIONS =============== */
-    .avatar {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #ff9bb8;
-    }
+  .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: contain;
+    border: 2px solid #ff9bb8;
+  }
 
-    .action-icon {
+  .action-icon {
     cursor: pointer;
     font-size: 1.3rem;
     margin: 0 5px;
@@ -140,148 +130,139 @@
     font-size: 1.8rem;
     vertical-align: middle;
   }
-    /* =============== PAGINATION =============== */
-    .pagination-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 15px;
-    }
 
-    .page-btn {
-      background-color: #ff6fa5;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      margin: 0 10px;
-      cursor: pointer;
-    }
-  </style>
+  .pagination-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+    gap: 5px;
+  }
 
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <%- include("../../views/partials/adminSidebar.ejs") %>
+  .page-btn {
+    background-color: #ff6fa5;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-      <!-- Main Content -->
-      <main class="admin-main">
-        <div class="card">
+  .page-btn.active {
+    background-color: #a04c74;
+  }
 
-          <!-- Page Top -->
-          <div class="page-top">
-            <h3>Category</h3>
-            <a href="/admin/categories/add" class="btn-add">+ Add Category</a>
+  .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+
+<div class="admin-layout">
+  <%- include("../../views/partials/adminSidebar.ejs") %>
+
+  <main class="admin-main">
+    <div class="card">
+      <div class="page-top">
+        <h3>Category</h3>
+        <a href="/admin/categories/add" class="btn-add">+ Add Category</a>
+      </div>
+
+      <div class="search-row">
+        <input type="text" id="categorySearch" placeholder="Search categories..." />
+        <button class="reset-btn" id="resetSearch">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="card-body p-4">
+        <% if (categories && categories.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center table-custom">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Thumbnail</th>
+                  <th>Category Name</th>
+                  <th>Description</th>
+                  <th>Offer (%)</th>
+                  <th>Listed</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categoryTableBody">
+                <% categories.forEach((category, index) => { %>
+                  <tr>
+                    <td><%= index + 1 %></td>
+                    <td>
+                      <img src="<%= category.thumbnail %>" alt="Category Image" class="rounded" width="70" height="70">
+                    </td>
+                    <td class="fw-semibold"><%= category.categoryName %></td>
+                    <td><%= category.description || '—' %></td>
+                    <td><%= category.categoryOffer ? category.categoryOffer + '%' : '—' %></td>
+                    <td>
+                      <% if (category.isListed) { %>
+                        <span class="badge bg-success">Listed</span>
+                      <% } else { %>
+                        <span class="badge bg-danger">Unlisted</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <a href="/admin/categories/edit/<%= category._id %>" class="action-icon" title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                      </a>
+
+                      <span class="action-icon delete" data-id="<%= category._id %>" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </span>
+
+                      <span class="action-icon toggle-switch" data-id="<%= category._id %>" title="Toggle List">
+                        <% if (category.isListed) { %>
+                          <i class="bi bi-toggle-on toggle-icon text-success"></i>
+                        <% } else { %>
+                          <i class="bi bi-toggle-off toggle-icon text-secondary"></i>
+                        <% } %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
           </div>
 
-          <!-- Search -->
-          <div class="search-row">
-            <input type="text" id="categorySearch" class="form-control" placeholder="Search categories..." />
-            <button class="reset-btn" id="resetSearch">
-              <i class="bi bi-x-lg"></i>
+          <div class="pagination-wrap">
+            <button class="page-btn" data-page="<%= currentPage - 1 %>" <%= currentPage === 1 ? 'disabled' : '' %>>
+              &laquo; Prev
+            </button>
+
+            <% for (let i = 1; i <= totalPages; i++) { %>
+              <button class="page-btn <%= i === currentPage ? 'active' : '' %>" data-page="<%= i %>">
+                <%= i %>
+              </button>
+            <% } %>
+
+            <button class="page-btn" data-page="<%= currentPage + 1 %>" <%= currentPage === totalPages ? 'disabled' : '' %>>
+              Next &raquo;
             </button>
           </div>
 
-          <!-- Category Table -->
-          <div class="card-body p-4">
-            <% if (categories && categories.length> 0) { %>
-              <div class="table-responsive">
-                <table class="table align-middle table-bordered text-center">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Thumbnail</th>
-                      <th>Category Name</th>
-                      <th>Description</th>
-                      <th>Offer (%)</th>
-                      <th>Listed</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="categoryTableBody">
-                    <% categories.forEach((category, index)=> { %>
-                      <tr>
-                        <td>
-                          <%= index + 1 %>
-                        </td>
-                        <td>
-                          <img src="<%= category.thumbnail %>" alt="Category Image" class="rounded" width="70"
-                            height="70">
-                        </td>
-                        <td class="fw-semibold">
-                          <%= category.categoryName %>
-                        </td>
-                        <td>
-                          <%= category.description ? category.description : '—' %>
-                        </td>
-                        <td>
-                          <%= category.categoryOffer ? category.categoryOffer + '%' : '—' %>
-                        </td>
-                        <td>
-                          <% if (category.isListed) { %>
-                            <span class="badge bg-success">Listed</span>
-                            <% } else { %>
-                              <span class="badge bg-danger">Unlisted</span>
-                              <% } %>
-                        </td>
-
-                        <td class="text-center">
-                          <!-- Edit Icon -->
-                          <a href="/admin/categories/edit/<%= category._id %>" class="action-icon" title="Edit">
-                            <i class="bi bi-pencil-square"></i>
-                          </a>
-
-                          <!-- Delete Icon -->
-                          <a href="/admin/categories/delete/<%= category._id %>" class="action-icon delete"
-                            title="Delete" onclick="return confirm('Are you sure you want to delete this category?')">
-                            <i class="bi bi-trash"></i>
-                          </a>
-
-                     <span class="action-icon toggle-switch" data-id="<%= category._id %>" title="Toggle List">
-  <% if (category.isListed) { %>
-    <i class="bi bi-toggle-on toggle-icon text-success"></i>
-  <% } else { %>
-    <i class="bi bi-toggle-off toggle-icon text-secondary"></i>
-  <% } %>
-</span>
-
-                        </td>
-
-                      </tr>
-                      <% }) %>
-                  </tbody>
-                </table>
-              </div>
-              <% } else { %>
-                <div class="text-center py-5">
-                  <img src="/img/empty.svg" alt="No Categories" width="200" class="mb-3">
-                  <h5 class="text-muted">No categories added yet</h5>
-                  <a href="/admin/categories/add" class="btn btn-pink mt-3">
-                    <i class="fas fa-plus me-2"></i>Add New Category
-                  </a>
-                </div>
-                <% } %>
-
-                  <div class="pagination-wrap">
-  <% if (currentPage > 1) { %>
-    <button class="page-btn" data-page="<%= currentPage - 1 %>">Previous</button>
-  <% } %>
-
-  <span><%= currentPage %> / <%= totalPages %></span>
-
-  <% if (currentPage < totalPages) { %>
-    <button class="page-btn" data-page="<%= currentPage + 1 %>">Next</button>
-  <% } %>
+        <% } else { %>
+          <div class="text-center py-5">
+            <img src="/img/empty.svg" alt="No Categories" width="200" class="mb-3">
+            <h5 class="text-muted">No categories added yet</h5>
+            <a href="/admin/categories/add" class="btn btn-pink mt-3">
+              <i class="fas fa-plus me-2"></i>Add New Category
+            </a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
 </div>
 
-          </div>
-        </div>
-      </main>
-  </div>
+<%- include("../../views/partials/adminFooter") %>
 
-  <%- include("../../views/partials/adminFooter") %>
-
- <script>
-  // 🧭 Backend search redirect
+<script>
   document.getElementById("categorySearch").addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       const search = this.value.trim();
@@ -289,21 +270,52 @@
     }
   });
 
-  // ❌ Clear search
   document.getElementById("resetSearch").addEventListener("click", function () {
     window.location.href = `/admin/categories`;
   });
 
-  // 🔁 Pagination
   document.querySelectorAll(".page-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.disabled) return;
       const page = btn.dataset.page;
       const search = new URLSearchParams(window.location.search).get("search") || "";
       window.location.href = `/admin/categories?page=${page}&search=${search}`;
     });
   });
 
-  // 🟢 Toggle button (switch + badge)
+  document.querySelectorAll(".delete").forEach((del) => {
+    del.addEventListener("click", function () {
+      const id = this.dataset.id;
+
+      Swal.fire({
+        title: "Are you sure?",
+        text: "This category will be permanently deleted!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!"
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          const res = await fetch(`/admin/categories/delete/${id}`, { method: "DELETE" });
+          const data = await res.json();
+
+          if (data.success) {
+            Swal.fire({
+              title: "Deleted!",
+              text: "Category has been deleted.",
+              icon: "success",
+              timer: 1500,
+              showConfirmButton: false
+            }).then(() => location.reload());
+          } else {
+            Swal.fire("Error!", "Failed to delete category.", "error");
+          }
+        }
+      });
+    });
+  });
+
   document.querySelectorAll(".toggle-switch").forEach((toggle) => {
     toggle.addEventListener("click", async function () {
       const id = this.dataset.id;
@@ -313,29 +325,33 @@
       const data = await res.json();
 
       if (data.success) {
-        // Toggle icon styles
         icon.classList.toggle("bi-toggle-on");
         icon.classList.toggle("bi-toggle-off");
         icon.classList.toggle("text-success");
         icon.classList.toggle("text-secondary");
 
-        // Find the badge in the same row
         const row = this.closest("tr");
         const badge = row.querySelector("td span.badge");
 
         if (badge) {
           if (badge.classList.contains("bg-success")) {
-            badge.classList.remove("bg-success");
-            badge.classList.add("bg-danger");
+            badge.classList.replace("bg-success", "bg-danger");
             badge.textContent = "Unlisted";
           } else {
-            badge.classList.remove("bg-danger");
-            badge.classList.add("bg-success");
+            badge.classList.replace("bg-danger", "bg-success");
             badge.textContent = "Listed";
           }
         }
+
+        Swal.fire({
+          title: "Updated!",
+          text: "Category listing status changed.",
+          icon: "success",
+          timer: 1200,
+          showConfirmButton: false
+        });
       } else {
-        alert("Failed to update category status!");
+        Swal.fire("Error!", "Failed to update status.", "error");
       }
     });
   });
