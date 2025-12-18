@@ -29,13 +29,13 @@ import {
 
 import {
   showAllProducts,
-  addProduct,
   updateProduct,
   deleteProduct,
   toggleBlockProduct,
   toggleListProduct,
   getAddProductPage,
   getEditProductPage,
+  addProduct,
 } from "../controllers/admin/productController.js";
 
 import {
@@ -48,7 +48,9 @@ import {
 import { validateProduct } from "../middlewares/categoryProductMiddleware.js";
 
 import { isAdmin, setCurrentPath } from "../middlewares/isAdmin.js"; 
-import { adminCancelOrder,getOrdersPage, updateOrderStatus, viewSingleOrder } from "../controllers/admin/orderController.js";
+import { adminCancelOrder,approveReturn,approveReturnRequest,getOrdersPage, getReturnRequests, getSingleReturnRequest, rejectReturnRequest, updateOrderStatus, viewSingleOrder } from "../controllers/admin/orderController.js";
+import { createCoupon, deleteCoupon,  getCouponListPage, updateCoupon} from "../controllers/admin/couponController.js";
+import { downloadSalesReportExcel, downloadSalesReportPDF, getSalesReport } from "../controllers/admin/reportController.js";
 
 const router = express.Router();
 
@@ -88,7 +90,7 @@ router.post("/categories/toggle/:id", toggleCategory);
 // Products
 router.get("/products", showAllProducts);
 router.get("/products/add", getAddProductPage);
-router.post("/products/add", uploadProductImages, processProductImages, validateProduct, addProduct);
+router.post("/products/add", uploadProductImages, processProductImages, validateProduct,addProduct);
 router.get("/products/edit/:id", getEditProductPage);
 router.post("/products/edit/:id", uploadProductImages, processProductImagesForEdit, validateProduct, updateProduct);
 router.get("/products/delete/:id", deleteProduct);
@@ -100,7 +102,32 @@ router.get("/orders", getOrdersPage);
 router.get("/orders/:id", viewSingleOrder);                      
 router.post("/orders/update-status/:id", updateOrderStatus);     
 router.get("/orders/cancel/:id", adminCancelOrder);                  
+router.post("/orders/approve-return/:id", approveReturn);
+
+router.get("/return-requests", getReturnRequests);
+// View single return request
+router.get("/return-requests/:orderID", getSingleReturnRequest);
+
+// Approve return
+router.post("/return-requests/approve/:orderID", approveReturnRequest);
+
+// Reject return
+router.post("/return-requests/reject/:orderID", rejectReturnRequest);
+
+//coupon
+router.get("/coupons", getCouponListPage);
+router.post("/coupons/create", createCoupon);
+router.put("/coupons/update/:id", updateCoupon);
+router.delete("/coupons/delete/:id", deleteCoupon);
 
 
+// Render Sales Report Page
+router.get("/salesReport", getSalesReport);
+
+// Download PDF
+router.get("/salesReport/download/pdf", downloadSalesReportPDF);
+
+// Download Excel
+router.get("/salesReport/download/excel", downloadSalesReportExcel);
 
 export default router;

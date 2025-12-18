@@ -1,101 +1,110 @@
 <%- include("../partials/adminHeader", { title: "Orders" }) %>
 
-<style>
-  .page-container {
-    margin: 100px 20px 40px 260px;
-    font-family: "Poppins", sans-serif;
-  }
+  <style>
+    .page-container {
+      margin: 100px 20px 40px 260px;
+      font-family: "Poppins", sans-serif;
+    }
 
-  h2 {
-    font-size: 26px;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 20px;
-  }
+    .page-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-  .filters {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-    align-items: center;
-  }
+    .page-top h3 {
+      color: #a04c74;
+      font-weight: 600;
+    }
 
-  .filters input,
-  .filters select {
-    padding: 8px 14px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    background: #fff;
-    min-width: 160px;
-  }
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
 
-  .filters button,
-  .filters a {
-    padding: 8px 14px;
-    font-size: 14px;
-    border-radius: 6px;
-    text-decoration: none;
-  }
+    .filters input,
+    .filters select {
+      padding: 8px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+      min-width: 160px;
+    }
 
-  .btn-primary {
-    background: #ff3b85;
-    color: #fff;
-    border: none;
-  }
+    .filters button,
+    .filters a {
+      padding: 8px 14px;
+      font-size: 14px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
 
-  .btn-secondary {
-    background: #ddd;
-    color: #333;
-  }
+    .btn-primary {
+      background: #ff3b85;
+      color: #fff;
+      border: none;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-  }
+    .btn-secondary {
+      background: #ddd;
+      color: #333;
+    }
 
-  th {
-    background: #ffe7ef;
-    padding: 14px;
-    text-align: left;
-    font-weight: 600;
-    color: #444;
-    font-size: 15px;
-    border-bottom: 1px solid #f4c7d9;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
-  td {
-    padding: 10px 10px;
-    font-size: 14px;
-    color: #333;
-    border-bottom: 1px solid #f5f5f5;
-  }
+    th {
+      background: #ffc4d6;
+      padding: 14px;
+      text-align: left;
+      font-weight: 600;
+      color: #a04c74;
+      font-size: 15px;
+      border-bottom: 1px solid #f4c7d9;
+    }
 
-  tr:hover {
-    background: #fff8fb;
-  }
+    td {
+      padding: 10px 10px;
+      font-size: 14px;
+      color: #333;
+      border-bottom: 1px solid #f5f5f5;
+    }
 
-  select[name="status"] {
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #fff;
-  }
+    tr:hover {
+      background: #fff8fb;
+    }
 
-  .btn-sm { padding: 6px 12px; }
+    select[name="status"] {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #fff;
+    }
 
-  .btn-danger {
-    background: #ff6b6b;
-    color: #fff;
-  }
+    .btn-sm {
+      padding: 6px 12px;
+    }
 
-  .btn-danger:hover { background: #e24a4a; }
+    .btn-danger {
+      background: #ff6b6b;
+      color: #fff;
+    }
 
-  
+    .btn-danger:hover {
+      background: #e24a4a;
+    }
+
+
     .pagination-wrap {
       display: flex;
       justify-content: center;
@@ -122,142 +131,267 @@
       background-color: #ffc4d6;
       cursor: not-allowed;
     }
-</style>
 
-<div class="page-container">
-  <h2>Orders</h2>
-  <div class="filters">
-    <form method="GET">
-      <input type="text" name="search" placeholder="Search Order ID / User / Phone"
-             value="<%= search || '' %>" />
+    .order-status {
+      padding: 6px 12px;
+      border: 1px solid #ff3b85;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      min-width: 150px;
+      transition: 0.2s all ease-in-out;
+    }
 
-      <select name="sort">
-        <option value="-createdAt">Newest First</option>
-        <option value="createdAt">Oldest First</option>
-        <option value="-totalPrice">Price High → Low</option>
-        <option value="totalPrice">Price Low → High</option>
-      </select>
+    .order-status:hover {
+      border-color: #ff3b85;
+      background: #fff0f6;
+    }
 
-      <select name="status">
-        <option value="">All Status</option>
-        <option value="Pending">Pending</option>
-        <option value="Shipped">Shipped</option>
-        <option value="Out for Delivery">Out for Delivery</option>
-        <option value="Delivered">Delivered</option>
-        <option value="Cancelled">Cancelled</option>
-         <option value="Returned">Returned</option>
-      </select>
+    .order-status:disabled {
+      color: #aaa;
+      cursor: not-allowed;
+    }
+  </style>
 
-      <button type="submit" class="btn btn-primary">Apply</button>
-      <a href="/admin/orders" class="btn btn-secondary">Clear</a>
-    </form>
-  </div>
+  <div class="page-container">
+    <div class="page-top">
+      <h3 class="mb-4">
+        Orders
+      </h3>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Order ID</th>
-        <th>Customer</th>
-        <th>Items</th>
-        <th>Date</th>
-        <th>Total</th>
-        <th>Payment</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+    <div class="filters">
+      <form method="GET">
+        <input type="text" name="search" placeholder="Search Order ID / User / Phone" value="<%= search || '' %>" />
 
-    <tbody>
-      <% orders.forEach(order => { %>
+        <select name="sort">
+          <option value="-createdAt">Newest First</option>
+          <option value="createdAt">Oldest First</option>
+          <option value="-totalPrice">Price High → Low</option>
+          <option value="totalPrice">Price Low → High</option>
+        </select>
+
+        <select name="status">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Shipped">Shipped</option>
+          <option value="Out for Delivery">Out for Delivery</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Returned">Returned</option>
+           <option value="Return Requested" <%= statusFilter==='Return Requested' ? 'selected' : '' %>>Return Requested</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">Apply</button>
+        <a href="/admin/orders" class="btn btn-secondary">Clear</a>
+      </form>
+    </div>
+
+    <table>
+      <thead>
         <tr>
-          <td>#<%= order.orderID %></td>
-
-          <td>
-            <%= order.user_id ? order.user_id.name : "Unknown User" %><br>
-            <small><%= order.user_id ? order.user_id.email : "" %></small>
-          </td>
-
-          <td><%= order.items.length %> items</td>
-
-          <td><%= order.createdAt.toDateString() %></td>
-
-          <td>₹<%= order.totalPrice %></td>
-
-          <td>
-            <%= order.paymentMethod %><br>
-            <small style="color:<%= order.paymentStatus === 'Paid' ? 'green' : 'red' %>;">
-              <%= order.paymentStatus %>
-            </small>
-          </td>
-
-          <td>
-            <form action="/admin/orders/update-status/<%= order._id %>" method="POST">
-              <select name="status" onchange="this.form.submit()">
-                <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
-                <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                <option value="Out for Delivery" <%= order.orderStatus === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                <option value="Cancelled" <%= order.orderStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-              <option value="Returned" <%= order.orderStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
-
-              </select>
-            </form>
-          </td>
-          <td>
-            <a href="/admin/orders/<%= order._id %>" class="btn btn-primary btn-sm">View</a>
-
-            <% if(order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered'){ %>
-            <a href="/admin/orders/cancel/<%= order._id %>"
-               class="btn btn-danger btn-sm"
-               <a href="javascript:void(0)"
-   class="btn btn-danger btn-sm"
-   onclick="confirmCancel('<%= order._id %>')">
-   Cancel
-</a>
-
-            
-            <% } %>
-          </td>
-
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Date</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% orders.forEach(order=> { %>
+          <tr>
+            <td>#<%= order.orderID %>
+            </td>
+            <td>
+              <%= order.user_id ? order.user_id.name : "Unknown User" %><br>
+                <small>
+                  <%= order.user_id ? order.user_id.email : "" %>
+                </small>
+            </td>
+            <td>
+              <%= order.items.length %> items
+            </td>
+            <td>
+              <%= order.createdAt.toDateString() %>
+            </td>
+            <td>₹<%= order.totalPrice.toFixed(2) %>
+            </td>
+            <td>
+              <%= order.paymentMethod %><br>
 
-  <div class="pagination-wrap">
-                <button class="page-btn" <%=currentPage> 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
-                  &laquo; Prev
+                <small style="color:
+    <%= 
+      order.paymentStatus === 'Paid' ||
+      (order.paymentMethod === 'COD' && 
+      (order.orderStatus === 'Delivered' || order.orderStatus === 'Returned'|| order.orderStatus === 'Return Approved' || order.orderStatus === 'Return Rejected'))
+      ? 'green' 
+      : 'red' 
+    %>;
+  ">
+
+                  <%= order.paymentStatus==='Paid' || (order.paymentMethod==='COD' && (order.orderStatus==='Delivered'
+                    || order.orderStatus==='Returned' || order.orderStatus==='Return Approved' ||
+                    order.orderStatus==='Return Rejected' )) ? 'Paid' : order.paymentStatus %>
+
+                </small>
+            </td>
+
+            <td>
+              <% if(order.orderStatus==='Return Requested' ) { %>
+                <button class="btn btn-warning btn-sm return-requested-btn" data-order-id="<%= order.orderID %>">
+                  Return Requested
                 </button>
 
-                <% for (let i=1; i <=totalPages; i++) { %>
-                  <button class="page-btn <%= i === currentPage ? 'active' : '' %>" onclick="changePage(<%= i %>)">
-                    <%= i %>
-                  </button>
-                  <% } %>
+                <% } else if(order.orderStatus==='Cancelled' || order.orderStatus==='Returned' ||
+                  order.orderStatus==='Return Approved' || order.orderStatus==='Return Rejected' ) { %>
 
-                    <button class="page-btn" <%=currentPage < totalPages ? `onclick="changePage(${currentPage + 1})" `
-                      : "disabled" %>>
-                      Next &raquo;
+                  <!-- Show Status Text Only -->
+                  <span style="color:<%= 
+        order.orderStatus.includes('Rejected') ? 'red' : 
+        order.orderStatus.includes('Approved') ? 'green' : 
+        '#ff4c8b' %>;">
+                    <%= order.orderStatus %>
+                  </span>
+
+                  <% } else { %>
+
+                    <!-- Normal Select Dropdown -->
+                    <select class="order-status" data-id="<%= order._id %>">
+                      <% const statuses=['Pending','Shipped','Out for Delivery','Delivered']; %>
+                        <% statuses.forEach((status)=> { %>
+                          <option value="<%= status %>" <%=order.orderStatus===status ? 'selected' : '' %>>
+                            <%= status %>
+                          </option>
+                          <% }) %>
+
+                            <option value="Cancelled" disabled>Cancelled</option>
+                            <option value="Returned" disabled>Returned</option>
+                    </select>
+
+                    <% } %>
+            </td>
+
+
+            <td>
+              <a href="/admin/orders/<%= order._id %>" class="btn btn-primary btn-sm">View</a>
+            </td>
+          </tr>
+          <% }) %>
+      </tbody>
+    </table>
+    <div class="pagination-wrap">
+
+      <!-- Calculate the 2-page sliding window -->
+      <% let start=currentPage - 1; let end=currentPage; if (start < 1) { start=1; end=2; } if (end> totalPages) {
+        end = totalPages;
+        start = totalPages - 1;
+        }
+
+        if (start < 1) start=1; %>
+
+          <!-- Previous Button -->
+          <% let prevParams=new URLSearchParams({ page: currentPage> 1 ? currentPage - 1 : 1
+            });
+            if(search) prevParams.set("search", search);
+            if(sort) prevParams.set("sort", sort);
+            if(statusFilter) prevParams.set("status", statusFilter);
+            %>
+
+            <% if(currentPage> 1) { %>
+              <button class="page-btn" onclick="window.location.href='?<%= prevParams.toString() %>'">&laquo;
+                Prev</button>
+              <% } else { %>
+                <button class="page-btn" disabled>&laquo; Prev</button>
+                <% } %>
+
+
+                  <!-- Sliding window: (start to end) -->
+                  <% for(let p=start; p <=end; p++) { let btnParams=new URLSearchParams({ page: p }); if(search)
+                    btnParams.set("search", search); if(sort) btnParams.set("sort", sort); if(statusFilter)
+                    btnParams.set("status", statusFilter); %>
+
+                    <button class="page-btn <%= currentPage === p ? 'active' : '' %>"
+                      onclick="window.location.href='?<%= btnParams.toString() %>'">
+                      <%= p %>
                     </button>
-              </div>
-</div>
 
-<%- include("../partials/adminFooter") %>
-<script>
-  function confirmCancel(orderId) {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "Do you really want to cancel this order?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#e24a4a",
-      cancelButtonColor: "#d3d3d3",
-      confirmButtonText: "Yes, Cancel it",
-      cancelButtonText: "No"
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = `/admin/orders/cancel/${orderId}`;
-      }
-    });
-  }
-</script>
+                    <% } %>
+
+
+                      <!-- Next Button -->
+                      <% let nextParams=new URLSearchParams({ page: currentPage < totalPages ? currentPage + 1 :
+                        totalPages }); if(search) nextParams.set("search", search); if(sort) nextParams.set("sort",
+                        sort); if(statusFilter) nextParams.set("status", statusFilter); %>
+
+                        <% if(currentPage < totalPages) { %>
+                          <button class="page-btn" onclick="window.location.href='?<%= nextParams.toString() %>'">Next
+                            &raquo;</button>
+                          <% } else { %>
+                            <button class="page-btn" disabled>Next &raquo;</button>
+                            <% } %>
+
+    </div>
+
+  </div>
+
+  <%- include("../partials/adminFooter") %>
+
+    <script>
+      document.querySelectorAll(".order-status").forEach(select => {
+        select.addEventListener("change", async (e) => {
+          const orderId = e.target.dataset.id;
+          const status = e.target.value;
+
+          try {
+            const res = await fetch(`/admin/orders/update-status/${orderId}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ status })
+            });
+
+            if (res.ok) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Updated!',
+                text: 'Order status has been updated.',
+                timer: 1500,
+                showConfirmButton: false
+              }).then(() => {
+                location.reload();
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Failed to update order status.'
+              });
+            }
+          } catch (err) {
+            console.error(err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Something went wrong.'
+            });
+          }
+        });
+      });
+
+
+      // Redirect to Return Request Detail Page
+      document.querySelectorAll(".return-requested-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const orderID = btn.dataset.orderId; // orderID from button
+          window.location.href = `/admin/return-requests/${orderID}`;
+        });
+      });
+
+    </script>

@@ -90,7 +90,8 @@
             <a href="/user/addresses/set-default/<%= address._id %>" class="btn btn-outline-primary btn-sm">Set Default</a>
           <% } %>
           <a href="/user/addresses/edit/<%= address._id %>" class="btn btn-outline-warning btn-sm">Edit</a>
-          <a href="/user/addresses/delete/<%= address._id %>" class="btn btn-outline-danger btn-sm">Delete</a>
+          <button class="btn btn-outline-danger btn-sm delete-btn" data-id="<%= address._id %>">Delete</button>
+
         </div>
       </div>
     <% }) %>
@@ -162,3 +163,28 @@
 </div>
 
 <%- include("../partials/userFooter") %>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+
+    deleteButtons.forEach(btn => {
+      btn.addEventListener("click", function () {
+        const addressId = this.getAttribute("data-id");
+
+        Swal.fire({
+          title: "Are you sure?",
+          text: "This address will be deleted permanently.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#f76f8f",
+          cancelButtonColor: "#6c757d",
+          confirmButtonText: "Yes, delete it!"
+        }).then(result => {
+          if (result.isConfirmed) {
+            window.location.href = `/user/addresses/delete/${addressId}`;
+          }
+        });
+      });
+    });
+  });
+</script>

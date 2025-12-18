@@ -1,242 +1,314 @@
 <%- include("../partials/userHeader", { title: "My Orders" }) %>
 
-<style>
-  .orders-container {
-    max-width: 1100px;
-    margin: 120px auto 40px;
-    font-family: "Poppins", sans-serif;
-  }
-
-  .order-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  .order-info p {
-    margin: 5px 0;
-  }
-
-  .order-actions a,
-  .order-actions button {
-    margin-left: 10px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-  }
-
-  .view-btn { background:  #f76f8f; color: white; }
-  .cancel-btn { background: #f75aa3; color: white; border-radius: 6px; border: 1px solid #ccc;}
-  .return-btn { background: #a04c74; color: white; }
-  .search-bar { margin-bottom: 20px; display: flex; gap: 10px; }
-  .search-bar input { padding: 8px; width: 300px; border-radius: 6px; border: 1px solid #ccc; }
-  .search-bar button { padding: 8px 16px; border-radius: 6px; background: #f76f8f; color:white; border:none; cursor:pointer;}
-</style>
-
-<div class="orders-container">
-  <h2>My Orders</h2>
-
-  <div class="search-bar">
-    <input type="text" id="searchQuery" placeholder="Search by Order ID, Product Name, Status or Date">
-    <button onclick="searchOrders()">Search</button>
-  </div>
-
-  <div id="ordersList">
-    <% if (orders.length===0) { %>
-      <p>No orders found. <a href="/products">Start shopping</a></p>
-    <% } else { %>
-      <% orders.forEach(order => { %>
-        <div class="order-card" data-orderid="<%= order.orderID %>">
-          <div class="order-info">
-            <p><strong>Order ID:</strong> <%= order.orderID %></p>
-            <p><strong>Date:</strong> <%= order.createdAt.toDateString() %></p>
-            <p><strong>Status:</strong> <span class="order-status"><%= order.orderStatus %></span></p>
-            <p><strong>Total:</strong> Rs.<%= order.totalPrice %></p>
-
-            <div class="ordered-items" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-              <% order.items.forEach(item => { %>
-                <div style="text-align:center;" data-productid="<%= item.productId %>">
-                  <img src="<%= item.image %>" alt="<%= item.productName %>" style="width:70px; height:70px;  object-fit: contain; border-radius:6px;">
-                  <p style="font-size:0.8rem; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= item.productName %></p>
-                  <% if(order.orderStatus !== "Cancelled" && order.orderStatus !== "Returned" && order.orderStatus !== "Delivered") { %>
-                    <button class="cancel-btn" onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">Cancel Item</button>
-                  <% } %>
-                </div>
-              <% }) %>
-            </div>
-          </div>
-
-          <div class="order-actions">
-            <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
-
-            <% if(order.orderStatus !=="Cancelled" && order.orderStatus !=="Returned" && order.orderStatus !=="Delivered") { %>
-              <button class="cancel-btn" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
-            <% } %>
-
-            <% if(order.orderStatus==="Delivered") { %>
-              <button class="return-btn" onclick="returnOrder('<%= order.orderID %>','<%= order.returnEndDate || '' %>')">Return Order</button>
-            <% } %>
-          </div>
-        </div>
-      <% }) %>
-
-      <% if(totalPages>1){ %>
-        <div style="text-align:center; margin-top:20px;">
-          <% if(currentPage>1){ %>
-            <a href="/order/list?page=<%= currentPage-1 %>" class="btn">Prev</a>
-          <% } %>
-          <% for(let i=1;i<=totalPages;i++){ %>
-            <a href="/order/list?page=<%= i %>" class="btn" style="<%= i===currentPage?'font-weight:bold':'' %>"><%= i %></a>
-          <% } %>
-          <% if(currentPage<totalPages){ %>
-            <a href="/order/list?page=<%= currentPage+1 %>" class="btn">Next</a>
-          <% } %>
-        </div>
-      <% } %>
-    <% } %>
-  </div>
-</div>
-
-<%- include("../partials/userFooter") %>
-
-<script>
-  function cancelOrder(orderID){
-    Swal.fire({
-      title:"Cancel Order?",
-      input:"text",
-      inputLabel:"Reason (optional)",
-      showCancelButton:true,
-      confirmButtonText:"Cancel Order",
-      confirmButtonColor:"#ff3b85",
-      cancelButtonColor:"#aaa",
-    }).then(result=>{
-      if(result.isConfirmed){
-        fetch(`/order/${orderID}/cancel`,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({reason:result.value || ""})
-        })
-        .then(res=>res.json())
-        .then(data=>{
-          if(data.success){
-            Swal.fire({
-              title:"Order Cancelled",
-              text:"Your order was cancelled successfully",
-              icon:"success",
-              confirmButtonColor:"#4BB543"
-            });
-
-            const card=document.querySelector(`[data-orderid="${orderID}"]`);
-            if(card){
-              card.querySelector(".order-status").textContent="Cancelled";
-              card.querySelectorAll(".cancel-btn").forEach(b=>b.disabled=true);
-            }
-          } else {
-            Swal.fire("Error",data.message,"error");
-          }
-        });
-      }
-    });
-  }
-
-  function cancelProduct(orderID,productID){
-    Swal.fire({
-      title:"Cancel This Item?",
-      input:"text",
-      inputLabel:"Reason (optional)",
-      showCancelButton:true,
-      confirmButtonText:"Cancel Item",
-      confirmButtonColor:"#ff3b85",
-      cancelButtonColor:"#aaa",
-    }).then(result=>{
-      if(result.isConfirmed){
-        fetch(`/order/${orderID}/cancel-product`,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({productId:productID,reason:result.value || ""})
-        })
-        .then(res=>res.json())
-        .then(data=>{
-          if(data.success){
-            Swal.fire({
-              title:"Item Cancelled",
-              text:"The item has been removed from your order",
-              icon:"success",
-              confirmButtonColor:"#4BB543"
-            });
-
-            const card=document.querySelector(`[data-orderid="${orderID}"]`);
-            const itemDiv=card.querySelector(`[data-productid="${productID}"]`);
-            if(itemDiv) itemDiv.remove();
-
-            if(data.order){
-              const subtotalEl=document.querySelector(".bill-box .bill-row span:nth-child(2)");
-              const totalEl=document.querySelector(".bill-box .bill-row strong:nth-child(2)");
-              if(subtotalEl) subtotalEl.textContent=`Rs.${data.order.subtotal}`;
-              if(totalEl) totalEl.textContent=`Rs.${data.order.totalPrice}`;
-            }
-
-          } else {
-            Swal.fire("Error",data.message,"error");
-          }
-        });
-      }
-    });
-  }
-
-  function returnOrder(orderID,returnEndDate){
-    if(returnEndDate && new Date(returnEndDate) < new Date()){
-      return Swal.fire({
-        title:"Return Not Allowed",
-        text:"The return period for this product has expired",
-        icon:"error",
-        confirmButtonColor:"#ff3b85"
-      });
+  <style>
+    .orders-container {
+      max-width: 1100px;
+      margin: 120px auto 40px;
+      font-family: "Poppins", sans-serif;
     }
 
-    Swal.fire({
-      title:"Return Order?",
-      input:"text",
-      inputLabel:"Reason (required)",
-      inputValidator: v => !v && "Reason is required",
-      showCancelButton:true,
-      confirmButtonText:"Request Return",
-      confirmButtonColor:"#ffc107",
-      cancelButtonColor:"#aaa",
-    }).then(result=>{
-      if(result.isConfirmed){
-        fetch(`/order/${orderID}/return`,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({reason:result.value})
-        })
-        .then(res=>res.json())
-        .then(data=>{
-          if(data.success){
-            Swal.fire({
-              title:"Return Requested",
-              text:"Your return request has been submitted",
-              icon:"success",
-              confirmButtonColor:"#4BB543"
-            }).then(()=> location.reload());
-          } else {
-            Swal.fire("Error",data.message,"error");
+    .order-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .order-info p {
+      margin: 5px 0;
+    }
+
+    .order-actions a,
+    .order-actions button {
+      margin-left: 10px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+    }
+
+    .view-btn {
+      background: #f76f8f;
+      color: white;
+    }
+
+    .cancel-btn {
+      background: #f75aa3;
+      color: white;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .return-btn {
+      background: #a04c74;
+      color: white;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-bar input {
+      padding: 8px;
+      width: 300px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .search-bar button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: #f76f8f;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+
+  <div class="orders-container">
+    <h2>My Orders</h2>
+
+    <div class="search-bar">
+      <input type="text" id="searchQuery" placeholder="Search by Order ID, Product Name, Status or Date">
+      <button onclick="searchOrders()">Search</button>
+    </div>
+
+    <div id="ordersList">
+      <% if (orders.length===0) { %>
+        <p>No orders found. <a href="/products">Start shopping</a></p>
+        <% } else { %>
+          <% orders.forEach(order=> { %>
+            <div class="order-card" data-orderid="<%= order.orderID %>">
+              <div class="order-info">
+                <p><strong>Order ID:</strong>
+                  <%= order.orderID %>
+                </p>
+                <p><strong>Date:</strong>
+                  <%= order.createdAt.toDateString() %>
+                </p>
+                <p><strong>Status:</strong> <span class="order-status">
+                    <%= order.orderStatus %>
+                  </span></p>
+              <!-- <p><strong>Total:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p> -->
+<!-- <p><strong>Price:</strong> Rs.<%= order.subtotal.toFixed(2) %></p>
+<p><strong>GST:</strong> Rs.<%= order.tax.toFixed(2) %></p>
+<% if(order.couponDiscount > 0) { %>
+  <p><strong>Coupon Discount:</strong> Rs.<%= order.couponDiscount.toFixed(2) %></p>
+<% } %>
+<% if(order.walletUsed > 0) { %>
+  <p><strong>Wallet Used:</strong>  Rs.<%= order.walletUsed.toFixed(2) %></p>
+<% } %> -->
+<p><strong>Total Paid:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p>
+ <p>Paid by: <strong><%= order.paymentMethod %></strong></p>
+                </p>
+
+                <div class="ordered-items" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                  <% order.items.forEach(item=> { %>
+                    <div style="text-align:center;" data-productid="<%= item.productId %>">
+                      <img src="<%= item.image %>" alt="<%= item.productName %>"
+                        style="width:70px; height:70px;  object-fit: contain; border-radius:6px;">
+                      <p
+                        style="font-size:0.8rem; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <%= item.productName %>
+                      </p>
+            <% if(order.orderStatus !== "Cancelled" && order.orderStatus !== "Returned" && 
+            order.orderStatus !== "Delivered" && order.orderStatus !== "Return Approved" && 
+            order.orderStatus !== "Return Requested") { %>
+  <button class="cancel-btn"
+    onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">Cancel Item</button>
+<% } %>
+
+
+                    </div>
+                    <% }) %>
+                </div>
+              </div>
+
+              <div class="order-actions">
+  <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
+
+  <% if(order.orderStatus !== "Cancelled" && order.orderStatus !== "Returned" && 
+  order.orderStatus !== "Delivered" && order.orderStatus !== "Return Approved" &&
+   order.orderStatus !== "Return Requested") { %>
+  <button class="cancel-btn" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
+<% } %>
+
+
+</div>
+
+            </div>
+            <% }) %>
+
+              <% if(totalPages>1){ %>
+                <div style="text-align:center; margin-top:20px;">
+                  <% if(currentPage>1){ %>
+                    <a href="/order/list?page=<%= currentPage-1 %>" class="btn">Prev</a>
+                    <% } %>
+                      <% for(let i=1;i<=totalPages;i++){ %>
+                        <a href="/order/list?page=<%= i %>" class="btn"
+                          style="<%= i===currentPage?'font-weight:bold':'' %>">
+                          <%= i %>
+                        </a>
+                        <% } %>
+                          <% if(currentPage<totalPages){ %>
+                            <a href="/order/list?page=<%= currentPage+1 %>" class="btn">Next</a>
+                            <% } %>
+                </div>
+                <% } %>
+                  <% } %>
+    </div>
+  </div>
+
+  <%- include("../partials/userFooter") %>
+
+    <script>
+      function cancelOrder(orderID) {
+        Swal.fire({
+          title: "Cancel Order?",
+          input: "text",
+          inputLabel: "Reason (optional)",
+          showCancelButton: true,
+          confirmButtonText: "Cancel Order",
+          confirmButtonColor: "#ff3b85",
+          cancelButtonColor: "#aaa",
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/cancel`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason: result.value || "" })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  Swal.fire({
+                    title: "Order Cancelled",
+                    text: "Your order was cancelled successfully",
+                    icon: "success",
+                    confirmButtonColor: "#4BB543"
+                  });
+
+                  const card = document.querySelector(`[data-orderid="${orderID}"]`);
+                  if (card) {
+                    // Update status
+                    card.querySelector(".order-status").textContent = "Cancelled";
+                    // Remove cancel buttons
+                    card.querySelectorAll(".cancel-btn, .return-btn").forEach(b => b.remove());
+                  }
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              });
           }
         });
       }
-    });
-  }
 
-  function searchOrders(){
-    const query=document.getElementById("searchQuery").value;
-    window.location.href=`/order/search/${encodeURIComponent(query)}`;
-  }
-</script>
+      function cancelProduct(orderID, productID) {
+        Swal.fire({
+          title: "Cancel This Item?",
+          input: "text",
+          inputLabel: "Reason (optional)",
+          showCancelButton: true,
+          confirmButtonText: "Cancel Item",
+          confirmButtonColor: "#ff3b85",
+          cancelButtonColor: "#aaa",
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/cancel-product`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ productId: productID, reason: result.value || "" })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  Swal.fire({
+                    title: "Item Cancelled",
+                    text: "The item has been removed from your order",
+                    icon: "success",
+                    confirmButtonColor: "#4BB543"
+                  });
+
+                  const card = document.querySelector(`[data-orderid="${orderID}"]`);
+                  const itemDiv = card.querySelector(`[data-productid="${productID}"]`);
+                  if (itemDiv) itemDiv.remove();
+
+                  // If no items left, mark order cancelled
+                  const remainingItems = card.querySelectorAll(".ordered-items > div");
+                  if (remainingItems.length === 0) {
+                    card.querySelector(".order-status").textContent = "Cancelled";
+                    card.querySelectorAll(".cancel-btn, .return-btn").forEach(b => b.remove());
+                  }
+
+                  // Update totals dynamically if provided
+                  if (data.order) {
+                    const subtotalEl = document.querySelector(".bill-box .bill-row span:nth-child(2)");
+                    const totalEl = document.querySelector(".bill-box .bill-row strong:nth-child(2)");
+                    if (subtotalEl) subtotalEl.textContent = `Rs.${data.order.subtotal}`;
+                    if (totalEl) totalEl.textContent = `Rs.${data.order.totalPrice}`;
+                  }
+
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              });
+          }
+        });
+      }
+
+      function returnOrder(orderID, returnEndDate) {
+        if (returnEndDate && new Date(returnEndDate) < new Date()) {
+          return Swal.fire({
+            title: "Return Not Allowed",
+            text: "The return period for this product has expired",
+            icon: "error",
+            confirmButtonColor: "#ff3b85"
+          });
+        }
+
+        Swal.fire({
+          title: "Return Order?",
+          input: "text",
+          inputLabel: "Reason (required)",
+          inputValidator: v => !v && "Reason is required",
+          showCancelButton: true,
+          confirmButtonText: "Request Return",
+          confirmButtonColor: "#ffc107",
+          cancelButtonColor: "#aaa",
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/return`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason: result.value })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  Swal.fire({
+                    title: "Return Requested",
+                    text: "Your return request has been submitted",
+                    icon: "success",
+                    confirmButtonColor: "#4BB543"
+                  }).then(() => location.reload());
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              });
+          }
+        });
+      }
+
+      function searchOrders() {
+        const query = document.getElementById("searchQuery").value;
+        window.location.href = `/order/search/${encodeURIComponent(query)}`;
+      }
+    </script>

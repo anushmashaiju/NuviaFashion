@@ -11,6 +11,6 @@ export const isAdmin = (req, res, next) => {
 
 
 export const setCurrentPath = (req, res, next) => {
-  res.locals.currentPath = req.path;
+  res.locals.currentPath = req.originalUrl;  
   next();
 };

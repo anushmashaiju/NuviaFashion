@@ -1,38 +1,61 @@
 import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
+import User from "../../models/userModel.js";
+import MESSAGES from "../../utils/messages.js";
+import STATUS from "../../utils/statusCodes.js";
+import { refundCancelledOrder, refundReturnedOrder } from "../../utils/walletRefund.js";
 
-// ADMIN — LIST ALL ORDERS 
-
+// ADMIN — LIST ALL ORDERS
 export const getOrdersPage = async (req, res) => {
   try {
     let { page = 1, search = "", sort = "-createdAt", status = "" } = req.query;
-
     page = parseInt(page);
     const limit = 10;
     const skip = (page - 1) * limit;
-
     let filter = {};
 
     if (search) {
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { mobile: { $regex: search, $options: "i" } },
+        ]
+      }).select("_id");
+
+      const userIds = users.map(u => u._id);
+
       filter.$or = [
         { orderID: { $regex: search, $options: "i" } },
         { orderStatus: { $regex: search, $options: "i" } },
+        { user_id: { $in: userIds } }
       ];
     }
 
-    if (status) {
-      filter.orderStatus = status;
+    if (status) filter.orderStatus = status;
+
+    let sortOption = { createdAt: -1 };
+    switch (sort) {
+      case "createdAt":
+        sortOption = { createdAt: 1 };
+        break;
+      case "-totalPrice":
+        sortOption = { totalPrice: -1 };
+        break;
+      case "totalPrice":
+        sortOption = { totalPrice: 1 };
+        break;
     }
 
     const totalOrders = await Order.countDocuments(filter);
 
     const orders = await Order.find(filter)
-      .populate("user_id") 
-      .sort(sort)
+      .populate("user_id")
+      .sort(sortOption)
       .skip(skip)
       .limit(limit);
 
-    res.render("admin/orders", {
+    res.status(200).render("admin/orders", {
       orders,
       currentPage: page,
       totalPages: Math.ceil(totalOrders / limit),
@@ -44,57 +67,77 @@ export const getOrdersPage = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
-
 // UPDATE ORDER STATUS + TIMELINE SAVE
-
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).send("Order not found");
+    if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
-    if (!order.statusTimeline) {
-      order.statusTimeline = {};
-    }
-
+    if (!order.statusTimeline) order.statusTimeline = {};
     const now = new Date();
 
-    if (status === "Pending") {
-      order.statusTimeline.orderPlaced = now;
-      order.statusTimeline.processing = now;
-    }
+    switch (status) {
+      case "Order Placed":
+        if (!order.statusTimeline.orderPlaced) order.statusTimeline.orderPlaced = now;
+        break;
 
-    if (status === "Shipped") {
-      order.statusTimeline.shipped = now;
-    }
+      case "Processing":
+        if (!order.statusTimeline.processing) order.statusTimeline.processing = now;
+        break;
 
-    if (status === "Out for Delivery") {
-      order.statusTimeline.outForDelivery = now;
-    }
+      case "Shipped":
+        if (!order.statusTimeline.shipped) order.statusTimeline.shipped = now;
+        break;
 
-    if (status === "Delivered") {
-      order.statusTimeline.delivered = now;
-      order.deliveryDate = now;
+      case "Reached Nearest Hub":
+        if (!order.statusTimeline.reachedHub) order.statusTimeline.reachedHub = now;
+        break;
+
+      case "Out for Delivery":
+        if (!order.statusTimeline.outForDelivery) order.statusTimeline.outForDelivery = now;
+        break;
+
+      case "Delivered":
+        if (!order.statusTimeline.delivered) {
+          order.statusTimeline.delivered = now;
+          order.deliveredAt = now; 
+          
+          if (order.paymentMethod === "COD" && order.paymentStatus === "pending") {
+            order.paymentStatus = "success";
+          }
+        }
+        break;
+
+      case "Cancelled":
+        if (!order.statusTimeline.cancelled) order.statusTimeline.cancelled = now;
+
+        for (let item of order.items) {
+          if (item.productId) {
+            await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+          }
+        }
+        break;
+
+      default:
+        break;
     }
 
     order.orderStatus = status;
     await order.save();
 
-    res.redirect("/admin/orders");
-
+    res.status(200).redirect(`/admin/orders/${order._id}`);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
+    console.error("Update Order Status Error:", err);
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
 // VIEW SINGLE ORDER
-
 export const viewSingleOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -102,17 +145,16 @@ export const viewSingleOrder = async (req, res) => {
       .populate("items.productId")
       .populate("shippingAddressId");
 
-    if (!order) return res.status(404).send("Order not found");
+    if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
     const purchasedDate = order.createdAt;
-
     const approxStart = new Date(purchasedDate);
     const approxEnd = new Date(purchasedDate);
 
     approxStart.setDate(approxStart.getDate() + 3);
     approxEnd.setDate(approxEnd.getDate() + 7);
 
-    res.render("admin/orderDetailAdmin", {
+    res.status(200).render("admin/orderDetailAdmin", {
       order,
       purchasedDate,
       approxStart,
@@ -122,16 +164,143 @@ export const viewSingleOrder = async (req, res) => {
 
   } catch (err) {
     console.error(err);
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
+  }
+};
+
+// ADMIN APPROVES RETURN
+export const approveReturn = async (req, res) => {
+  try {
+    const { orderID } = req.params;
+
+    const order = await Order.findOne({ orderID });
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    if (order.orderStatus !== "Return Requested")
+      return res.status(400).json({ success: false, message: "No return request for this order" });
+
+    order.orderStatus = "Returned";
+    order.returnApprovedAt = new Date();
+    await order.save();
+
+    for (let item of order.items) {
+      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+    }
+
+    res.status(200).json({ success: true, message: "Return approved" });
+  } catch (err) {
+    console.error("Approve Return Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// getReturnRequests
+export const getReturnRequests = async (req, res) => {
+  try {
+    const orders = await Order.find({ orderStatus: "Return Requested" })
+      .populate("user_id")
+      .populate("items.productId")
+      .populate("shippingAddressId");
+
+    res.status(200).render("admin/returnRequests", { orders });
+  } catch (err) {
+    console.error(err);
+    res.status(STATUS.SERVER_ERROR).send("Server Error");
+  }
+};
+
+// GET SINGLE RETURN REQUEST
+export const getSingleReturnRequest = async (req, res) => {
+  try {
+    const { orderID } = req.params;
+
+    const order = await Order.findOne({ orderID })
+      .populate("user_id")
+      .populate("items.productId")
+      .populate("shippingAddressId");
+
+    if (!order) return res.status(404).send("Order not found");
+
+    res.status(200).render("admin/returnRequestDetail", { order });
+  } catch (err) {
+    console.error("Get Single Return Request Error:", err);
     res.status(500).send("Server Error");
   }
 };
 
-// CANCEL ORDER
+// APPROVE RETURN
+export const approveReturnRequest = async (req, res) => {
+  console.log("Approve return called for orderID:", req.params.orderID);
+  
+  try {
+    const { orderID } = req.params;
+    const order = await Order.findOne({ orderID }).populate("user_id");
 
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (!order.deliveredAt) {
+      return res.status(400).json({ success: false, message: "Order not delivered yet" });
+    }
+
+    const now = new Date();
+    const diffDays = Math.ceil((now - order.deliveredAt) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 7) {
+      return res.status(400).json({ success: false, message: "Return period expired" });
+    }
+
+    order.orderStatus = "Return Approved";
+    order.returnApprovedAt = now;
+    await order.save();
+
+    for (let item of order.items) {
+      if (item.productId) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+      }
+    }
+
+    await refundReturnedOrder(order.user_id._id, order.totalPrice);
+
+    return res.status(200).json({ success: true, message: "Return approved and amount refunded to wallet" });
+
+  } catch (err) {
+    console.error("Approve Return Error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// REJECT RETURN
+export const rejectReturnRequest = async (req, res) => {
+  console.log("Reject return called", req.params, req.body);
+  try {
+    const { orderID } = req.params;
+    const { reason } = req.body;
+
+    const order = await Order.findOne({ orderID });
+    if (!order) {
+      console.log("Order not found");
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    order.orderStatus = "Return Rejected";
+    order.returnRejectedAt = new Date();
+    order.returnReason = reason || "No reason provided";
+    await order.save();
+
+    res.status(200).json({ success: true, message: "Return rejected" });
+  } catch (err) {
+    console.error("Reject Return Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// CANCEL ORDER
 export const adminCancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).send("Order not found");
+    if (!order) return res.status(404).send(MESSAGES.ORDER_NOT_FOUND);
 
     if (order.orderStatus !== "Cancelled") {
       for (let item of order.items) {
@@ -139,14 +308,16 @@ export const adminCancelOrder = async (req, res) => {
           $inc: { stock: item.quantity }
         });
       }
+
+      await refundCancelledOrder(order.user_id._id, order.totalPrice);
     }
 
     order.orderStatus = "Cancelled";
     await order.save();
 
-    res.redirect("/admin/orders");
+    res.status(200).redirect("/admin/orders");
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(500).send(MESSAGES.SERVER_ERROR);
   }
 };

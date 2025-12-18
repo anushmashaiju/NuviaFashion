@@ -1,94 +1,103 @@
 <%- include("../../views/partials/adminHeader") %>
 
-<style>
-  body {
-    background-color: #fff5f7;
-    font-family: "Poppins", sans-serif;
-  }
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+    }
 
-  .main-content {
-    margin-left: 200px; 
-    padding: 30px;
-    margin-top: 50px;
-  }
+    .main-content {
+      margin-left: 200px;
+      padding: 30px;
+      margin-top: 50px;
+    }
 
-  .dashboard-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-  }
+    .dashboard-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px;
+    }
 
-  .card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 
-  .chart-container {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
+    .chart-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 
-  .charts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 30px;
-  }
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 30px;
+    }
 
-  canvas {
-    width: 100% !important;
-    height: 300px !important;
-  }
-</style>
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+  </style>
 
-<section class="dashboard-content">
+  <section class="dashboard-content">
     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-    <div class="card" style="flex: 1;">
-      <h3>Total Users</h3>
-      <p><strong><%= totalUsers %></strong></p>
+      <div class="card" style="flex: 1;">
+        <h3>Total Users</h3>
+        <p><strong>
+            <%= totalUsers %>
+          </strong></p>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <h3>Total Orders</h3>
+        <p><strong>
+            <%= totalOrders %>
+          </strong></p>
+      </div>
+
+
+      <div class="card" style="flex: 1;">
+        <h3>Total Revenue</h3>
+        <p><strong>₹<%= totalRevenue.toLocaleString() %></strong></p>
+      </div>
+
     </div>
 
-    <div class="card" style="flex: 1;">
-      <h3>Total Orders</h3>
-      <p><strong>589</strong></p>
-    </div>
+    <div class="charts">
+      <div class="chart-container">
+        <h3>Monthly Revenue (₹)</h3>
+        <canvas id="revenueChart"></canvas>
+      </div>
 
-    <div class="card" style="flex: 1;">
-      <h3>Total Revenue</h3>
-      <p><strong>₹4,28,000</strong></p>
+      <div class="chart-container">
+        <h3>Order Status Distribution</h3>
+        <canvas id="orderChart"></canvas>
+      </div>
     </div>
+  </section>
   </div>
+  <%- include("../partials/adminFooter") %>
 
-  <div class="charts">
-    <div class="chart-container">
-      <h3>Monthly Revenue (₹)</h3>
-      <canvas id="revenueChart"></canvas>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <div class="chart-container">
-      <h3>Order Status Distribution</h3>
-      <canvas id="orderChart"></canvas>
-    </div>
-  </div>
-</section>
-</div>
-<%- include("../partials/adminFooter") %>
+   <script>
+  const monthlyRevenue = <%- JSON.stringify(monthlyRevenue) %>;
+  const statusCounts = <%- JSON.stringify(statusCounts) %>;
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
+  // Revenue Chart
   const revenueCtx = document.getElementById('revenueChart').getContext('2d');
   const revenueChart = new Chart(revenueCtx, {
     type: 'bar',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
       datasets: [{
         label: 'Revenue (₹)',
-        data: [65000, 59000, 80000, 81000, 56000, 95000],
+        data: monthlyRevenue,
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
         borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
@@ -97,19 +106,10 @@
     },
     options: {
       responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      },
+      scales: { y: { beginAtZero: true } },
       plugins: {
-        legend: {
-          position: 'top'
-        },
-        title: {
-          display: true,
-          text: 'Revenue Growth (Last 6 Months)'
-        }
+        legend: { position: 'top' },
+        title: { display: true, text: 'Revenue Growth (Last 12 Months)' }
       }
     }
   });
@@ -121,7 +121,7 @@
       labels: ['Delivered', 'Pending', 'Cancelled'],
       datasets: [{
         label: 'Orders',
-        data: [350, 180, 59],
+        data: [statusCounts.Delivered, statusCounts.Pending, statusCounts.Cancelled],
         backgroundColor: [
           'rgba(75, 192, 192, 0.7)',
           'rgba(255, 205, 86, 0.7)',
@@ -138,13 +138,8 @@
     options: {
       responsive: true,
       plugins: {
-        legend: {
-          position: 'bottom'
-        },
-        title: {
-          display: true,
-          text: 'Order Status Breakdown'
-        }
+        legend: { position: 'bottom' },
+        title: { display: true, text: 'Order Status Breakdown' }
       }
     }
   });

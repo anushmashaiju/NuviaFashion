@@ -2,7 +2,6 @@
 
 <style>
   body {
-    background-color: #fdf2f5;
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
@@ -17,7 +16,6 @@
     flex: 1;
     margin-left: 230px;
     padding: 30px;
-    background-color: #fff;
     min-height: calc(100vh - 80px);
   }
 
@@ -156,13 +154,19 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  td i {
+  margin-left: 5px;
+  vertical-align: middle;
+  font-size: 1rem;
+}
+
 </style>
 
 <div class="admin-layout">
   <%- include("../../views/partials/adminSidebar.ejs") %>
 
   <main class="admin-main">
-    <div class="card">
+   
       <div class="page-top">
         <h3>Category</h3>
         <a href="/admin/categories/add" class="btn-add">+ Add Category</a>
@@ -199,7 +203,25 @@
                     </td>
                     <td class="fw-semibold"><%= category.categoryName %></td>
                     <td><%= category.description || '—' %></td>
-                    <td><%= category.categoryOffer ? category.categoryOffer + '%' : '—' %></td>
+                    <td>
+  <% if (category.categoryOffer && category.categoryOffer.percentage > 0) { %>
+    <%= category.categoryOffer.percentage %>%
+    <% if (category.categoryOffer.isActive) { %>
+      <span class="badge bg-success">
+      <i class="bi bi-check-circle-fill"></i> Offer
+    </span>
+    <% } else { %>
+
+       <span class="badge bg-danger">
+      <i class="bi bi-x-circle-fill "></i> No Offer
+    </span>
+    <% } %>
+  <% } else { %>
+    —
+  <% } %>
+</td>
+
+
                     <td>
                       <% if (category.isListed) { %>
                         <span class="badge bg-success">Listed</span>
@@ -256,7 +278,7 @@
           </div>
         <% } %>
       </div>
-    </div>
+
   </main>
 </div>
 
@@ -355,4 +377,6 @@
       }
     });
   });
+
+  
 </script>

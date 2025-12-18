@@ -1,6 +1,8 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/categoryModel.js";
-import Address from "../../models/addressModel.js"
+import Address from "../../models/addressModel.js";
+import STATUS from "../../utils/statusCodes.js";
+import MESSAGES from "../../utils/messages.js";
 
 // Validation helper
 const validateAddressInput = ({ name, phone, addressLine, area, state, pincode }) => {
@@ -9,12 +11,12 @@ const validateAddressInput = ({ name, phone, addressLine, area, state, pincode }
   const pincodeRegex = /^\d{6}$/;
   const nameRegex = /^[A-Za-z ]{3,}$/;
 
-  if (!name || !nameRegex.test(name)) errors.name = "Enter a valid full name (min 3 characters)";
-  if (!phone || !phoneRegex.test(phone)) errors.phone = "Invalid mobile number! Must be 10 digits";
-  if (!addressLine || addressLine.length < 5) errors.addressLine = "Address Line must have at least 5 characters";
-  if (!area || area.length < 3) errors.area = "Area must have at least 3 characters";
-  if (!state || state.length < 3) errors.state = "State must have at least 3 characters";
-  if (!pincode || !pincodeRegex.test(pincode)) errors.pincode = "Invalid Pincode! Must be exactly 6 digits";
+  if (!name || !nameRegex.test(name)) errors.name = MESSAGES.INVALID_NAME;
+  if (!phone || !phoneRegex.test(phone)) errors.phone = MESSAGES.INVALID_PHONE;
+  if (!addressLine || addressLine.length < 5) errors.addressLine = MESSAGES.INVALID_ADDRESS_LINE;
+  if (!area || area.length < 3) errors.area = MESSAGES.INVALID_AREA;
+  if (!state || state.length < 3) errors.state = MESSAGES.INVALID_STATE;
+  if (!pincode || !pincodeRegex.test(pincode)) errors.pincode = MESSAGES.INVALID_PINCODE;
 
   return errors;
 };
@@ -22,7 +24,8 @@ const validateAddressInput = ({ name, phone, addressLine, area, state, pincode }
 // Render Addresses Page
 export const getAddressPage = async (req, res) => {
   try {
-    if (!req.session.user || !req.session.user.id) return res.redirect("/login");
+    if (!req.session.user || !req.session.user.id)
+      return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
     const userId = req.session.user.id;
     const addresses = await Address.find({ userId }).lean();
@@ -46,7 +49,7 @@ export const getAddressPage = async (req, res) => {
       error = ""
     } = req.query;
 
-    res.render("user/addresses", {
+    res.status(STATUS.SUCCESS).render("user/addresses", {
       title: "My Addresses",
       user: req.session.user,
       addresses,
@@ -71,7 +74,7 @@ export const getAddressPage = async (req, res) => {
 
   } catch (err) {
     console.error("Error rendering address page:", err);
-    res.redirect("/error");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
@@ -80,7 +83,8 @@ export const addAddress = async (req, res) => {
   try {
     const { name, phone, addressLine, landmark, area, state, pincode, addressType } = req.body;
     const userId = req.session.user?.id;
-    if (!userId) return res.redirect("/login");
+
+    if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
     const errors = validateAddressInput({ name, phone, addressLine, area, state, pincode });
 
@@ -94,7 +98,7 @@ export const addAddress = async (req, res) => {
         query.set(`${key}Error`, errors[key]);
       });
 
-      return res.redirect(`/user/addresses?${query.toString()}`);
+      return res.status(STATUS.BAD_REQUEST).redirect(`/user/addresses?${query.toString()}`);
     }
 
     const hasAddresses = await Address.exists({ userId });
@@ -104,16 +108,19 @@ export const addAddress = async (req, res) => {
     });
 
     await newAddress.save();
-    if (req.query.redirect === "checkout") return res.redirect("/checkout");
-    return res.redirect("/user/addresses");
+
+    if (req.query.redirect === "checkout")
+      return res.status(STATUS.CREATED).redirect("/checkout");
+
+    return res.status(STATUS.CREATED).redirect("/user/addresses");
 
   } catch (err) {
     console.error("Error adding address:", err);
-    return res.redirect("/user/addresses?error=Failed to add address");
+    return res.status(STATUS.SERVER_ERROR).redirect(`/user/addresses?error=${MESSAGES.ADDRESS_ADD_FAILED}`);
   }
 };
 
-//get edit address page
+// Get Edit Address Page
 export const getEditAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
@@ -121,7 +128,8 @@ export const getEditAddress = async (req, res) => {
     const redirect = req.query.redirect || "";
 
     const address = await Address.findOne({ _id: addressId, userId }).lean();
-    if (!address) return res.redirect("/user/addresses");
+    if (!address)
+      return res.status(STATUS.NOT_FOUND).redirect(`/user/addresses?error=${MESSAGES.ADDRESS_NOT_FOUND}`);
 
     const {
       name = address.name,
@@ -141,8 +149,8 @@ export const getEditAddress = async (req, res) => {
       error = ""
     } = req.query;
 
-    res.render("user/editAddress", {
-       address,
+    res.status(STATUS.SUCCESS).render("user/editAddress", {
+      address,
       redirect,
       name,
       phone,
@@ -165,12 +173,11 @@ export const getEditAddress = async (req, res) => {
 
   } catch (err) {
     console.error("Get Edit Address Error:", err);
-    res.redirect("/user/addresses");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
-//post Edit Address
-
+// Post Edit Address
 export const postEditAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
@@ -190,11 +197,12 @@ export const postEditAddress = async (req, res) => {
         query.set(`${key}Error`, errors[key]);
       });
 
-      return res.redirect(`/user/addresses/edit/${addressId}?${query.toString()}`);
+      return res.status(STATUS.BAD_REQUEST).redirect(`/user/addresses/edit/${addressId}?${query.toString()}`);
     }
 
     const address = await Address.findOne({ _id: addressId, userId });
-    if (!address) return res.redirect("/user/addresses?error=Address not found");
+    if (!address)
+      return res.status(STATUS.NOT_FOUND).redirect(`/user/addresses?error=${MESSAGES.ADDRESS_NOT_FOUND}`);
 
     address.name = name;
     address.phone = phone;
@@ -207,16 +215,20 @@ export const postEditAddress = async (req, res) => {
 
     await address.save();
 
-    if (redirect === "checkout") return res.redirect("/checkout");
-    return res.redirect("/user/addresses");
+    if (redirect === "checkout")
+      return res.status(STATUS.SUCCESS).redirect("/checkout");
+
+    return res.status(STATUS.SUCCESS).redirect("/user/addresses");
 
   } catch (error) {
     console.error("Address update failed:", error);
-    return res.redirect(`/user/addresses/edit/${req.params.id}?error=Failed to update address`);
+    return res
+      .status(STATUS.SERVER_ERROR)
+      .redirect(`/user/addresses/edit/${req.params.id}?error=${MESSAGES.ADDRESS_UPDATE_FAILED}`);
   }
 };
 
-//Set default address
+// Set Default Address
 export const setDefaultAddress = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -225,10 +237,10 @@ export const setDefaultAddress = async (req, res) => {
     await Address.updateMany({ userId }, { $set: { isDefault: false } });
     await Address.findByIdAndUpdate(addressId, { $set: { isDefault: true } });
 
-    res.redirect("/user/addresses");
+    res.status(STATUS.SUCCESS).redirect("/user/addresses");
   } catch (error) {
     console.error("Error setting default address:", error);
-    res.status(500).render("errorPage", { errorMessage: "Failed to update default address." });
+    res.status(STATUS.SERVER_ERROR).render("errorPage", { errorMessage: MESSAGES.ADDRESS_UPDATE_FAILED });
   }
 };
 
@@ -236,10 +248,12 @@ export const setDefaultAddress = async (req, res) => {
 export const deleteAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
+
     await Address.findByIdAndDelete(addressId);
-    res.redirect("/user/addresses");
+
+    res.status(STATUS.SUCCESS).redirect("/user/addresses");
   } catch (error) {
     console.error("Error deleting address:", error);
-    res.status(500).render("errorPage", { errorMessage: "Failed to delete address." });
+    res.status(STATUS.SERVER_ERROR).render("errorPage", { errorMessage: MESSAGES.ADDRESS_DELETE_FAILED });
   }
 };

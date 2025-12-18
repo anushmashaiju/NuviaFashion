@@ -107,11 +107,9 @@
            alt="Profile Image">
     </div>
 
-    <!-- PROFILE IMAGE -->
     <label>Profile Image</label>
     <input type="file" name="profileImage" class="form-control" accept="image/*" onchange="previewFile()">
     
-    <!-- NAME -->
     <label>Name</label>
     <input type="text" name="name" value="<%= user.name %>" 
       class="form-control <%= errorField === 'name' ? 'input-error' : '' %>">
@@ -119,7 +117,6 @@
       <p class="error-msg"><%= errorMessage %></p>
     <% } %>
 
-    <!-- EMAIL -->
     <label>Email</label>
     <input type="email" name="email" value="<%= user.email %>"
       class="form-control <%= errorField === 'email' ? 'input-error' : '' %>">
@@ -127,7 +124,6 @@
       <p class="error-msg"><%= errorMessage %></p>
     <% } %>
 
-    <!-- MOBILE -->
     <label>Mobile</label>
     <input type="text" name="mobile" value="<%= user.mobile %>"
       class="form-control <%= errorField === 'mobile' ? 'input-error' : '' %>">

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Report</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 20px;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #f76f8f;
+      font-family: "Dancing Script", cursive;
+      margin-bottom: 20px;
+    }
+
+    .section-card {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table th,
+    table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    table th {
+      background-color: #f7c4d4;
+      color: #000000;
+    }
+
+    .summary-box {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: nowrap;
+    }
+
+    .summary-card {
+      flex: 1;
+      background: #f7f7f7;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .summary-card h5 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .summary-card p {
+      margin: 0;
+      font-weight: bold;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Sales Report</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>
+          <h6>Total Orders</h6>
+          <p class="mb-0 fs-5">
+            <%= grandTotal.totalOrders %>
+          </p>
+        </th>
+        <th>
+          <h6>Total Sales</h6>
+          <p class="mb-0 fs-5">₹ <%= grandTotal.totalAmount.toFixed(2) %>
+          </p>
+        </th>
+        <th>
+          <h6>Total Discounts</h6>
+          <p class="mb-0 fs-5">₹ <%= grandTotal.totalDiscount.toFixed(2) %>
+          </p>
+        </th>
+        <th>
+          <h6>Total Delivery Charges</h6>
+          <p class="mb-0 fs-5">₹ <%= grandTotal.deliveryCharge.toFixed(2) %>
+          </p>
+        </th>
+        <th>
+          <h6>Net Revenue</h6>
+          <p class="mb-0 fs-5">₹ <%= grandTotal.finalAmount.toFixed(2) %>
+          </p>
+        </th>
+
+      </tr>
+    </thead>
+  </table>
+  <div class="section-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Discount</th>
+          <th>Delivery Charge</th>
+          <th>Final</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% orders.forEach(order=> { %>
+          <tr>
+            <td>
+              <%= order.createdAt.toLocaleDateString() %>
+            </td>
+            <td>
+              <%= order.orderID %>
+            </td>
+            <td>
+              <%= order.user_id?.name || "Unknown" %>
+            </td>
+            <td>₹ <%= order.totalPrice.toFixed(2) %>
+            </td>
+            <td>₹ <%= ((order.discount || 0) + (order.couponDiscount || 0)).toFixed(2) %>
+            </td>
+            <td>₹ <%= order.deliveryCharge || 0 %>
+            </td>
+            <td>₹ <%= (order.totalPrice - ((order.discount || 0) + (order.couponDiscount || 0)) + (order.deliveryCharge
+                || 0)).toFixed(2) %>
+            </td>
+            <td>
+              <%= order.paymentMethod %>
+            </td>
+          </tr>
+          <% }) %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

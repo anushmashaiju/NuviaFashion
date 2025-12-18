@@ -18,7 +18,7 @@ const orderedItemSchema = new mongoose.Schema(
     isReturned: { type: Boolean, default: false },
     returnReason: { type: String, default: null },
   },
-  { _id: false } 
+  { _id: false }
 );
 
 const orderSchema = new mongoose.Schema(
@@ -27,34 +27,33 @@ const orderSchema = new mongoose.Schema(
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     transactionId: { type: mongoose.Schema.Types.ObjectId, ref: "TransactionHistory", default: null },
     couponApplied: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon", default: null },
-    shippingAddressId: { type: mongoose.Schema.Types.ObjectId, ref: "Address", required: true },
-
+    shippingAddressId: { type: mongoose.Schema.Types.ObjectId, ref: "Address", required: false },
     items: [orderedItemSchema],
-
     subtotal: { type: Number, required: true },
-    discount: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
-    couponCode: { type: String, default: null },
+    couponName: { type: String, default: null },
     couponDiscount: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 0 },
     totalPrice: { type: Number, required: true },
-
+    walletUsed: { type: Number, default: 0 },
     orderStatus: {
       type: String,
       enum: [
-        "Pending",
         "Order Placed",
         "Processing",
         "Shipped",
-        "Reached Nearest Hub",
         "Out for Delivery",
         "Delivered",
         "Cancelled",
+        "Return Requested",
+        "Return Approved",
         "Returned",
+        "Return Rejected",
+        "Failed",
+        "Confirmed"
       ],
-      default: "Order Placed",
+      default: "Order Placed"
     },
-
     statusTimeline: {
       orderPlaced: { type: Date },
       processing: { type: Date },
@@ -62,16 +61,19 @@ const orderSchema = new mongoose.Schema(
       reachedHub: { type: Date },
       outForDelivery: { type: Date },
       delivered: { type: Date },
-      returned: { type: Date }, // new: tracks full order return
+      returned: { type: Date },
     },
 
     paymentMethod: { type: String, enum: ["COD", "Razorpay", "Wallet"], required: true },
     paymentStatus: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
     cancelReason: { type: String, default: null },
     returnReason: { type: String, default: null },
+    returnRequestedAt: { type: Date, default: null },
+    returnApprovedAt: { type: Date, default: null },
     orderDate: { type: Date, default: Date.now },
-    deliveryDate: { type: Date, default: null },
+    deliveredAt: { type: Date, default: null }
   },
+
   { timestamps: true }
 );
 

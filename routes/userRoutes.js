@@ -17,12 +17,14 @@ import {
   verifyForgotOtp,
   resendForgotOtp,
   resetPassword,
+  getReferralPage,
   
 } from "../controllers/user/userController.js";
 
 import {
   addProductReview,
   getHomePage,
+  getMaxOfferProductByCategory,
   getProductDetailsPage,
   getUserProductListPage,
 } from "../controllers/user/productController.js";
@@ -30,9 +32,10 @@ import {
 import { getCategoryOffer } from "../controllers/user/categoryController.js";
 
 import {
-  addToWishlist,
+  // addToWishlist,
   getWishlist,
-  removeFromWishlist
+  removeFromWishlist,
+  toggleWishlist,
 } from "../controllers/user/wishlistController.js";
 
 import {
@@ -46,11 +49,16 @@ import {
 } from "../controllers/user/cartController.js";
 
 import { isUserAuthenticated, isGuest } from "../middlewares/authMiddleware.js";
-import { cancelOrder, cancelProduct, downloadInvoice, getOrderDetail, listOrders, returnOrder, searchOrders } from "../controllers/user/orderController.js";
+import { cancelOrder, cancelProduct, downloadInvoice, getOrderDetail, listOrders, requestReturn, searchOrders } from "../controllers/user/orderController.js";
 import { addAddress, deleteAddress, getAddressPage, getEditAddress, postEditAddress, setDefaultAddress } from "../controllers/user/addressController.js";
-import { buyNow, checkoutPage, orderSuccessPage, placeCODOrder } from "../controllers/user/checkoutController.js";
+import { buyNow, checkoutPage, orderSuccessPage, placeCODOrder, placeOrder, renderPaymentPage } from "../controllers/user/checkoutController.js";
 import { processProfileImage, uploadProfileImage } from "../utils/imageHelper.js";
 import { changePasswordLogged, editUserProfile, getChangePasswordPage, getEditUserProfile, getUserProfile, resendEditEmailOtp, verifyEditProfileOtp } from "../controllers/user/loggedUserController.js";
+import { createRazorpayOrder, verifyPayment } from "../controllers/user/onlinePaymentController.js";
+import { addMoneyToWallet, applyWallet,  getWalletBalance,  getWalletPage, walletPayment } from "../controllers/user/walletController.js";
+import { applyCoupon, getAvailableCoupons, paymentPage } from "../controllers/user/couponController.js";
+
+
 
 const router = express.Router();
 
@@ -70,6 +78,7 @@ router.get("/logout", logoutUser);
 
 // HOME
 router.get("/home", isUserAuthenticated, getHomePage);
+router.get("/max-offer-product/:categoryId", getMaxOfferProductByCategory);
 
 //PRODUCTS 
 router.get("/products", isUserAuthenticated, getUserProductListPage);
@@ -79,13 +88,14 @@ router.get("/product/:id", isUserAuthenticated, getProductDetailsPage);
 router.get("/auth/google", googleLogin);
 router.get("/auth/google/callback", googleCallback, googleRedirectSuccess);
 
-// FORGOT PASSWOR
+// FORGOT PASSWORD
 router.get("/forgot-password", isGuest, getForgotPasswordPage);
 router.post("/forgot-password", sendForgotPasswordOtp);
 router.post("/verify-forgot-otp", verifyForgotOtp);
 router.get("/resend-forgot-otp", resendForgotOtp);
 router.post("/reset-password", resetPassword);
 
+router.get("/refer", isUserAuthenticated, getReferralPage);
 // CATEGORY OFFER
 router.get("/offers/category/:categoryId", getCategoryOffer);
 
@@ -110,9 +120,9 @@ router.get("/user/change-password", isUserAuthenticated, getChangePasswordPage);
 router.post("/user/change-password", isUserAuthenticated, changePasswordLogged);
 
 //WISHLIST 
+// WISHLIST
 router.get("/wishlist", isUserAuthenticated, getWishlist);
-router.get("/add-to-wishlist/:id", isUserAuthenticated, addToWishlist);
-router.post("/add-to-wishlist/:id", isUserAuthenticated, addToWishlist);
+router.post("/add-to-wishlist/:id", isUserAuthenticated, toggleWishlist); // AJAX toggle
 router.post("/wishlist/remove", isUserAuthenticated, removeFromWishlist);
 
 // CART 
@@ -136,11 +146,29 @@ router.post("/checkout/cod", placeCODOrder);
 router.get("/order/list", isUserAuthenticated, listOrders);
 router.get("/order/:id", isUserAuthenticated, getOrderDetail);
 router.post("/order/:id/cancel", isUserAuthenticated, cancelOrder);
-router.post("/order/:id/return", isUserAuthenticated, returnOrder);
+// router.post("/order/:id/return", isUserAuthenticated, returnOrder);
 router.get("/order/search/:query", isUserAuthenticated, searchOrders);
 router.get("/order/:id/invoice", isUserAuthenticated, downloadInvoice);
+router.post("/order/:id/return", isUserAuthenticated, requestReturn);
 
 // Cancel specific product
 router.post("/order/:id/cancel-product", isUserAuthenticated, cancelProduct);
 
+router.post("/checkout/razorpay", createRazorpayOrder);
+router.post("/payment/verify", verifyPayment);
+router.get("/payment/failed", (req, res) => res.render("user/paymentFailed"));
+
+// View wallet page
+router.get("/wallet", getWalletPage);
+router.post("/wallet-payment", walletPayment);
+router.post("/wallet/add", addMoneyToWallet);
+router.post("/wallet/apply", applyWallet);
+router.get("/wallet/balance", getWalletBalance);
+
+router.get("/payment-gateway", isUserAuthenticated, renderPaymentPage);
+router.post("/payment-gateway/place-order", isUserAuthenticated, placeOrder);
+
+router.get("/coupon/available", isUserAuthenticated, getAvailableCoupons);
+router.post("/coupon/apply", isUserAuthenticated, applyCoupon);
+router.get("/payment-gateway", isUserAuthenticated, paymentPage);
 export default router;

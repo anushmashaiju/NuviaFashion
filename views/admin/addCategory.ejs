@@ -23,16 +23,15 @@
     background: #ffe6eb;
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     max-width: 800px;
     margin: 30px auto;
   }
 
   h3 {
     color: #a04c74;
-    font-weight: 600;
     text-align: center;
     margin-bottom: 20px;
+    font-weight: 600;
   }
 
   .form-group {
@@ -40,10 +39,9 @@
   }
 
   .form-group label {
-    display: block;
     font-weight: 500;
-    color: #444;
     margin-bottom: 8px;
+    display: block;
   }
 
   .form-group input,
@@ -52,8 +50,6 @@
     padding: 10px;
     border: 1px solid #f08da4;
     border-radius: 8px;
-    background-color: #fff;
-    font-size: 15px;
   }
 
   .error-text {
@@ -66,7 +62,7 @@
     display: flex;
     justify-content: center;
     gap: 15px;
-    margin-top: 25px;
+    margin-top: 20px;
   }
 
   .btn-update {
@@ -75,33 +71,19 @@
     border: none;
     padding: 12px 30px;
     border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 500;
-    transition: 0.3s;
-  }
-
-  .btn-update:hover {
-    background-color: #e96c8b;
-    transform: scale(1.03);
   }
 
   .btn-cancel {
     background-color: #ffd4dd;
-    color: #a04c74;
     padding: 12px 30px;
     border-radius: 8px;
     text-decoration: none;
-    transition: 0.3s;
-  }
-
-  .btn-cancel:hover {
-    background-color: #ffb6c8;
+    color: #a04c74;
   }
 </style>
 
 <div class="admin-layout">
-  <%- include("../partials/adminSidebar.ejs") %>
+  <%- include("../partials/adminSidebar") %>
 
   <main class="admin-main">
     <div class="card">
@@ -109,38 +91,84 @@
 
       <form action="/admin/categories/add" method="POST" enctype="multipart/form-data">
 
-        <div class="form-group">
-          <label for="categoryName">Category Name</label>
-          <input type="text" id="categoryName" name="categoryName" placeholder="Enter category name" required>
-          <% if (errorField === 'categoryName') { %>
-            <p class="error-text"><%= errorMessage %></p>
-          <% } %>
-        </div>
+   <div class="form-group">
+  <label for="categoryName">Category Name</label>
+  <input 
+    type="text" 
+    id="categoryName" 
+    name="categoryName"
+    value="<%= formData.categoryName || '' %>"
+    placeholder="Enter category name"
+  >
+  <% if (errors && errors.categoryName) { %>
+    <p class="error-text"><%= errors.categoryName %></p>
+  <% } %>
+</div>
 
-        <div class="form-group">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" rows="3" placeholder="Write a short description..."></textarea>
-          <% if (errorField === 'description') { %>
-            <p class="error-text"><%= errorMessage %></p>
-          <% } %>
-        </div>
+<div class="form-group">
+  <label for="description">Description</label>
+  <textarea 
+    id="description" 
+    name="description"
+    rows="3"
+    placeholder="Write a short description..."
+  ><%= formData.description || '' %></textarea>
+  
+  <% if (errors && errors.description) { %>
+    <p class="error-text"><%= errors.description %></p>
+  <% } %>
+</div>
+<div class="form-group">
+  <label for="categoryOffer">Category Offer (%)</label>
+  <input 
+    type="number" 
+    id="categoryOffer" 
+    name="categoryOffer"
+    value="<%= formData.categoryOffer || '' %>"
+    min="0" max="100"
+    placeholder="Enter offer (optional)"
+  >
+  <% if (errors && errors.categoryOffer) { %>
+    <p class="error-text"><%= errors.categoryOffer %></p>
+  <% } %>
+</div>
 
-        <div class="form-group">
-          <label for="categoryOffer">Category Offer (%)</label>
-          <input type="number" id="categoryOffer" name="categoryOffer" min="0" max="100" placeholder="Enter offer (optional)">
-          <% if (errorField === 'categoryOffer') { %>
-            <p class="error-text"><%= errorMessage %></p>
-          <% } %>
-        </div>
+<div class="form-group">
+  <label for="categoryOfferStart">Offer Start Date</label>
+  <input 
+    type="date" 
+    id="categoryOfferStart" 
+    name="categoryOfferStart"
+    value="<%= formData.categoryOfferStart || '' %>"
+  >
+  <% if (errors && errors.categoryOfferStart) { %>
+    <p class="error-text"><%= errors.categoryOfferStart %></p>
+  <% } %>
+</div>
 
-        <div class="form-group">
-          <label for="thumbnail">Thumbnail Image</label>
-          <input type="file" id="thumbnail" name="thumbnail" accept="image/*" required>
-          <div id="preview" class="d-flex flex-wrap mt-2"></div>
-          <% if (errorField === 'thumbnail') { %>
-            <p class="error-text"><%= errorMessage %></p>
-          <% } %>
-        </div>
+<div class="form-group">
+  <label for="categoryOfferEnd">Offer End Date</label>
+  <input 
+    type="date" 
+    id="categoryOfferEnd" 
+    name="categoryOfferEnd"
+    value="<%= formData.categoryOfferEnd || '' %>"
+  >
+  <% if (errors && errors.categoryOfferEnd) { %>
+    <p class="error-text"><%= errors.categoryOfferEnd %></p>
+  <% } %>
+</div>
+
+
+<div class="form-group">
+  <label for="thumbnail">Thumbnail Image</label>
+  <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+  <div id="preview" class="d-flex flex-wrap mt-2"></div>
+  
+  <% if (errors && errors.thumbnail) { %>
+    <p class="error-text"><%= errors.thumbnail %></p>
+  <% } %>
+</div>
 
         <div class="form-buttons">
           <button type="submit" class="btn-update">Add Category</button>
@@ -151,20 +179,28 @@
   </main>
 </div>
 
-<%- include("../partials/adminFooter") %>
-
 <script>
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("success") === "true") {
+    Swal.fire({
+      icon: "success",
+      title: "Category added successfully!",
+      showConfirmButton: false,
+      timer: 2000
+    }).then(() => {
+      window.location.href = "/admin/categories";
+    });
+  }
+  
   const input = document.getElementById("thumbnail");
   const preview = document.getElementById("preview");
 
   input.addEventListener("change", function () {
     preview.innerHTML = "";
-
     if (this.files && this.files[0]) {
-      const file = this.files[0];
       const reader = new FileReader();
-
-      reader.onload = function (e) {
+      reader.onload = (e) => {
         const img = document.createElement("img");
         img.src = e.target.result;
         img.style.width = "150px";
@@ -172,32 +208,11 @@
         img.style.objectFit = "contain";
         img.style.border = "1px solid #ccc";
         img.style.borderRadius = "8px";
-        img.style.padding = "4px";
         preview.appendChild(img);
       };
-
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(this.files[0]);
     }
   });
 </script>
 
-<% if (typeof successMessage !== 'undefined') { %>
-<script>
-  Swal.fire({
-    icon: 'success',
-    title: '<%= successMessage %>',
-    showConfirmButton: false,
-    timer: 2000
-  });
-</script>
-<% } %>
-
-<% if (typeof errorMessage !== 'undefined' && !errorField) { %>
-<script>
-  Swal.fire({
-    icon: 'error',
-    title: '<%= errorMessage %>',
-    showConfirmButton: true
-  });
-</script>
-<% } %>
+<%- include("../partials/adminFooter") %>

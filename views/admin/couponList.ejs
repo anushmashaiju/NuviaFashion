@@ -1,0 +1,300 @@
+<%- include("../../views/partials/adminHeader", { pageTitle: "Coupon Management" }) %>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .admin-layout {
+      display: flex;
+      margin-top: 60px;
+    }
+
+    .admin-main {
+      flex: 1;
+      margin-left: 230px;
+      padding: 30px;
+      background-color: white;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #ffe6eb;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .page-top h3 {
+      color: #a04c74;
+      font-weight: 600;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .search-row input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ffb6c1;
+    }
+
+    .reset-btn {
+      background-color: #ff6fa5;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff0f4;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .table-custom th,
+    .table-custom td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ffd4dd;
+    }
+
+    .table-custom th {
+      background: #ffc4d6;
+      color: #a04c74;
+      font-weight: 600;
+    }
+
+    .action-btn {
+      color: white;
+      cursor: pointer;
+      margin: 2px;
+    }
+
+    .add-btn {
+      background: #05802c;
+    }
+
+    .edit-btn {
+      background: #d7ad05;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+    }
+
+    .action-btn i {
+      font-size: 12px;
+    }
+  </style>
+
+  <div class="admin-layout">
+    <%- include("../../views/partials/adminSidebar") %>
+
+      <main class="admin-main">
+
+        <div class="page-top">
+          <h3>Coupons</h3>
+        </div>
+        <div class="search-row">
+          <input type="text" id="couponSearch" placeholder="Search coupons..." value="<%= search || '' %>">
+          <button class="reset-btn" id="resetSearch"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Coupon Code</th>
+              <th>Expire On</th>
+              <th>Offer Price</th>
+              <th>Minimum Price</th>
+              <th>Status</th>
+              <th>Used Count</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% coupons.forEach(c=> { %>
+              <tr data-id="<%= c._id %>">
+                <td><input type="text" class="form-control coupon-code" value="<%= c.couponName %>"></td>
+
+                <td><input type="date" class="form-control expire-input"
+                    value="<%= c.expireOn.toISOString().slice(0,10) %>"></td>
+
+                <td><input type="number" class="form-control offer-input" value="<%= c.offerPrice %>"></td>
+
+                <td><input type="number" class="form-control min-input" value="<%= c.minimumPrice %>"></td>
+
+                <td>
+                  <% if (new Date(c.expireOn) < new Date()) { %>
+                    <span class="text-danger">Expired</span>
+                    <% } else { %>
+                      <span class="text-success">Active</span>
+                      <% } %>
+                </td>
+
+                <td>
+                  <%= c.usedBy.length %>
+                </td>
+
+                <td>
+                  <button type="button" class="action-btn edit-btn" onclick="saveCoupon('<%= c._id %>', this)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+
+                  <button type="button" class="action-btn delete-btn" onclick="deleteCoupon('<%= c._id %>')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+
+
+                </td>
+              </tr>
+              <% }) %>
+
+                <tr id="addCouponRow">
+                  <td><input type="text" class="form-control coupon-code" placeholder="Coupon Code"></td>
+                  <td><input type="date" class="form-control expire-input"></td>
+                  <td><input type="number" class="form-control offer-input" placeholder="Offer Price"></td>
+                  <td><input type="number" class="form-control min-input" placeholder="Minimum Price"></td>
+                  <td>—</td>
+                  <td>0</td>
+                  <td><button class="action-btn add-btn" onclick="addCoupon()">
+                      <i class="bi bi-plus-circle"></i>
+                    </button>
+                  </td>
+                </tr>
+
+          </tbody>
+        </table>
+      </main>
+  </div>
+
+  <script>
+
+    document.getElementById("couponSearch")?.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        window.location.href = `/admin/coupons?search=${e.target.value.trim()}`;
+      }
+    });
+
+    document.getElementById("resetSearch")?.addEventListener("click", () => {
+      window.location.href = "/admin/coupons";
+    });
+
+    // ADD COUPON
+    async function addCoupon() {
+      const row = document.getElementById("addCouponRow");
+      const couponName = row.querySelector(".coupon-code").value.trim();
+      const expireOn = row.querySelector(".expire-input").value;
+      const offerPrice = row.querySelector(".offer-input").value;
+      const minimumPrice = row.querySelector(".min-input").value;
+
+      if (
+        couponName === "" ||
+        expireOn === "" ||
+        offerPrice === "" ||
+        minimumPrice === ""
+      ) {
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Oops!',
+          text: 'Please fill all fields',
+        });
+      }
+
+      const res = await fetch("/admin/coupons/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponName, expireOn, offerPrice, minimumPrice })
+      });
+
+      const data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.error);
+    }
+
+    // SAVE COUPON
+    async function saveCoupon(id, btn) {
+      const row = btn.closest("tr");
+
+      const couponName = row.querySelector(".coupon-code").value.trim();
+      const expireOn = row.querySelector(".expire-input").value;
+      const offerPrice = row.querySelector(".offer-input").value;
+      const minimumPrice = row.querySelector(".min-input").value;
+
+      if (
+        couponName === "" ||
+        expireOn === "" ||
+        offerPrice === "" ||
+        minimumPrice === ""
+      ) {
+        return alert("Fill all fields");
+      }
+
+
+      const res = await fetch(`/admin/coupons/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponName, expireOn, offerPrice, minimumPrice })
+      });
+
+      const data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.error);
+    }
+
+    // DELETE COUPON
+    async function deleteCoupon(id) {
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete this coupon?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      });
+
+      if (!result.isConfirmed) return;
+
+      const res = await fetch(`/admin/coupons/delete/${id}`, {
+        method: "DELETE"
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Coupon saved successfully',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => location.reload());
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: data.error
+        });
+      }
+
+    }
+  </script>
+
+  <%- include("../../views/partials/adminFooter") %>

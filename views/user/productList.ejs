@@ -259,6 +259,25 @@
       transform: translateX(-320px);
       opacity: 1;
     }
+    .out-stock {  
+      color: #ff4f4f;
+      font-weight: 600;
+    }
+    .in-stock {
+      color: #28a745;
+      font-weight: 500;
+    }
+
+.product-actions .wishlist-btn i {
+  transition: color 0.3s ease;
+}
+
+
+/* ACTIVE / ADDED TO WISHLIST */
+.product-actions .wishlist-btn.active i {
+  color: #ff4f8a !important;
+}
+
 
     @media (max-width: 992px) {
       .filter-sidebar {
@@ -274,7 +293,6 @@
   <div class="container-fluid mt-4 mb-5">
     <h2 class="text-center mb-4">Products</h2>
 
-    <!-- Search Form -->
     <form method="GET" action="/products" class="search-row mb-4">
       <input type="text" name="search" class="form-control" placeholder="Search for products, brands and more..."
         value="<%= currentFilters.search || '' %>">
@@ -389,28 +407,56 @@
                       <p class="brand">
                         <%= product.brand || 'No Brand' %>
                       </p>
+                       <p class="<%= product.stock>0 ? 'in-stock':'out-stock' %>">
+                    <%= product.stock>0 ? 'In Stock':'Out of Stock' %>
+                  </p>
                       <div class="rating-stars">
                         <% let rating=product.rating || 0; %>
                           <% for (let i=1; i <=5; i++) { %>
                             <i class="fa <%= i <= Math.floor(rating) ? 'fa-star' : 'fa-star-o' %>"></i>
                             <% } %> (<%= rating.toFixed(1) %>)
                       </div>
-                      <p>
-                        <span class="product-price">
-                          ₹<%= (product.price * (1 - (product.discount || 0) / 100)).toFixed(2) %>
-                        </span>
-                        <% if (product.discount && product.discount> 0) { %>
-                          <span class="old-price">₹<%= product.price.toFixed(2) %></span>
-                          <span class="discount">
-                            <%= product.discount %>% off
-                          </span>
-                          <% } %>
-                      </p>
+                     <p>
+  <% if (product.activeOffer && product.activeOffer.type) { %>
+
+    <!-- final price -->
+    <span class="product-price" style="color: green; font-weight:600;">
+      ₹<%= product.finalPrice.toFixed(2) %>
+    </span>
+
+    <!-- original price -->
+    <span class="old-price" style="color: red; text-decoration: line-through;">
+      ₹<%= product.price.toFixed(2) %>
+    </span>
+
+    <!-- offer badge -->
+    <span class="discount">
+      <%= product.activeOffer.percentage %>% off
+      
+    </span>
+
+  <% } else { %>
+
+    <!-- no offer -->
+    <span class="product-price">
+      ₹<%= product.price.toFixed(2) %>
+    </span>
+
+  <% } %>
+</p>
+
                       <div class="product-actions mt-2 d-flex justify-content-center" style="gap: 10px;">
                         <a href="/product/<%= product._id %>" class="btn-add">View Details</a>
-                        <button class="btn-add wishlist-btn" data-product-id="<%= product._id %>">
-                          <i class="fa fa-heart"></i>
-                        </button>
+   
+
+<button 
+  class="btn-add wishlist-btn <%= product.inWishlist ? 'active' : '' %>" 
+  data-product-id="<%= product._id %>" 
+  data-in-wishlist="<%= product.inWishlist ? 'true' : 'false' %>">
+  <i class="fa fa-heart"></i>
+</button>
+
+
                         <button class="btn-add cart-btn" data-product-id="<%= product._id %>">
                           <i class="fa fa-shopping-cart"></i>
                         </button>
@@ -438,87 +484,113 @@
 
   <%- include("../../views/partials/userFooter.ejs") %>
 
-    <script>
-      const minSlider = document.getElementById('minPrice');
-      const maxSlider = document.getElementById('maxPrice');
-      const minLabel = document.getElementById('minPriceLabel');
-      const maxLabel = document.getElementById('maxPriceLabel');
-      const sliderRange = document.getElementById('sliderRange');
-      const minGap = 500;
-      const sliderMax = parseInt(maxSlider.max);
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Price slider
+  const minSlider = document.getElementById('minPrice');
+  const maxSlider = document.getElementById('maxPrice');
+  const minLabel = document.getElementById('minPriceLabel');
+  const maxLabel = document.getElementById('maxPriceLabel');
+  const sliderRange = document.getElementById('sliderRange');
+  const minGap = 500;
+  const sliderMax = parseInt(maxSlider.max);
 
-      function updateSlider(event) {
-        let minVal = parseInt(minSlider.value);
-        let maxVal = parseInt(maxSlider.value);
+  function updateSlider(event) {
+    let minVal = parseInt(minSlider.value);
+    let maxVal = parseInt(maxSlider.value);
 
-        if (maxVal - minVal <= minGap) {
-          if (event.target === minSlider) minSlider.value = maxVal - minGap;
-          else maxSlider.value = minVal + minGap;
+    if (maxVal - minVal <= minGap) {
+      if (event.target === minSlider) minSlider.value = maxVal - minGap;
+      else maxSlider.value = minVal + minGap;
+    }
+
+    minVal = parseInt(minSlider.value);
+    maxVal = parseInt(maxSlider.value);
+    minLabel.textContent = `₹${minVal}`;
+    maxLabel.textContent = `₹${maxVal}`;
+
+    const percent1 = (minVal / sliderMax) * 100;
+    const percent2 = (maxVal / sliderMax) * 100;
+    sliderRange.style.left = percent1 + "%";
+    sliderRange.style.width = (percent2 - percent1) + "%";
+  }
+
+  minSlider.addEventListener("input", updateSlider);
+  maxSlider.addEventListener("input", updateSlider);
+  updateSlider();
+
+  // Toast
+  const toast = document.getElementById("action-toast");
+  const wishlistBadge = document.getElementById("wishlist-count");
+  const cartBadge = document.getElementById("cart-count");
+
+  const showToast = (message, error = false) => {
+    toast.innerText = message;
+    toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+    toast.classList.add("show");
+    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+    toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
+  };
+
+  // Wishlist
+  document.querySelectorAll(".wishlist-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const productId = btn.dataset.productId;
+
+      try {
+        const res = await fetch(`/add-to-wishlist/${productId}`, { method: "POST" });
+        const data = await res.json();
+
+        if (data.success) {
+          // Ensure boolean type
+          const inWishlist = data.inWishlist === true || data.inWishlist === "true";
+          btn.classList.toggle("active", inWishlist);
+          btn.dataset.inWishlist = inWishlist;
+
+          if (wishlistBadge) {
+            wishlistBadge.innerText = data.count || 0;
+          }
+
+          showToast(inWishlist ? "Added to Wishlist" : "Removed from Wishlist");
+        } else {
+          showToast(data.message || "Action failed", true);
         }
-
-        minVal = parseInt(minSlider.value);
-        maxVal = parseInt(maxSlider.value);
-        minLabel.textContent = `₹${minVal}`;
-        maxLabel.textContent = `₹${maxVal}`;
-
-        const percent1 = (minVal / sliderMax) * 100;
-        const percent2 = (maxVal / sliderMax) * 100;
-
-        sliderRange.style.left = percent1 + "%";
-        sliderRange.style.width = (percent2 - percent1) + "%";
+      } catch (err) {
+        console.error(err);
+        showToast("Something went wrong", true);
       }
+    });
+  });
 
-      minSlider.addEventListener("input", updateSlider);
-      maxSlider.addEventListener("input", updateSlider);
-      updateSlider();
+  // Cart
+document.querySelectorAll(".cart-btn").forEach(btn => {
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const productId = btn.dataset.productId;
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const toast = document.getElementById("action-toast");
-
-        const showToast = (message, error = false) => {
-          toast.innerText = message;
-          toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
-          toast.classList.add("show");
-          if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
-          toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
-        };
-
-        document.querySelectorAll(".wishlist-btn").forEach(btn => {
-          btn.addEventListener("click", async e => {
-            e.preventDefault();
-            const productId = btn.dataset.productId;
-            try {
-              const res = await fetch(`/add-to-wishlist/${productId}`, { method: "POST" });
-              const data = await res.json();
-              showToast(data.success ? "Added to Wishlist!" : data.message || "Could not add to wishlist", !data.success);
-            } catch {
-              showToast("Something went wrong", true);
-            }
-          });
-        });
-
-
-        document.querySelectorAll(".cart-btn").forEach(btn => {
-          btn.addEventListener("click", async (e) => {
-            e.preventDefault();
-            const productId = btn.dataset.productId;
-
-            try {
-              const res = await fetch(`/cart/add-ajax/${productId}`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json"
-                }
-              });
-              const data = await res.json();
-              showToast(data.message, !data.success);
-            } catch (err) {
-              console.error(err);
-              showToast("Something went wrong", true);
-            }
-          });
-        });
-
+    try {
+      const res = await fetch(`/cart/add-ajax/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" }
       });
-    </script>
+      const data = await res.json();
+
+      if (data.success) {
+        // Use correct server key
+        if (cartBadge) {
+          cartBadge.innerText = data.cartCount || 0; 
+        }
+        showToast(data.message || "Added to cart!");
+      } else {
+        showToast(data.message || "Action failed", true);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Something went wrong", true);
+    }
+  });
+});
+
+});
+</script>

@@ -19,8 +19,8 @@ export const uploadSingleImage = upload.single("thumbnail");
 
 // Upload Product Images (Main + Variant)
 export const uploadProductImages = upload.fields([
-  { name: "images", maxCount: 5 },         
-  { name: "variantImages", maxCount: 10 },
+  { name: "images", maxCount: 20 },         
+  { name: "variantImages", maxCount: 50 },
 ]);
 
 //  Upload Buffer to Cloudinary
@@ -133,3 +133,4 @@ export const processProfileImage = async (req, res, next) => {
     next(error);
   }
 };
+

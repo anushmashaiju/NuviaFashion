@@ -1,9 +1,11 @@
 import User from "../../models/userModel.js";
+import Order from "../../models/orderModel.js";
 import bcrypt from "bcrypt";
+import STATUS from "../../utils/statusCodes.js";
 
 // Admin Login Page
 export const getAdminLoginPage = (req, res) => {
-  res.render("admin/adminLogin", { 
+  res.status(STATUS.SUCCESS).render("admin/adminLogin", { 
     title: "Admin Login",
     email: "",
     errorField: null,
@@ -19,7 +21,7 @@ export const adminLogin = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!email) {
-      return res.render("admin/adminLogin", {
+      return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
         title: "Admin Login",
         errorField: "email",
         errorMessage: "Email is required"
@@ -27,7 +29,7 @@ export const adminLogin = async (req, res) => {
     }
 
     if (!password) {
-      return res.render("admin/adminLogin", {
+      return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
         title: "Admin Login",
         errorField: "password",
         errorMessage: "Password is required"
@@ -35,22 +37,24 @@ export const adminLogin = async (req, res) => {
     }
 
     if (!user || user.role !== "admin") {
-      return res.render("admin/adminLogin", {
-  title: "Admin Login",
-  email,
-  errorField: "email",
-  errorMessage: "Email is required"
-});
+      return res.status(STATUS.UNAUTHORIZED).render("admin/adminLogin", {
+        title: "Admin Login",
+        email,
+        errorField: "email",
+        errorMessage: "Email is required"
+      });
     }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.render("admin/adminLogin", {
-  title: "Admin Login",
-  email,
-  errorField: "password",
-  errorMessage: "Incorrect password"
-});
+      return res.status(STATUS.UNAUTHORIZED).render("admin/adminLogin", {
+        title: "Admin Login",
+        email,
+        errorField: "password",
+        errorMessage: "Incorrect password"
+      });
     }
+
     req.session.user = {
       id: user._id,
       name: user.name,
@@ -60,19 +64,19 @@ export const adminLogin = async (req, res) => {
 
     req.session.save(err => {
       if (err) {
-       return res.render("admin/adminLogin", {
-  title: "Admin Login",
-  email,
-  errorField: null,
-  errorMessage: "Something went wrong"
-});
+        return res.status(STATUS.SERVER_ERROR).render("admin/adminLogin", {
+          title: "Admin Login",
+          email,
+          errorField: null,
+          errorMessage: "Something went wrong"
+        });
       }
-      res.redirect("/admin/dashboard");
+      res.status(STATUS.SUCCESS).redirect("/admin/dashboard");
     });
 
   } catch (error) {
     console.error(error);
-    res.render("admin/adminLogin", {
+    res.status(STATUS.SERVER_ERROR).render("admin/adminLogin", {
       title: "Admin Login",
       errorField: "",
       errorMessage: "Something went wrong"
@@ -80,24 +84,54 @@ export const adminLogin = async (req, res) => {
   }
 };
 
-// Admin Dashboard
+// Get admin dashboard
 export const getAdminDashboard = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: "user", isDeleted: false });
-    res.render("admin/dashboard", {
+    const totalOrders = await Order.countDocuments({});
+    const paidOrders = await Order.find({
+      $or: [
+        { paymentStatus: "Paid" },
+        { paymentMethod: "COD", orderStatus: "Delivered" }
+      ]
+    });
+
+    const totalRevenue = paidOrders.reduce((acc, order) => acc + order.totalPrice, 0);
+
+    const monthlyRevenue = Array(12).fill(0);
+    paidOrders.forEach(order => {
+      const month = order.createdAt.getMonth(); 
+      monthlyRevenue[month] += order.totalPrice;
+    });
+
+    const statusCounts = { Delivered: 0, Pending: 0, Cancelled: 0 };
+    const allOrders = await Order.find({});
+    allOrders.forEach(order => {
+      if (order.orderStatus === "Delivered") statusCounts.Delivered++;
+      else if (order.orderStatus === "Pending") statusCounts.Pending++;
+      else if (order.orderStatus === "Cancelled") statusCounts.Cancelled++;
+    });
+
+    res.status(STATUS.SUCCESS).render("admin/dashboard", {
       title: "Admin Dashboard",
       admin: req.session.user,
-      totalUsers   
+      totalUsers,
+      totalOrders,
+      totalRevenue,
+      monthlyRevenue,
+      statusCounts
     });
+
   } catch (error) {
     console.error("Dashboard Error:", error);
-    res.redirect("/error");
+    res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
 };
 
 // Logout
 export const adminLogout = (req, res) => {
-  req.session.destroy(err => res.redirect("/admin/login"));
+  req.session.admin = null; 
+  res.status(STATUS.SUCCESS).redirect("/admin/login");
 };
 
 // Get All Users 
@@ -109,7 +143,7 @@ export const getAllUsers = async (req, res) => {
 
     const query = {
       role: "user",
-      isDeleted: false, 
+      isDeleted: false,
       ...(search && {
         $or: [
           { name: { $regex: search, $options: "i" } },
@@ -122,11 +156,11 @@ export const getAllUsers = async (req, res) => {
     const totalPages = Math.ceil(totalUsers / limit);
 
     const users = await User.find(query)
-      .sort({ createdAt: -1 }) 
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    res.render("admin/users", {
+    res.status(STATUS.SUCCESS).render("admin/users", {
       title: "Manage Users",
       cData: users,
       currentPage: page,
@@ -137,7 +171,7 @@ export const getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.redirect("/error");
+    res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
 };
 
@@ -145,20 +179,22 @@ export const getAllUsers = async (req, res) => {
 export const toggleUserStatus = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user || user.isDeleted) return res.redirect("/admin/users");
+    if (!user || user.isDeleted) 
+      return res.status(STATUS.NOT_FOUND).redirect("/admin/users");
 
     user.isActive = !user.isActive;
     await user.save();
-    res.redirect("/admin/users");
+    res.status(STATUS.SUCCESS).redirect("/admin/users");
+
   } catch (error) {
     console.error("Toggle User Status Error:", error);
-    res.redirect("/error");
+    res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
 };
 
 // Forgot Password 
 export const getAdminForgotPassword = (req, res) => {
-  res.render("admin/adminForgotPassword", { 
+  res.status(STATUS.SUCCESS).render("admin/adminForgotPassword", { 
     email: "",
     errorField: null,
     errorMessage: null,
@@ -170,8 +206,8 @@ export const getAdminForgotPassword = (req, res) => {
 export const postAdminForgotPassword = async (req, res) => {
   const { email } = req.body;
 
- if (!email || email.trim() === "") {
-    return res.render("admin/adminForgotPassword", {
+  if (!email || email.trim() === "") {
+    return res.status(STATUS.BAD_REQUEST).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
       errorMessage: "Email address is required.",
@@ -181,7 +217,7 @@ export const postAdminForgotPassword = async (req, res) => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.render("admin/adminForgotPassword", {
+    return res.status(STATUS.BAD_REQUEST).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
       errorMessage: "Email address is invalid.",
@@ -193,7 +229,7 @@ export const postAdminForgotPassword = async (req, res) => {
     const admin = await User.findOne({ email, role: "admin" });
 
     if (!admin) {
-      return res.render("admin/adminForgotPassword", {
+      return res.status(STATUS.NOT_FOUND).render("admin/adminForgotPassword", {
         email,
         errorField: "email",
         errorMessage: "Admin account not found.",
@@ -208,7 +244,7 @@ export const postAdminForgotPassword = async (req, res) => {
     const emailSent = await sendVerificationEmail(email, otp);
 
     if (!emailSent) {
-      return res.render("admin/adminForgotPassword", {
+      return res.status(STATUS.SERVER_ERROR).render("admin/adminForgotPassword", {
         email,
         errorField: "email",
         errorMessage: "Failed to send OTP. Try again.",
@@ -217,11 +253,11 @@ export const postAdminForgotPassword = async (req, res) => {
     }
 
     console.log("Admin Forgot OTP:", otp);
-    res.redirect(`/admin/verify-forgot-otp?email=${email}`);
+    res.status(STATUS.SUCCESS).redirect(`/admin/verify-forgot-otp?email=${email}`);
 
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    return res.render("admin/adminForgotPassword", {
+    return res.status(STATUS.SERVER_ERROR).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
       errorMessage: "Something went wrong. Try again.",
@@ -230,69 +266,89 @@ export const postAdminForgotPassword = async (req, res) => {
   }
 };
 
-//Verify OTP 
+// Verify OTP 
 export const getAdminForgotOtpPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
-  if (!email) return res.redirect("/admin/forgot-password");
-  res.render("admin/otpForgotPassword", { email, errorMessage: null });
+  if (!email) return res.status(STATUS.BAD_REQUEST).redirect("/admin/forgot-password");
+
+  res.status(STATUS.SUCCESS).render("admin/otpForgotPassword", { email, errorMessage: null });
 };
 
-//Verify AdminForgotOtp
+// Verify AdminForgotOtp
 export const verifyAdminForgotOtp = async (req, res) => {
   const { otp1, otp2, otp3, otp4, email } = req.body;
   const enteredOtp = `${otp1}${otp2}${otp3}${otp4}`;
 
   if (enteredOtp === String(req.session.adminResetOtp)) {
     req.session.adminOtpVerified = true;
-    res.redirect(`/admin/reset-password?email=${email}`);
+    return res.status(STATUS.SUCCESS).redirect(`/admin/reset-password?email=${email}`);
   } else {
-    res.render("admin/otpForgotPassword", { email, errorMessage: "Invalid OTP. Try again." });
+    return res.status(STATUS.UNAUTHORIZED).render("admin/otpForgotPassword", { 
+      email, 
+      errorMessage: "Invalid OTP. Try again." 
+    });
   }
 };
 
-//Resend OTP 
+// Resend OTP 
 export const resendAdminForgotOtp = async (req, res) => {
   try {
     const email = req.query.email || req.session.adminResetEmail;
-    if (!email) return res.redirect("/admin/forgot-password");
+    if (!email) return res.status(STATUS.BAD_REQUEST).redirect("/admin/forgot-password");
 
     const newOtp = Math.floor(1000 + Math.random() * 9000);
     req.session.adminResetOtp = newOtp;
 
     const emailSent = await sendVerificationEmail(email, newOtp);
     if (!emailSent) {
-      return res.render("admin/otpForgotPassword", { email, errorMessage: "Failed to resend OTP." });
+      return res.status(STATUS.SERVER_ERROR).render("admin/otpForgotPassword", { 
+        email, 
+        errorMessage: "Failed to resend OTP." 
+      });
     }
 
     console.log("Resent Admin OTP:", newOtp);
-    res.render("admin/otpForgotPassword", { email, errorMessage: "New OTP sent successfully." });
+    res.status(STATUS.SUCCESS).render("admin/otpForgotPassword", { 
+      email, 
+      errorMessage: "New OTP sent successfully." 
+    });
+
   } catch (error) {
     console.error("Resend Admin OTP Error:", error);
-    res.render("admin/otpForgotPassword", { email: req.session.adminResetEmail, errorMessage: "Something went wrong." });
+    res.status(STATUS.SERVER_ERROR).render("admin/otpForgotPassword", { 
+      email: req.session.adminResetEmail, 
+      errorMessage: "Something went wrong." 
+    });
   }
 };
 
-// admin reset Password page
+// Admin Reset Password Page
 export const getAdminResetPasswordPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
+
   if (!req.session.adminOtpVerified) 
-    return res.redirect("/admin/forgot-password");
-  res.render("admin/resetPassword", { email, errorMessage: null });
+    return res.status(STATUS.FORBIDDEN).redirect("/admin/forgot-password");
+
+  res.status(STATUS.SUCCESS).render("admin/resetPassword", { 
+    email, 
+    errorMessage: null 
+  });
 };
 
-//Reset adminPassword 
+// Reset Admin Password 
 export const resetAdminPassword = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
 
   if (password !== confirmPassword) {
-    return res.render("admin/resetPassword", { 
+    return res.status(STATUS.BAD_REQUEST).render("admin/resetPassword", { 
       email,
       errorField: "confirmPassword",
       errorMessage: "Passwords do not match." 
     });
   }
+
   if (password.length < 6) {
-    return res.render("admin/resetPassword", { 
+    return res.status(STATUS.BAD_REQUEST).render("admin/resetPassword", { 
       email,
       errorField: "password",
       errorMessage: "Password must be at least 6 characters." 
@@ -306,14 +362,14 @@ export const resetAdminPassword = async (req, res) => {
     req.session.adminOtpVerified = false;
     req.session.adminResetEmail = null;
 
-    res.render("admin/adminLogin", { 
+    res.status(STATUS.SUCCESS).render("admin/adminLogin", { 
       title: "Admin Login", 
       errorMessage: "Password reset successful. Please login." 
     });
 
   } catch (error) {
     console.error("Admin Reset Password Error:", error);
-    res.render("admin/resetPassword", { 
+    res.status(STATUS.SERVER_ERROR).render("admin/resetPassword", { 
       email,
       errorField: "password",
       errorMessage: "Something went wrong. Try again." 

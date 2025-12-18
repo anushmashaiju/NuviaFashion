@@ -124,6 +124,12 @@
     .add-variant-btn:hover {
       background-color: #e96c8b;
     }
+
+    .error-text {
+      color: red;
+      font-size: 13px;
+      margin-top: 4px;
+    }
   </style>
 
   <div class="admin-layout">
@@ -133,319 +139,603 @@
         <div class="card">
           <h3>Add Product</h3>
 
-          <form id="productForm" method="POST" action="/admin/products/add" enctype="multipart/form-data">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label>Product Name</label>
-                <input type="text" name="name" class="form-control" required>
-              </div>
+          <% const _formData=(typeof formData !=='undefined' ? formData : {}); %>
+            <% const _errors=(typeof errors !=='undefined' ? errors : {}); %>
 
-              <div class="col-md-6">
-                <label>Category</label>
-                <select name="category" class="form-select" required>
-                  <option value="" disabled selected>Select Category</option>
-                  <% categories.forEach(category=> { %>
-                    <option value="<%= category._id %>">
-                      <%= category.categoryName %>
-                    </option>
-                    <% }) %>
-                </select>
-              </div>
+              <form id="productForm" method="POST" action="/admin/products/add" enctype="multipart/form-data">
+                <div class="row g-3">
+                  <div class="col-md-5">
+                    <label>Product Name</label>
+                    <input type="text" name="name" class="form-control" value="<%= _formData?.name || '' %>">
+                    <div class="field-error" data-field="name">
+                      <% if (_errors && _errors.name) { %>
+                        <p class="error-text">
+                          <%= _errors.name %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
 
-              <div class="col-md-6">
-                <label>Brand</label>
-                <input type="text" name="brand" class="form-control" required>
-              </div>
+                  <div class="col-md-5">
+                    <label>Category</label>
+                    <select name="category" class="form-select">
+                      <option value="" disabled <%=!_formData?.category ? 'selected' : '' %>>Select Category</option>
+                      <% categories.forEach(category=> { %>
+                      <option value="<%= category._id %>" 
+  data-offer="<%= category.categoryOffer?.percentage || 0 %>"
+  data-start="<%= category.categoryOffer?.startDate || '' %>"
+  data-end="<%= category.categoryOffer?.endDate || '' %>"
+  data-active="<%= category.categoryOffer?.isActive || false %>"
+  <%= String(_formData?.category) === String(category._id) ? "selected" : "" %>>
+  <%= category.categoryName %>
+</option>
 
-              <div class="col-md-4">
-                <label>Price</label>
-                <input type="number" name="price" class="form-control" id="price" required>
-              </div>
+                        <% }) %>
+                    </select>
+                    <div class="field-error" data-field="category">
+                      <% if (_errors && _errors.category) { %>
+                        <p class="error-text">
+                          <%= _errors.category %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <label>Category Offer (%)</label>
+                    <input type="number" id="categoryOffer" class="form-control" readonly
+  value="<%= categories.find(c => String(c._id) === String(_formData?.category)) && 
+          categories.find(c => String(c._id) === String(_formData?.category)).categoryOffer?.isActive && 
+          new Date() >= new Date(categories.find(c => String(c._id) === String(_formData?.category)).categoryOffer?.startDate) &&
+          new Date() <= new Date(categories.find(c => String(c._id) === String(_formData?.category)).categoryOffer?.endDate) 
+          ? categories.find(c => String(c._id) === String(_formData?.category)).categoryOffer?.percentage : 0 %>">
 
-              <div class="col-md-4">
-                <label>Discount (%)</label>
-                <input type="number" name="discount" class="form-control" id="discount" value="0">
-              </div>
+                  </div>
 
-              <div class="col-md-4">
-                <label>Final Price</label>
-                <input type="number" name="finalPrice" class="form-control" id="finalPrice" readonly>
-              </div>
 
-              <div class="col-md-3">
-                <label>Color</label>
-                <input type="text" name="color" class="form-control">
-              </div>
-              <div class="col-md-3">
-                <label>Size</label>
-                <input type="text" name="size" class="form-control">
-              </div>
-              <div class="col-md-3">
-                <label>SKU</label>
-                <input type="text" name="sku" class="form-control">
-              </div>
-              <div class="col-md-3">
-                <label>Stock</label>
-                <input type="number" name="stock" id="mainStock" class="form-control" value="0">
-              </div>
-              <div class="col-md-3">
-                <label>Total Stock</label>
-                <input type="number" name="totalStock" id="totalStock" class="form-control" value="0" readonly>
-              </div>
+                  <!-- BRAND -->
+                  <div class="col-md-6">
+                    <label>Brand</label>
+                    <input type="text" name="brand" class="form-control" value="<%= _formData?.brand || '' %>">
+                    <div class="field-error" data-field="brand">
+                      <% if (_errors && _errors.brand) { %>
+                        <p class="error-text">
+                          <%= _errors.brand %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
 
-              <div class="col-12">
-                <label>Description</label>
-                <textarea name="description" class="form-control" rows="3" required></textarea>
-              </div>
 
-              <div class="col-12">
-                <label>Product Images (Minimum 3)</label>
-                <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control mt-1">
-                <div id="preview" class="d-flex flex-wrap mt-2"></div>
-              </div>
+                  <div class="col-md-4">
+                    <label>Price</label>
+                    <input type="number" name="price" class="form-control" id="price"
+                      value="<%= _formData?.price || '' %>">
+                    <div class="field-error" data-field="price">
+                      <% if (_errors && _errors.price) { %>
+                        <p class="error-text">
+                          <%= _errors.price %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
 
-              <div class="col-12 mt-4">
-                <label>Variants (Color / Size / SKU / Stock)</label>
-                <table class="variant-table">
-                  <thead>
-                    <tr>
-                      <th>Color</th>
-                      <th>Size</th>
-                      <th>SKU</th>
-                      <th>Stock</th>
-                      <th>Image</th>
-                      <th>Preview</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="variantBody"></tbody>
-                </table>
-                <button type="button" class="add-variant-btn" onclick="addVariant()">+</button>
-              </div>
-            </div>
+                  <div class="col-md-4">
+                    <label>Offer Start Date</label>
+                    <input type="date" name="offerStartDate" id="offerStartDate" class="form-control"
+                      value="<%= _formData?.offerStartDate || '' %>">
+                    <div class="field-error" data-field="offerStartDate"></div>
+                  </div>
 
-            <div class="text-center mt-4">
-              <button type="submit" class="btn-submit">Add Product</button>
-            </div>
-          </form>
+                  <div class="col-md-4">
+                    <label>Offer End Date</label>
+                    <input type="date" name="offerEndDate" id="offerEndDate" class="form-control"
+                      value="<%= _formData?.offerEndDate || '' %>">
+                    <div class="field-error" data-field="offerEndDate"></div>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label>Product Offer (%)</label>
+                    <input type="number" name="offerPercentage" id="offerPercentage" class="form-control"
+                      value="<%= _formData?.offerPercentage || '' %>" min="0" max="90">
+                    <div class="field-error" data-field="offerPercentage">
+                      <% if (_errors && _errors.offerPercentage) { %>
+                        <p class="error-text">
+                          <%= _errors.offerPercentage %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+                  
+
+
+                  <div class="col-md-4">
+                    <label>Final Price</label>
+                    <input type="number" name="finalPrice" class="form-control" id="finalPrice" readonly
+                      value="<%= _formData?.finalPrice || '' %>">
+                    <div class="field-error" data-field="finalPrice">
+                      <% if (_errors && _errors.finalPrice) { %>
+                        <p class="error-text">
+                          <%= _errors.finalPrice %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-md-3">
+                    <label>Color</label>
+                    <input type="text" name="color" class="form-control" value="<%= _formData?.color || '' %>">
+                    <div class="field-error" data-field="color">
+                      <% if (_errors && _errors.color) { %>
+                        <p class="error-text">
+                          <%= _errors.color %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-md-3">
+                    <label>Size</label>
+                    <input type="text" name="size" class="form-control" value="<%= _formData?.size || '' %>">
+                    <div class="field-error" data-field="size">
+                      <% if (_errors && _errors.size) { %>
+                        <p class="error-text">
+                          <%= _errors.size %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-md-3">
+                    <label>SKU</label>
+                    <input type="text" name="sku" class="form-control" value="<%= _formData?.sku || '' %>">
+                    <div class="field-error" data-field="sku">
+                      <% if (_errors && _errors.sku) { %>
+                        <p class="error-text">
+                          <%= _errors.sku %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-md-3">
+                    <label>Stock</label>
+                    <input type="number" name="stock" id="mainStock" class="form-control"
+                      value="<%= _formData?.stock || 0 %>">
+                    <div class="field-error" data-field="stock">
+                      <% if (_errors && _errors.stock) { %>
+                        <p class="error-text">
+                          <%= _errors.stock %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-md-3">
+                    <label>Total Stock</label>
+                    <input type="number" name="totalStock" id="totalStock" class="form-control" readonly>
+                    <div class="field-error" data-field="totalStock">
+                      <% if (_errors && _errors.totalStock) { %>
+                        <p class="error-text">
+                          <%= _errors.totalStock %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-12">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control"
+                      rows="3"><%= _formData?.description || '' %></textarea>
+                    <div class="field-error" data-field="description">
+                      <% if (_errors && _errors.description) { %>
+                        <p class="error-text">
+                          <%= _errors.description %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+                  <div class="col-12">
+                    <label>Product Images (Minimum 3)</label>
+                    <input type="file" id="imageInput" name="images" multiple accept="image/*"
+                      class="form-control mt-1">
+                    <div id="preview" class="d-flex flex-wrap mt-2"></div>
+                    <div class="field-error" data-field="images">
+                      <% if (_errors && _errors.images) { %>
+                        <p class="error-text">
+                          <%= _errors.images %>
+                        </p>
+                        <% } %>
+                    </div>
+                  </div>
+
+
+
+                  <div class="col-12 mt-4">
+                    <label>Variants (Color / Size / SKU / Stock)</label>
+                    <table class="variant-table">
+                      <thead>
+                        <tr>
+                          <th>Color</th>
+                          <th>Size</th>
+                          <th>SKU</th>
+                          <th>Price</th>
+                          <th>Final Price</th>
+                          <th>Stock</th>
+                          <th>Image</th>
+                          <th>Preview</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                    <tbody id="variantBody">
+  <% if (_formData?.variants?.length) { %>
+    <% _formData.variants.forEach((v, i) => { %>
+      <tr>
+        <td><input type="text" class="form-control" name="variantName[]" value="<%= v.color %>"></td>
+        <td><input type="text" class="form-control" name="variantSize[]" value="<%= v.size %>"></td>
+        <td><input type="text" class="form-control" name="variantSKU[]" value="<%= v.sku %>"></td>
+        <td><input type="number" class="form-control variant-price" name="variantPrice[]" value="<%= v.price %>" step="0.01"></td>
+        <td><input type="number" class="form-control variantFinalPrice" name="variantFinalPrice[]" readonly value="<%= v.finalPrice %>"></td>
+        <td><input type="number" class="form-control" name="variantStock[]" value="<%= v.stock %>"></td>
+        <td><input type="file" class="form-control variant-input"></td>
+        <td class="variant-preview">
+          <% if (v.image) { %>
+            <img src="<%= v.image %>" style="width:70px;height:70px;border-radius:6px;">
+          <% } %>
+        </td>
+        <td><i class="bi bi-trash text-danger" style="cursor:pointer"></i></td>
+      </tr>
+    <% }) %>
+  <% } %>
+</tbody>
+
+                    </table>
+                    <button type="button" class="add-variant-btn" onclick="addVariant()">+</button>
+                  </div>
+                </div>
+
+                <div class="text-center mt-4">
+                  <button type="submit" class="btn-submit">Add Product</button>
+                </div>
+              </form>
         </div>
       </main>
   </div>
 
   <%- include("../partials/adminFooter") %>
-    <% if (errorMessage) { %>
-      <script>
-        Swal.fire({
-          icon: "error",
-          title: "<%= errorMessage %>",
-          confirmButtonColor: "#f08da4",
-        });
-      </script>
-      <% } %>
 
-        <script>
-          document.addEventListener("DOMContentLoaded", () => {
+   <script>
+document.addEventListener("DOMContentLoaded", () => {
 
-            const discountInput = document.getElementById("discount");
-            const priceInput = document.getElementById("price");
-            const finalPriceInput = document.getElementById("finalPrice");
+  const form = document.getElementById("productForm");
+  const priceInput = document.getElementById("price");
+  const finalPriceInput = document.getElementById("finalPrice");
+  const imageInput = document.getElementById("imageInput");
+  const mainStockInput = document.getElementById("mainStock");
+  const totalStockInput = document.getElementById("totalStock");
+  const preview = document.getElementById("preview");
+  const categorySelect = document.querySelector("select[name='category']");
+  const categoryOfferInput = document.getElementById("categoryOffer");
 
-            function updateFinalPrice() {
-              const price = parseFloat(priceInput.value || 0);
-              const discount = parseFloat(discountInput.value || 0);
-              finalPriceInput.value = (price - (price * discount / 100)).toFixed(2);
-            }
+  let uploadedFiles = [];
 
-            discountInput.addEventListener("input", updateFinalPrice);
-            priceInput.addEventListener("input", updateFinalPrice);
+  /* ---------------- FIELD ERROR HANDLING ---------------- */
+  function clearFieldErrors() {
+    document.querySelectorAll(".field-error").forEach(el => el.innerHTML = '');
+  }
+  function showFieldError(field, msg) {
+    const container = document.querySelector(`.field-error[data-field="${field}"]`);
+    if (container) container.innerHTML = `<p class="error-text">${msg}</p>`;
+  }
 
-            let uploadedFiles = [];
-            const input = document.getElementById('imageInput');
-            const preview = document.getElementById('preview');
+  /* ---------------- CATEGORY OFFER AUTO FILL ---------------- */
+  function updateCategoryOffer() {
+    const selected = categorySelect.selectedOptions[0];
+    const offer = selected.dataset.offer || 0;
+    categoryOfferInput.value = offer;
+    updateFinalPrice();
+  }
+  categorySelect.addEventListener("change", updateCategoryOffer);
+  if (categorySelect.selectedOptions[0]) updateCategoryOffer();
 
-            input.addEventListener('change', function () {
-              uploadedFiles.push(...Array.from(this.files));
-              updateInputFiles();
-              renderPreview();
-            });
+  /* ---------------- FINAL PRICE CALCULATION ---------------- */
+function updateFinalPrice() {
+  const price = parseFloat(priceInput.value || 0);
+  const productOffer = parseFloat(document.getElementById("offerPercentage").value || 0);
+  const productStart = new Date(document.getElementById("offerStartDate").value);
+  const productEnd = new Date(document.getElementById("offerEndDate").value);
+  const now = new Date();
 
-            function updateInputFiles() {
-              const dt = new DataTransfer();
-              uploadedFiles.forEach(file => dt.items.add(file));
-              input.files = dt.files;
-            }
+  const productActive = productOffer > 0 && (!isNaN(productStart) && !isNaN(productEnd)) && now >= productStart && now <= productEnd;
 
-            function renderPreview() {
-  preview.innerHTML = '';
+  let categoryOffer = parseFloat(categoryOfferInput.value || 0);
+  const categoryOption = categorySelect.selectedOptions[0];
+  const catStart = new Date(categoryOption.dataset.start || '');
+  const catEnd = new Date(categoryOption.dataset.end || '');
+  const catActive = categoryOption.dataset.active === "true" && (!isNaN(catStart) && !isNaN(catEnd)) && now >= catStart && now <= catEnd;
 
-  Array.from(input.files).forEach((file, index) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'image-wrapper';
+  const applicableOffer = Math.max(
+    productActive ? productOffer : 0,
+    catActive ? categoryOffer : 0
+  );
 
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.className = 'preview-thumb';
+  if (price > 0) {
+    finalPriceInput.value = (price - (price * applicableOffer / 100)).toFixed(2);
+  } else {
+    finalPriceInput.value = "";
+  }
 
-      const removeBtn = document.createElement('span');
-      removeBtn.className = 'remove-btn';
-      removeBtn.textContent = '×';
-
-      // ⭐ IMPORTANT FIX: connect delete button
-      removeBtn.onclick = () => {
-        uploadedFiles.splice(index, 1);
-        updateInputFiles();
-        renderPreview();
-      };
-
-      wrapper.appendChild(img);
-      wrapper.appendChild(removeBtn);
-      preview.appendChild(wrapper);
-    };
-    reader.readAsDataURL(file);
+  // update all variant final prices
+  document.querySelectorAll(".variant-price").forEach((vp, i) => {
+    const vf = document.querySelectorAll(".variantFinalPrice")[i];
+    const vPrice = parseFloat(vp.value || 0);
+    vf.value = (vPrice - (vPrice * applicableOffer / 100)).toFixed(2);
   });
 }
 
-            const mainStockInput = document.getElementById("mainStock");
-            const totalStockInput = document.getElementById("totalStock");
 
-            function updateTotalStock() {
-              let total = parseInt(mainStockInput.value || 0);
-              document.querySelectorAll('input[name="variantStock[]"]').forEach(input => {
-                total += parseInt(input.value || 0);
-              });
-              totalStockInput.value = total;
-            }
+  document.getElementById("offerPercentage").addEventListener("input", updateFinalPrice);
+  priceInput.addEventListener("input", updateFinalPrice);
 
-            if (mainStockInput) mainStockInput.addEventListener("input", updateTotalStock);
+  /* ---------------- MULTIPLE IMAGE PREVIEW ---------------- */
+  imageInput.addEventListener("change", function () {
+    uploadedFiles.push(...Array.from(this.files));
+    updateInputFiles();
+    renderPreview();
+  });
 
-            function attachVariantStockListener(input) {
-              input.addEventListener("input", updateTotalStock);
-            }
+  function updateInputFiles() {
+    const dt = new DataTransfer();
+    uploadedFiles.forEach(file => dt.items.add(file));
+    imageInput.files = dt.files;
+  }
 
-            function addVariant() {
-              const tbody = document.getElementById('variantBody');
-              const row = document.createElement('tr');
+  function renderPreview() {
+    preview.innerHTML = '';
+    Array.from(imageInput.files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper';
 
-              row.innerHTML = `
-      <td><input type="text" class="form-control" name="variantColor[]" placeholder="Color"></td>
+        wrapper.innerHTML = `
+          <img src="${e.target.result}" class="preview-thumb">
+          <span class="remove-btn">&times;</span>
+        `;
+
+        wrapper.querySelector(".remove-btn").onclick = () => {
+          uploadedFiles.splice(index, 1);
+          updateInputFiles();
+          renderPreview();
+        };
+        preview.appendChild(wrapper);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ---------------- TOTAL STOCK CALCULATION ---------------- */
+  function updateTotalStock() {
+    let total = parseInt(mainStockInput.value || 0);
+
+    document.querySelectorAll('input[name="variantStock[]"]').forEach(input => {
+      total += parseInt(input.value || 0);
+    });
+
+    totalStockInput.value = total;
+  }
+
+  mainStockInput.addEventListener("input", updateTotalStock);
+
+  function attachVariantStockListener(input) {
+    if (input) input.addEventListener("input", updateTotalStock);
+  }
+
+  /* ---------------- ADD VARIANT ROW ---------------- */
+  window.addVariant = function () {
+    const tbody = document.getElementById("variantBody");
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td><input type="text" class="form-control" name="variantName[]" placeholder="Color"></td>
       <td><input type="text" class="form-control" name="variantSize[]" placeholder="Size"></td>
       <td><input type="text" class="form-control" name="variantSKU[]" placeholder="SKU"></td>
+
+      <td><input type="number" class="form-control variant-price" name="variantPrice[]" step="0.01"></td>
+      <td><input type="number" class="form-control variantFinalPrice" name="variantFinalPrice[]" readonly></td>
+
       <td><input type="number" class="form-control" name="variantStock[]" placeholder="Stock"></td>
-      <td><input type="file" class="form-control variant-input" name="variantImages" accept="image/*"></td>
+      
+      <td>
+  <input type="file" class="form-control variant-input" name="variantImages" accept="image/*">
+ <input type="hidden" name="variantExistingImage[]" value="">
+
+</td>
+
       <td class="variant-preview"></td>
+
       <td><i class="bi bi-trash text-danger" style="cursor:pointer"></i></td>
     `;
 
-              tbody.appendChild(row);
+    tbody.appendChild(row);
 
-              attachVariantStockListener(row.querySelector('input[name="variantStock[]"]'));
+    /* VARIANT PRICE CALCULATION */
+  const variantPriceInput = row.querySelector(".variant-price");
+const variantFinalInput = row.querySelector(".variantFinalPrice");
 
-              const fileInput = row.querySelector('.variant-input');
-              const previewCell = row.querySelector('.variant-preview');
-              fileInput.addEventListener('change', function () {
-                previewCell.innerHTML = '';
-                const file = this.files[0];
-                if (!file) return;
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.style.width = '70px';
-                img.style.height = '70px';
-                img.style.borderRadius = '6px';
-                previewCell.appendChild(img);
-              });
+function calculateVariantFinal() {
+  const price = parseFloat(variantPriceInput.value || 0);
 
-              row.querySelector('i.bi-trash').addEventListener('click', function () {
-                row.remove();
-                updateTotalStock();
-              });
+  const productOffer = parseFloat(document.getElementById("offerPercentage").value || 0);
+  const productStart = new Date(document.getElementById("offerStartDate").value);
+  const productEnd = new Date(document.getElementById("offerEndDate").value);
+  const now = new Date();
 
-              updateTotalStock();
-            }
+  const productActive = productOffer > 0 &&
+                        (!isNaN(productStart) && !isNaN(productEnd)) &&
+                        now >= productStart && now <= productEnd;
 
-            window.addVariant = addVariant; 
+  let categoryOffer = parseFloat(categoryOfferInput.value || 0);
+  const categoryOption = categorySelect.selectedOptions[0];
+  const catStart = new Date(categoryOption.dataset.start || '');
+  const catEnd = new Date(categoryOption.dataset.end || '');
+  const catActive = categoryOption.dataset.active === "true" &&
+                    (!isNaN(catStart) && !isNaN(catEnd)) &&
+                    now >= catStart && now <= catEnd;
 
-            const form = document.getElementById("productForm");
+  const applicableOffer = Math.max(
+    productActive ? productOffer : 0,
+    catActive ? categoryOffer : 0
+  );
 
-            form.addEventListener("submit", async (e) => {
-              e.preventDefault();
+  variantFinalInput.value = price > 0 ? (price - (price * applicableOffer / 100)).toFixed(2) : '';
+}
 
-              const price = parseFloat(priceInput.value || 0);
-              const images = input.files;
+// Attach event listeners
+variantPriceInput.addEventListener("input", calculateVariantFinal);
+document.getElementById("offerPercentage").addEventListener("input", calculateVariantFinal);
+document.getElementById("offerStartDate").addEventListener("input", calculateVariantFinal);
+document.getElementById("offerEndDate").addEventListener("input", calculateVariantFinal);
+categorySelect.addEventListener("change", calculateVariantFinal);
 
-              if (isNaN(price) || price <= 0) {
-                return Swal.fire({
-                  icon: "error",
-                  title: "Invalid Price",
-                  text: "Price must be greater than zero.",
-                  confirmButtonColor: "#f08da4"
-                });
-              }
 
-              if (images.length < 3) {
-                return Swal.fire({
-                  icon: "warning",
-                  title: "Minimum 3 Images Required",
-                  text: "Please upload at least 3 product images.",
-                  confirmButtonColor: "#f08da4"
-                });
-              }
+    /* VARIANT STOCK CALC */
+    attachVariantStockListener(row.querySelector('input[name="variantStock[]"]'));
 
-              const confirmResult = await Swal.fire({
-                title: "Confirm Add Product",
-                text: "Are you sure you want to add this product?",
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonColor: "#f08da4",
-                cancelButtonColor: "#aaa",
-                confirmButtonText: "Yes, Add"
-              });
+    /* VARIANT IMAGE PREVIEW */
+    const fileInput = row.querySelector(".variant-input");
+    const previewCell = row.querySelector(".variant-preview");
 
-              if (!confirmResult.isConfirmed) return;
+    fileInput.addEventListener("change", function () {
+      previewCell.innerHTML = "";
+      const file = this.files[0];
+      if (!file) return;
 
-              const formData = new FormData(form);
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.style.width = "70px";
+      img.style.height = "70px";
+      img.style.borderRadius = "6px";
 
-              document.querySelectorAll('input[name="variantImages"]').forEach(fileInput => {
-                if (fileInput.files[0]) formData.append('variantImages', fileInput.files[0]);
-              });
+      previewCell.appendChild(img);
+    });
 
-              try {
-                const response = await fetch(form.action, {
-                  method: "POST",
-                  body: formData
-                });
+    /* REMOVE VARIANT */
+    row.querySelector("i.bi-trash").addEventListener("click", () => {
+      row.remove();
+      updateTotalStock();
+    });
 
-                const data = await response.json();
+    updateTotalStock();
+  };
 
-                if (!response.ok) {
-                  return Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: data.errorMessage || "Please check your input values.",
-                    confirmButtonColor: "#f08da4"
-                  });
-                }
+  updateFinalPrice();
 
-                Swal.fire({
-                  icon: "success",
-                  title: "Product Added!",
-                  text: "Your product has been added successfully.",
-                  showConfirmButton: false,
-                  timer: 1500
-                }).then(() => {
-                  window.location.href = "/admin/products";
-                });
+  /* ---------------- FORM SUBMIT ---------------- */
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearFieldErrors();
 
-              } catch (error) {
-                console.error(error);
-                Swal.fire({
-                  icon: "error",
-                  title: "Server Error",
-                  text: "Something went wrong while adding the product.",
-                  confirmButtonColor: "#f08da4"
-                });
-              }
-            });
-          });
-        </script>
+  let hasError = false;
+
+  const name = form.name.value.trim();
+  const category = form.category.value;
+  const brand = form.brand.value.trim();
+  const price = parseFloat(form.price.value || 0);
+  const offerPercentage = form.offerPercentage.value.trim();
+  const finalPrice = form.finalPrice.value.trim();
+  const color = form.color.value.trim();
+  const size = form.size.value.trim();
+  const sku = form.sku.value.trim();
+  const stock = form.stock.value.trim();
+  const description = form.description.value.trim();
+  const images = imageInput.files;
+
+  /* VALIDATION */
+  if (!name) { showFieldError("name", "Product name is required."); hasError = true; }
+  if (!category) { showFieldError("category", "Please select a category."); hasError = true; }
+  if (!brand) { showFieldError("brand", "Brand is required."); hasError = true; }
+  if (isNaN(price) || price <= 0) { showFieldError("price", "Price must be greater than 0."); hasError = true; }
+  if (offerPercentage === "") { showFieldError("offerPercentage", "Offer percentage is required."); hasError = true; }
+  if (!finalPrice) { showFieldError("finalPrice", "Final price is required."); hasError = true; }
+  if (!color) { showFieldError("color", "Color is required."); hasError = true; }
+  if (!size) { showFieldError("size", "Size is required."); hasError = true; }
+  if (!sku) { showFieldError("sku", "SKU is required."); hasError = true; }
+  if (stock === "" || parseInt(stock) < 0) { showFieldError("stock", "Stock must be at least 0."); hasError = true; }
+  if (!description) { showFieldError("description", "Description is required."); hasError = true; }
+  if (!images || images.length < 3) { showFieldError("images", "Upload at least 3 product images."); hasError = true; }
+
+  if (hasError) return;
+
+  /* CONFIRMATION POPUP */
+  const confirmResult = await Swal.fire({
+    title: "Confirm Add Product",
+    text: "Are you sure you want to add this product?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#f08da4",
+    cancelButtonColor: "#aaa",
+    confirmButtonText: "Add"
+  });
+
+  if (!confirmResult.isConfirmed) return;
+
+  /* -------- FINAL SUBMISSION ---------- */
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: formData
+    });
+
+    const ctype = response.headers.get("content-type") || "";
+
+    if (!ctype.includes("application/json")) {
+      Swal.fire({
+        icon: "success",
+        title: "Product Added!",
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => window.location.href = "/admin/products");
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (data.errors) {
+        Object.keys(data.errors).forEach(f => showFieldError(f, data.errors[f]));
+        return;
+      }
+      throw new Error(data.message || "Server error");
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: data.message || "Product Added!",
+      timer: 1400,
+      showConfirmButton: false
+    }).then(() => window.location.href = data.redirect || "/admin/products");
+
+  } catch (err) {
+    console.error("Submission error:", err);
+    Swal.fire({
+      icon: "error",
+      title: "Server Error",
+      text: err.message || "Something went wrong.",
+      confirmButtonColor: "#f08da4"
+    });
+  }
+});
+});
+</script>

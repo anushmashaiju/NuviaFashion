@@ -199,6 +199,14 @@
           <p class="error-text"><%= errorMessage %></p>
         <% } %>
       </div>
+<div class="form-group">
+  <input type="text" name="referralCode" placeholder="Enter Referral Code (Optional)" 
+         value="<%= typeof ref !== 'undefined' ? ref : '' %>"
+         class="<%= errorField === 'referralCode' ? 'input-error' : '' %>">
+  <% if (errorField === 'referralCode') { %>
+    <p class="error-text"><%= errorMessage %></p>
+  <% } %>
+</div>
 
       <button class="btn" type="submit">Sign Up</button>
     </form>
@@ -211,6 +219,7 @@
         Signup with Google
       </button>
     </div>
+
 
     <div class="login-link">
       Already have an account? <a href="/login">Login</a>
@@ -233,6 +242,15 @@
         icon.classList.add("fa-eye");
       }
     }
+
+
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref");
+  if(ref) {
+     document.querySelector("input[name='referralCode']").value = ref;
+  }
+
+
   </script>
 </body>
 

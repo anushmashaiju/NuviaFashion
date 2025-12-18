@@ -134,7 +134,7 @@
       font-weight: 500;
     }
 
-    .out-stock {
+    .out-stock,.disabled-message {
       color: red;
       font-weight: 500;
     }
@@ -161,7 +161,7 @@
       align-items: center;
       text-align: center;
     }
-    
+
     .btn-buy {
       background-color: #a04c74;
       color: white;
@@ -369,8 +369,8 @@
                   <div class="gallery-wrapper">
                     <div class="side-thumbnails">
                       <% product.images.forEach((img, i)=> { %>
-                        <img src="<%= img %>" class="<%= i===0?'active':'' %>"
-                          onclick="changeImage('<%= img %>', this)">
+                        <img src="<%= img %>" data-main="<%= img %>" class="<%= i===0?'active':'' %>">
+
                         <% }) %>
                     </div>
                     <div class="main-image-container">
@@ -380,20 +380,34 @@
 
                   <% if(product.variants && product.variants.length> 0){ %>
                     <h6 style="color:#a04c74;margin-top:15px;">Variants</h6>
-                    <div class="variant-thumbnail-row">
-                      <% product.variants.forEach(variant=> { %>
-                        <div class="variant-thumb-wrapper">
-                          <img src="<%= variant.image %>" alt="Variant - <%= variant.color %>" class="variant-thumb"
-                            data-color="<%= variant.color %>" data-size="<%= variant.size %>"
-                            data-sku="<%= variant.sku %>" data-stock="<%= variant.stock %>">
-                          <span class="variant-stock <%= variant.stock>0?'in-stock':'out-stock' %>">
-                            <%= variant.stock>0 ? 'In Stock':'Out of Stock' %>
-                          </span>
-                        </div>
-                        <% }) %>
+<div class="variant-thumbnail-row">
+  <% product.variants.forEach(variant => { 
+       const variantImg = Array.isArray(variant.images) ? variant.images[0] : variant.image;
+  %>
+ <div class="variant-thumb-wrapper">
 
-                    </div>
-                    <% } %>
+  <img 
+    src="<%= variantImg %>"
+    data-main="<%= variantImg %>"
+    class="variant-thumb"
+    data-color="<%= variant.color %>"
+    data-size="<%= variant.size %>"
+    data-sku="<%= variant.sku %>"
+    data-price="<%= variant.price %>"
+    data-stock="<%= variant.stock %>"
+    data-variant-id="<%= variant._id %>"
+    style="cursor:pointer"
+  >
+
+  <span class="variant-stock <%= variant.stock > 0 ? 'in-stock' : 'out-stock' %>">
+    <%= variant.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+  </span>
+
+</div>
+
+  <% }) %>
+</div>
+                  <% } %>
                       <div class="ratings-box">
                         <h5>Ratings & Reviews</h5>
                         <div class="stars">
@@ -411,13 +425,36 @@
                   <h2>
                     <%= product.name %>
                   </h2>
-                  <div class="price">
-                    ₹<%= (product.price * (1 - (product.discount || 0)/100)).toFixed(2) %>
-                      <% if(product.discount){ %>
-                        <span class="old">₹<%= product.price.toFixed(2) %></span>
-                        <span class="discount">(<%= product.discount %>% OFF)</span>
-                        <% } %>
-                  </div>
+                 <div class="price">
+
+  <% if (product.activeOffer && product.activeOffer.type) { %>
+
+    <!-- Final Price After Offer -->
+    <span class="new-price" style="color:#a04c74; font-weight:600;">
+      ₹<%= product.finalPrice.toFixed(2) %>
+    </span>
+
+    <!-- Original Price -->
+    <span class="old" style="color:#777; text-decoration: line-through;">
+      ₹<%= product.price.toFixed(2) %>
+    </span>
+
+    <!-- Offer Percentage -->
+    <span class="discount" style="color:green; font-weight:600;">
+      (<%= product.activeOffer.percentage %>% OFF)
+    </span>
+
+  <% } else { %>
+
+    <!-- No Offer → show normal price -->
+    <span class="new-price">
+      ₹<%= product.price.toFixed(2) %>
+    </span>
+
+  <% } %>
+
+</div>
+
                   <p class="<%= product.stock>0 ? 'in-stock':'out-stock' %>">
                     <%= product.stock>0 ? 'In Stock':'Out of Stock' %>
                   </p>
@@ -429,25 +466,28 @@
                       <p class="disabled-message">This product is currently unavailable.</p>
                       <% } %>
 
+
+
                         <div class="btn-group">
 
-                          <button class="btn-wishlist <%= disabledBtn %>" data-product-id="<%= product._id %>"
-                            data-stock="<%= product.stock %>" <%=disabledBtn ? 'disabled' : '' %>>
+                         <button 
+  class="btn-wishlist <%= disabledBtn %>" 
+  data-product-id="<%= product._id %>" 
+  data-stock="<%= product.stock %>" 
+  data-in-wishlist="<%= product.inWishlist ? 'true' : 'false' %>"
+  <%=disabledBtn ? 'disabled' : '' %>>
+  <%= product.inWishlist ? 'Already in Wishlist' : 'Add to Wishlist' %>
+</button>
 
-                            Add to Wishlist
-                          </button>
                           <div id="wishlist-toast" class="wishlist-toast">Added to Wishlist!</div>
 
-                          <form action="<%= disabledBtn ? '#' : '/add-to-cart/' + product._id %>" method="POST"
-                            style="display:inline;">
-                            <button type="submit" class="btn-cart <%= disabledBtn %>" <%=disabledBtn ? 'disabled' : ''
-                              %>>
-                              Add to Cart
-                            </button>
+                          <form action="/add-to-cart/<%= product._id %>" method="POST" id="addToCartForm">
+                            <input type="hidden" name="variantId" id="variantIdInput" value="">
+                            <button type="submit" class="btn-cart">Add to Cart</button>
                           </form>
 
-                          <a href="<%= disabledBtn ? '#' : '/buy-now/' + product._id %>"
-                            class="btn-buy <%= disabledBtn %> <%= disabledBtn ? 'disabled-link' : '' %>">
+                          <a href="#" class="btn-buy <%= disabledBtn %> <%= disabledBtn ? 'disabled-link' : '' %>"
+                            id="buyNowBtn" data-product-id="<%= product._id %>" data-variant-id="">
                             Buy Now
                           </a>
 
@@ -470,6 +510,10 @@
                             </li>
                             <li id="variantSKU"><strong>SKU:</strong>
                               <%= product.sku || 'N/A' %>
+                            </li>
+                            <li id="variantPrice">
+                              <strong>Price: </strong>
+                              ₹<%= product.price || '0' %>
                             </li>
                             <li><strong>Description:</strong>
                               <%= product.description || 'N/A' %>
@@ -510,160 +554,249 @@
                 </div>
               </div>
 
-              <div class="container recommended">
-                <h4>Recommended Products</h4>
-                <div class="recommended-row">
-                  <% recommendedProducts.forEach(p=>{ %>
-                    <div class="recommended-card">
-                      <a href="/product/<%= p._id %>">
-                        <img src="<%= p.images[0] %>" alt="<%= p.name %>">
-                      </a>
-                      <h6>
-                        <%= p.name %>
-                      </h6>
-                      <div class="stars">
-                        <% for(let i=1;i<=5;i++){ %>
-                          <i class="fa <%= i<=Math.floor(p.rating||0)?'fa-star':'fa-star-o' %>"></i>
-                          <% } %>
-                      </div>
-                      <div class="price">₹<%= (p.price * (1 - (p.discount || 0)/100)).toFixed(2) %>
-                      </div>
-                    </div>
-                    <% }) %>
-                </div>
-              </div>
+           <div class="container recommended">
+  <h4>Recommended Products</h4>
+  <div class="recommended-row">
+
+    <% recommendedProducts.forEach(p => { %>
+
+      <div class="recommended-card">
+        <a href="/product/<%= p._id %>">
+          <img src="<%= p.images && p.images.length ? p.images[0] : '/images/placeholder.png' %>" alt="<%= p.name %>">
+        </a>
+
+        <h6><%= p.name %></h6>
+
+        <div class="stars">
+          <% for(let i = 1; i <= 5; i++){ %>
+            <i class="fa <%= i <= Math.floor(p.rating || 0) ? 'fa-star' : 'fa-star-o' %>"></i>
+          <% } %>
+        </div>
+
+        <div class="price">
+          
+          <% if (p.activeOffer && p.activeOffer.type) { %>
+
+            <!-- Final Price -->
+            <span class="new-price" style="color:#a04c74; font-weight:600;">
+              ₹<%= p.finalPrice.toFixed(2) %>
+            </span>
+
+            <!-- Original Price -->
+            <span class="old-price" style="color:#777; text-decoration:line-through;">
+              ₹<%= p.price.toFixed(2) %>
+            </span>
+
+            <!-- Offer Percentage -->
+            <span class="offer" style="color:green; font-weight:600;">
+              (<%= p.activeOffer.percentage %>% OFF)
+            </span>
+
+          <% } else { %>
+
+            <!-- No offer -->
+            <span class="new-price">₹<%= p.price.toFixed(2) %></span>
+
+          <% } %>
+
+        </div>
+      </div>
+
+    <% }) %>
+
+  </div>
+</div>
+
 
               <%- include("../../views/partials/userFooter.ejs") %>
 
                 <script>
-                  document.addEventListener("DOMContentLoaded", () => {
-                    const mainImg = document.getElementById("mainImage");
-                    const sideThumbnails = document.querySelectorAll(".side-thumbnails img");
-                    const variants = document.querySelectorAll(".variant-thumbnail-row img");
-                    const productId = "<%= product._id %>";
-                    const toast = document.getElementById("wishlist-toast");
-                    const wishlistBtns = document.querySelectorAll(".btn-wishlist");
+document.addEventListener("DOMContentLoaded", () => {
+  const mainImg = document.getElementById("mainImage");
+  const sideThumbnails = document.querySelectorAll(".side-thumbnails img");
+  const variantContainer = document.querySelector(".variant-thumbnail-row");
+  const productId = "<%= product._id %>";
+  const toast = document.getElementById("wishlist-toast");
+  const wishlistBtns = document.querySelectorAll(".btn-wishlist");
+  const buyNowBtn = document.getElementById("buyNowBtn");
+  const variantInput = document.getElementById("variantIdInput");
 
-                    let activeSideThumb = sideThumbnails[0];
-                    activeSideThumb.classList.add("active");
+  if (!mainImg) return;
 
-                    sideThumbnails.forEach(thumb => {
-                      thumb.addEventListener("click", () => {
-                        if (activeSideThumb) activeSideThumb.classList.remove("active");
-                        mainImg.src = thumb.src;
-                        thumb.classList.add("active");
-                        activeSideThumb = thumb;
-                      });
-                    });
+  if (sideThumbnails && sideThumbnails.length > 0) {
+    let activeSideThumb = sideThumbnails[0];
+    activeSideThumb.classList.add("active");
 
-                    mainImg.addEventListener("click", () => {
-                      mainImg.classList.toggle("zoomed");
-                    });
+    sideThumbnails.forEach(thumb => {
+      thumb.addEventListener("click", () => {
+        if (activeSideThumb) activeSideThumb.classList.remove("active");
+        mainImg.src = thumb.dataset.main || thumb.src;
+        thumb.classList.add("active");
+        activeSideThumb = thumb;
+      });
+    });
+  }
 
-                    const originalMainImage = mainImg.src;
-                    const originalSpecs = {
-                      color: document.getElementById("variantColor").textContent.replace("Color:", "").trim(),
-                      size: document.getElementById("variantSize").textContent.replace("Size:", "").trim(),
-                      sku: document.getElementById("variantSKU").textContent.replace("SKU:", "").trim()
-                    };
-                    let activeVariant = null;
+  mainImg.addEventListener("click", () => {
+    mainImg.classList.toggle("zoomed");
+  });
 
-                    const saved = JSON.parse(localStorage.getItem(`variantSwap_${productId}`));
-                    if (saved) {
-                      mainImg.src = saved.mainImage;
-                      updateSpecs(saved.color, saved.size, saved.sku);
+  const originalMainImage = mainImg.src;
 
-                      variants.forEach(v => {
-                        if (v.src === saved.mainImage) {
-                          v.classList.add("active");
-                          activeVariant = v;
-                        }
-                      });
-                    }
+  function readSpecText(id, label) {
+    const el = document.getElementById(id);
+    if (!el) return "N/A";
+    return el.textContent.replace(new RegExp(label, "i"), "").replace("₹", "").trim();
+  }
 
-                    variants.forEach(thumb => {
-                      thumb.addEventListener("click", () => {
-                        const color = thumb.dataset.color || "N/A";
-                        const size = thumb.dataset.size || "N/A";
-                        const sku = thumb.dataset.sku || "N/A";
+  const originalSpecs = {
+    color: readSpecText("variantColor", "Color:"),
+    size: readSpecText("variantSize", "Size:"),
+    sku: readSpecText("variantSKU", "SKU:"),
+    price: readSpecText("variantPrice", "Price:")
+  };
 
-                        if (activeVariant === thumb) {
-                          mainImg.src = originalMainImage;
-                          updateSpecs(originalSpecs.color, originalSpecs.size, originalSpecs.sku);
-                          thumb.classList.remove("active");
-                          activeVariant = null;
-                          localStorage.removeItem(`variantSwap_${productId}`);
-                          return;
-                        }
+  let activeVariant = null;
 
-                        if (activeVariant) activeVariant.classList.remove("active");
+  try {
+    const saved = JSON.parse(localStorage.getItem(`variantSwap_${productId}`));
+    if (saved && saved.variantId && variantContainer) {
+      const savedThumb = variantContainer.querySelector(`[data-variant-id="${saved.variantId}"]`);
+      if (savedThumb) {
+        mainImg.src = saved.mainImage || originalMainImage;
+        updateSpecs(saved.color || originalSpecs.color, saved.size || originalSpecs.size, saved.sku || originalSpecs.sku, saved.price || originalSpecs.price);
+        savedThumb.classList.add("active");
+        activeVariant = savedThumb;
+        variantInput.value = saved.variantId;
+        if (buyNowBtn) buyNowBtn.dataset.variantId = saved.variantId;
+      }
+    }
+  } catch (e) {
 
-                        mainImg.src = thumb.src;
-                        updateSpecs(color, size, sku);
-                        thumb.classList.add("active");
-                        activeVariant = thumb;
+    console.warn("Invalid saved variant data", e);
+  }
 
-                        localStorage.setItem(`variantSwap_${productId}`, JSON.stringify({
-                          mainImage: thumb.src,
-                          color, size, sku
-                        }));
-                      });
-                    });
+  if (variantContainer) {
+    variantContainer.addEventListener("click", (ev) => {
+      const clicked = ev.target.closest("img");
+      if (!clicked || !variantContainer.contains(clicked)) return;
 
-                    function updateSpecs(color, size, sku) {
-                      document.getElementById("variantColor").innerHTML = `<strong>Color:</strong> ${color || "N/A"}`;
-                      document.getElementById("variantSize").innerHTML = `<strong>Size:</strong> ${size || "N/A"}`;
-                      document.getElementById("variantSKU").innerHTML = `<strong>SKU:</strong> ${sku || "N/A"}`;
-                    }
+      const variantId = clicked.dataset.variantId || "";
+      const mainImageURL = clicked.dataset.main || clicked.src;
+      const color = clicked.dataset.color || "N/A";
+      const size = clicked.dataset.size || "N/A";
+      const sku = clicked.dataset.sku || "N/A";
+      const price = clicked.dataset.price || "0";
 
-                    wishlistBtns.forEach(btn => {
-                      btn.addEventListener("click", async (e) => {
-                        e.preventDefault();
+      if (activeVariant === clicked) {
+        mainImg.src = originalMainImage;
+        updateSpecs(originalSpecs.color, originalSpecs.size, originalSpecs.sku, originalSpecs.price);
 
-                        const productId = btn.dataset.productId;
-                        const stock = parseInt(btn.dataset.stock);
+        clicked.classList.remove("active");
+        activeVariant = null;
+        variantInput.value = "";
+        if (buyNowBtn) buyNowBtn.dataset.variantId = "";
+        localStorage.removeItem(`variantSwap_${productId}`);
+        return;
+      }
 
-                        if (stock <= 0) {
-                          showToast("Product is out of stock!", true);
-                          return;
-                        }
+      if (activeVariant) activeVariant.classList.remove("active");
 
-                        try {
-                          const res = await fetch(`/add-to-wishlist/${productId}`, {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "Accept": "application/json"
-                            }
-                          });
+      mainImg.src = mainImageURL;
 
-                          const data = await res.json();
+      clicked.classList.add("active");
+      activeVariant = clicked;
 
-                          if (data.success) {
-                            showToast(data.message || "Added to Wishlist!");
-                          } else {
-                            showToast(data.message || "Could not add to wishlist", true);
-                          }
+      updateSpecs(color, size, sku, price);
 
-                        } catch (err) {
-                          console.error(err);
-                          showToast("Something went wrong", true);
-                        }
-                      });
-                    });
+      variantInput.value = variantId;
+      if (buyNowBtn) buyNowBtn.dataset.variantId = variantId;
 
-                    function showToast(message, error = false) {
-                      toast.innerText = message;
-                      toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+      try {
+        localStorage.setItem(`variantSwap_${productId}`, JSON.stringify({
+          mainImage: mainImageURL,
+          color,
+          size,
+          sku,
+          price,
+          variantId
+        }));
+      } catch (e) {
+        console.warn("Could not save variant to localStorage", e);
+      }
+    });
+  }
 
-                      toast.classList.add("show");
+  function updateSpecs(color, size, sku, price) {
+    const colorEl = document.getElementById("variantColor");
+    const sizeEl = document.getElementById("variantSize");
+    const skuEl = document.getElementById("variantSKU");
+    const priceEl = document.getElementById("variantPrice");
+    if (colorEl) colorEl.innerHTML = `<strong>Color:</strong> ${color}`;
+    if (sizeEl) sizeEl.innerHTML = `<strong>Size:</strong> ${size}`;
+    if (skuEl) skuEl.innerHTML = `<strong>SKU:</strong> ${sku}`;
+    if (priceEl) priceEl.innerHTML = `<strong>Price:</strong> ₹${price}`;
+  }
 
-                      if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+const wishlistBadge = document.getElementById("wishlist-count");
+wishlistBtns.forEach(btn => {
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
 
-                      toast.hideTimeout = setTimeout(() => {
-                        toast.classList.remove("show");
-                      }, 2000);
-                    }
-                  });
+    const pid = btn.dataset.productId;
+    const inWishlist = btn.dataset.inWishlist === "true";
 
-                </script>
+    try {
+      const res = await fetch(`/add-to-wishlist/${pid}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (inWishlist) {
+          btn.innerText = "Add to Wishlist";
+          btn.dataset.inWishlist = "false";
+          if (wishlistBadge) {
+            let count = parseInt(wishlistBadge.innerText) || 0;
+            wishlistBadge.innerText = Math.max(count - 1, 0);
+          }
+          showToast("Removed from Wishlist");
+        } else {
+          btn.innerText = "Already in Wishlist";
+          btn.dataset.inWishlist = "true";
+          if (wishlistBadge) {
+            let count = parseInt(wishlistBadge.innerText) || 0;
+            wishlistBadge.innerText = count + 1;
+          }
+          showToast("Added to Wishlist");
+        }
+      } else {
+        showToast(data.message || "Action failed", true);
+      }
+
+    } catch (err) {
+      showToast("Something went wrong", true);
+    }
+  });
+});
+
+  function showToast(message, error = false) {
+    if (!toast) return;
+    toast.innerText = message;
+    toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
+  }
+
+ 
+  if (buyNowBtn) {
+    buyNowBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const variantId = buyNowBtn.dataset.variantId;
+      let url = `/buy-now/${productId}`;
+      if (variantId) url += `?variantId=${variantId}`;
+      window.location.href = url;
+    });
+  }
+});
+</script>

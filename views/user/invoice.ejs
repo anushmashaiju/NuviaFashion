@@ -131,9 +131,9 @@
         </div>
       <% } %>
 
-      <% if(order.couponCode && order.couponDiscount) { %>
+      <% if(order.couponName && order.couponDiscount) { %>
         <div class="bill-row">
-          <span>Coupon (<%= order.couponCode %>)</span>
+          <span>Coupon (<%= order.couponName %>)</span>
           <span>- Rs.<%= order.couponDiscount %></span>
         </div>
       <% } %>

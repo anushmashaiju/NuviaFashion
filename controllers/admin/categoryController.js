@@ -1,4 +1,6 @@
 import Category from "../../models/categoryModel.js";
+import MESSAGES from "../../utils/messages.js";
+import STATUS from "../../utils/statusCodes.js";
 
 // Render All Categories 
 export const getCategories = async (req, res) => {
@@ -21,7 +23,7 @@ export const getCategories = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    res.render("admin/category", {
+    res.status(STATUS.SUCCESS).render("admin/category", {
       title: "Category Management",
       categories,
       currentPage: page,
@@ -30,232 +32,232 @@ export const getCategories = async (req, res) => {
       admin: req.session.user,
     });
   } catch (error) {
-    console.error(" Error fetching categories:", error);
-    res.status(500).render("partials/errorPage", { errorMessage: "Failed to load categories." });
+    console.error("Error fetching categories:", error);
+    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
   }
 };
 
 // Render Add Category Page
 export const getAddCategoryPage = (req, res) => {
   try {
-    res.render("admin/addCategory", { title: "Add Category", admin: req.session.user });
+    res.status(STATUS.SUCCESS).render("admin/addCategory", { 
+      title: "Add Category",
+      admin: req.session.user,
+      formData: {
+        categoryOffer: "",
+        categoryOfferStart: "",
+        categoryOfferEnd: ""
+      },
+      errors: {}
+    });
+
   } catch (error) {
-    console.error(" Error rendering add category page:", error);
-    res.status(500).render("partials/errorPage", { errorMessage: "Failed to load page." });
+    console.error("Error rendering add category page:", error);
+    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
   }
 };
 
-//  Add New Category
+// Add New Category
 export const addCategory = async (req, res) => {
   try {
-    const { categoryName, description, categoryOffer } = req.body;
+    const { categoryName, description, categoryOffer, categoryOfferStart, categoryOfferEnd } = req.body;
     const thumbnail = req.thumbnailUrl;
-    
+
+    const formData = { categoryName, description, categoryOffer, categoryOfferStart, categoryOfferEnd };
+    const errors = {};
+
     if (!categoryName || categoryName.trim().length === 0) {
-      return res.render("admin/addCategory", {
-        title: "Add Category",
-        admin: req.session.user,
-        errorField: "categoryName",
-        errorMessage: "Category name is required.",
-      });
+      errors.categoryName = MESSAGES.CATEGORY_NAME_REQUIRED;
     }
-
     if (!thumbnail) {
-      return res.render("admin/addCategory", {
-        title: "Add Category",
-        admin: req.session.user,
-        errorField: "thumbnail",
-        errorMessage: "Thumbnail image is required.",
-      });
+      errors.thumbnail = MESSAGES.CATEGORY_THUMBNAIL_REQUIRED;
+    }
+    if (!description || description.trim().length < 10) {
+      errors.description = MESSAGES.CATEGORY_DESCRIPTION_SHORT;
     }
 
-    if (description && description.length < 10) {
-      return res.render("admin/addCategory", {
-        title: "Add Category",
-        admin: req.session.user,
-        errorField: "description",
-        errorMessage: "Description must be at least 10 characters long.",
-      });
+    let offerObj = null;
+    if (categoryOffer) {
+      const offerPercent = Number(categoryOffer);
+      if (isNaN(offerPercent) || offerPercent < 0 || offerPercent > 100) {
+        errors.categoryOffer = MESSAGES.CATEGORY_OFFER_INVALID;
+      } else {
+        const startDate = categoryOfferStart ? new Date(categoryOfferStart) : null;
+        const endDate = categoryOfferEnd ? new Date(categoryOfferEnd) : null;
+        const now = new Date();
+        const isActive = (!startDate || startDate <= now) && (!endDate || endDate >= now);
+
+        offerObj = {
+          percentage: offerPercent,
+          startDate,
+          endDate,
+          isActive,
+        };
+      }
     }
 
-    if (categoryOffer && (categoryOffer < 0 || categoryOffer > 100)) {
-      return res.render("admin/addCategory", {
-        title: "Add Category",
-        admin: req.session.user,
-        errorField: "categoryOffer",
-        errorMessage: "Offer must be between 0% and 100%.",
-      });
-    }
-
-    // CHECK DUPLICATE
     const existingCategory = await Category.findOne({
       categoryName: { $regex: new RegExp(`^${categoryName}$`, "i") },
     });
-
     if (existingCategory) {
-      return res.render("admin/addCategory", {
+      errors.categoryName = MESSAGES.CATEGORY_EXISTS;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(STATUS.BAD_REQUEST).render("admin/addCategory", {
         title: "Add Category",
         admin: req.session.user,
-        errorField: "categoryName",
-        errorMessage: "Oops! This category already exists.",
+        formData,
+        errors,
       });
     }
 
-    // CREATE NEW CATEGORY
     await Category.create({
       categoryName,
       description,
-      categoryOffer,
+      categoryOffer: offerObj,
       thumbnail,
     });
 
-    console.log("Category added successfully");
-    res.redirect("/admin/categories?success=true");
+    res.redirect(`/admin/categories/add?success=true`);
   } catch (error) {
     console.error("Error adding category:", error);
-    res.status(500).render("partials/errorPage", {
-      errorMessage: "Failed to add category.",
-    });
+    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
   }
 };
 
-
-//  Render Edit Category Page
+// Render Edit Category Page
 export const getEditCategoryPage = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
-      return res.status(404).render("partials/errorPage", { errorMessage: "Category not found." });
+      return res.status(STATUS.NOT_FOUND).render("partials/errorPage", { errorMessage: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
-    res.render("admin/editCategory", {
+    res.status(STATUS.SUCCESS).render("admin/editCategory", {
       title: "Edit Category",
       category,
       admin: req.session.user,
+      formData: {
+        categoryOffer: category.categoryOffer?.percentage || "",
+        categoryOfferStart: category.categoryOffer?.startDate
+          ? category.categoryOffer.startDate.toISOString().split("T")[0]
+          : "",
+        categoryOfferEnd: category.categoryOffer?.endDate
+          ? category.categoryOffer.endDate.toISOString().split("T")[0]
+          : ""
+      },
+      errors: {}
     });
+
   } catch (error) {
-    console.error(" Error rendering edit page:", error);
-    res.status(500).render("partials/errorPage", { errorMessage: "Failed to load edit page." });
+    console.error("Error rendering edit page:", error);
+    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
   }
 };
 
-//  Update Category 
+// Update Category 
 export const editCategory = async (req, res) => {
   try {
-    const { categoryName, description, categoryOffer } = req.body;
+    const { categoryName, description, categoryOffer, categoryOfferStart, categoryOfferEnd } = req.body;
     const categoryId = req.params.id;
 
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(404).render("partials/errorPage", { 
-        errorMessage: "Category not found." 
-      });
+      return res.status(STATUS.NOT_FOUND).render("partials/errorPage", { errorMessage: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
-    // VALIDATIONS
+    const errors = {};
+
     if (!categoryName || categoryName.trim().length === 0) {
-      return res.render("admin/editCategory", {
-        title: "Edit Category",
-        category,
-        admin: req.session.user,
-        errorField: "categoryName",
-        errorMessage: "Category name cannot be empty.",
-      });
+      errors.categoryName = MESSAGES.CATEGORY_NAME_REQUIRED;
     }
-
     if (description && description.length < 10) {
-      return res.render("admin/editCategory", {
-        title: "Edit Category",
-        category,
-        admin: req.session.user,
-        errorField: "description",
-        errorMessage: "Description must be at least 10 characters.",
-      });
+      errors.description = MESSAGES.CATEGORY_DESCRIPTION_SHORT;
     }
-
     if (categoryOffer && (categoryOffer < 0 || categoryOffer > 100)) {
-      return res.render("admin/editCategory", {
-        title: "Edit Category",
-        category,
-        admin: req.session.user,
-        errorField: "categoryOffer",
-        errorMessage: "Offer percentage must be between 0 and 100.",
-      });
+      errors.categoryOffer = MESSAGES.CATEGORY_OFFER_INVALID;
     }
 
-    // DUPLICATE CATEGORY CHECK
     const duplicate = await Category.findOne({
       categoryName: { $regex: new RegExp(`^${categoryName}$`, "i") },
       _id: { $ne: categoryId },
     });
-
     if (duplicate) {
-      return res.render("admin/editCategory", {
+      errors.categoryName = MESSAGES.CATEGORY_EXISTS;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(STATUS.BAD_REQUEST).render("admin/editCategory", {
         title: "Edit Category",
         category,
         admin: req.session.user,
-        errorField: "categoryName",
-        errorMessage: "Oops! Category name already exists.",
+        errors,
       });
     }
 
-    // UPDATE FIELDS
+    // Update fields
     category.categoryName = categoryName.trim();
     category.description = description;
-    category.categoryOffer = categoryOffer;
+    if (req.thumbnailUrl) category.thumbnail = req.thumbnailUrl;
 
-    if (req.thumbnailUrl) {
-      category.thumbnail = req.thumbnailUrl;
+    // Update offer
+    if (categoryOffer !== undefined && categoryOffer !== "") {
+      const offerPercent = Number(categoryOffer);
+      const startDate = categoryOfferStart ? new Date(categoryOfferStart) : null;
+      const endDate = categoryOfferEnd ? new Date(categoryOfferEnd) : null;
+      const now = new Date();
+      const isActive = (!startDate || startDate <= now) && (!endDate || endDate >= now);
+
+      category.categoryOffer = {
+        percentage: offerPercent,
+        startDate,
+        endDate,
+        isActive,
+      };
+    } else {
+      category.categoryOffer = { percentage: 0, startDate: null, endDate: null, isActive: false };
     }
 
     await category.save();
-
-    res.redirect(`/admin/categories?success=true`);
+    res.redirect(`/admin/categories/edit/${category._id}?success=true`);
 
   } catch (error) {
     console.error("Error updating category:", error);
-    res.status(500).render("partials/errorPage", { 
-      errorMessage: "Failed to update category." 
-    });
+    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
   }
 };
 
-
-//  Soft Delete Category 
+// Soft Delete Category 
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-
     const category = await Category.findByIdAndUpdate(id, { isActive: false });
     if (!category) {
-      return res.status(404).json({ success: false,errorMessage: "Category not found" });
+      return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_NOT_FOUND });
     }
-
-    console.log(" Category soft deleted");
-    res.json({ success: true, message: "Category soft deleted" });
+    res.status(STATUS.SUCCESS).json({ success: true, message: MESSAGES.CATEGORY_DELETED });
   } catch (error) {
-    console.error(" Error deleting category:", error);
-    res.status(500).json({ success: false,errorMessage: "Failed to delete category" });
+    console.error("Error deleting category:", error);
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
 };
 
-//  Toggle Listed/Unlisted 
+// Toggle Listed/Unlisted 
 export const toggleCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const category = await Category.findById(id);
-
     if (!category) {
-      return res.status(404).json({ success: false, errorMessage: "Category not found" });
+      return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
     category.isListed = !category.isListed;
     await category.save();
 
-    console.log(` Category "${category.categoryName}" toggled to ${category.isListed ? "Listed" : "Unlisted"}`);
-    res.json({ success: true, isListed: category.isListed });
+    res.status(STATUS.SUCCESS).json({ success: true, isListed: category.isListed });
   } catch (error) {
-    console.error(" Error toggling category:", error);
-    res.status(500).json({ success: false, errorMessage: "Server error" });
+    console.error("Error toggling category:", error);
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
 };

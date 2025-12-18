@@ -1,8 +1,10 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/categoryModel.js";
-import Coupon from "../../models/couponModel.js"; 
 import Cart from "../../models/cartModel.js";
 import Wishlist from "../../models/wishlistModel.js";
+import Coupon from "../../models/couponModel.js";
+import MESSAGES from "../../utils/messages.js";
+import STATUS from "../../utils/statusCodes.js";
 
 // HOME PAGE
 export const getHomePage = async (req, res) => {
@@ -11,30 +13,34 @@ export const getHomePage = async (req, res) => {
     const categoryId = req.query.category;
 
     let maxOfferProduct = null;
+
     if (categoryId) {
+      // When category is selected
       maxOfferProduct = await Product.findOne({
         category: categoryId,
         isDeleted: false,
         isBlocked: false,
         isListed: true,
+        "activeOffer.percentage": { $gt: 0 }
       })
-        .sort({ discount: -1, createdAt: -1 })
+        .sort({ "activeOffer.percentage": -1, createdAt: -1 })
         .populate("category");
     } else {
+      // Highest offer across all products
       maxOfferProduct = await Product.findOne({
         isDeleted: false,
         isBlocked: false,
         isListed: true,
-        discount: { $gt: 0 },
+        "activeOffer.percentage": { $gt: 0 }
       })
-        .sort({ discount: -1, createdAt: -1 })
+        .sort({ "activeOffer.percentage": -1, createdAt: -1 })
         .populate("category");
     }
 
     const newArrivals = await Product.find({
       isDeleted: false,
       isBlocked: false,
-      isListed: true,
+      isListed: true
     })
       .sort({ createdAt: -1 })
       .limit(4);
@@ -42,10 +48,10 @@ export const getHomePage = async (req, res) => {
     const products = await Product.find({
       isDeleted: false,
       isBlocked: false,
-      isListed: true,
+      isListed: true
     })
       .sort({ createdAt: -1 })
-      .limit(8); 
+      .limit(8);
 
     const topBrands = await Product.aggregate([
       { $match: { isDeleted: false, isBlocked: false, isListed: true } },
@@ -54,35 +60,62 @@ export const getHomePage = async (req, res) => {
           _id: "$brand",
           image: { $first: "$images" },
           count: { $sum: 1 },
-        },
+        }
       },
       { $sort: { count: -1 } },
-      { $limit: 3 },
+      { $limit: 3 }
     ]);
 
+    // 3-day expiry timer
     const offerExpiry = new Date();
     offerExpiry.setDate(offerExpiry.getDate() + 3);
 
-    res.render("user/userHome", {
+    res.status(STATUS.SUCCESS).render("user/userHome", {
       title: "Home",
       activePage: "home",
-      products,        
+      products,
       newArrivals,
       categories,
       maxOfferProduct,
       topBrands,
       offerExpiry,
-      selectedCategory: categoryId || null,
+      selectedCategory: categoryId || null
     });
-
   } catch (error) {
     console.error("HomePage Error:", error);
-    res.status(500).send("Server Error");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
+export const getMaxOfferProductByCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId;
 
-// User Product List Page 
+    const product = await Product.findOne({
+      category: categoryId,
+      isDeleted: false,
+      isBlocked: false,
+      isListed: true,
+      "activeOffer.percentage": { $gt: 0 }
+    })
+      .sort({ "activeOffer.percentage": -1, createdAt: -1 })
+      .populate("category");
+
+    if (!product) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: "No offer product found for this category."
+      });
+    }
+
+    res.status(STATUS.SUCCESS).json({ success: true, product });
+  } catch (err) {
+    console.error("MaxOfferProduct Error:", err);
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
+  }
+};
+
+// PRODUCT LIST PAGE
 export const getUserProductListPage = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -106,12 +139,15 @@ export const getUserProductListPage = async (req, res) => {
     }
 
     if (categoryFilter) {
-      const categoryDoc = await Category.findOne({ categoryName: categoryFilter, isListed: true });
-      if (categoryDoc) query.category = categoryDoc._id;
-      else query.category = null;
+      const categoryDoc = await Category.findOne({
+        categoryName: categoryFilter,
+        isListed: true,
+      });
+      query.category = categoryDoc ? categoryDoc._id : null;
     }
 
     if (brand) query.brand = brand;
+
     query.price = { $gte: minPrice, $lte: maxPrice };
     if (minRating > 0) query.rating = { $gte: minRating };
 
@@ -131,66 +167,87 @@ export const getUserProductListPage = async (req, res) => {
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / limit);
 
-    const products = await Product.find(query)
+    let products = await Product.find(query)
       .populate("category")
       .sort(sortOption)
       .skip((page - 1) * limit)
       .limit(limit);
 
     const categories = await Category.find({ isListed: true });
-    const brands = await Product.distinct("brand", { isDeleted: false, isBlocked: false, isListed: true });
+    const brands = await Product.distinct("brand", {
+      isDeleted: false,
+      isBlocked: false,
+      isListed: true,
+    });
 
-const userId = req.session.user?.id;
+    const userId = req.session.user?.id;
+    let cartCount = 0,
+      wishlistCount = 0;
 
-let cartCount = 0;
-let wishlistCount = 0;
+    if (userId) {
+      const cart = await Cart.findOne({ userId });
+      const wishlist = await Wishlist.findOne({ userId });
 
-if (userId) {
-    const cart = await Cart.findOne({ userId });
-    const wishlist = await Wishlist.findOne({ userId });
+      cartCount = cart ? cart.items.length : 0;
+      wishlistCount = wishlist ? wishlist.products.length : 0;
 
-    cartCount = cart ? cart.items.length : 0;
-    wishlistCount = wishlist ? wishlist.products.length : 0;
-}
+      let formattedProducts = products.map((p) => p.toObject());
 
-    res.render("user/productList", {
+      if (wishlist && wishlist.products.length) {
+        const wishlistIds = wishlist.products.map((wp) => wp.toString());
+
+        formattedProducts = formattedProducts.map((p) => ({
+          ...p,
+          inWishlist: wishlistIds.includes(p._id.toString()),
+        }));
+      }
+
+      products = formattedProducts;
+    }
+
+    return res.status(STATUS.SUCCESS).render("user/productList", {
       activePage: "shop",
       cartCount,
-   wishlistCount,
+      wishlistCount,
       products,
       categories,
       brands,
-      currentFilters: { search, category: categoryFilter, brand, sort, minPrice, maxPrice, minRating },
+      currentFilters: {
+        search,
+        category: categoryFilter,
+        brand,
+        sort,
+        minPrice,
+        maxPrice,
+        minRating,
+      },
       totalPages,
       currentPage: page,
       flash: req.flash(),
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
+    console.error("Product List Error:", err);
+    return res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
-//  Product Details Page 
+// PRODUCT DETAILS PAGE
 export const getProductDetailsPage = async (req, res) => {
   try {
     const productId = req.params.id;
 
-  if (!productId || productId === "undefined") {
-      req.flash("error", "Invalid product ID");
-      return res.redirect("/products");
+    if (!productId || productId === "undefined") {
+      req.flash("error", MESSAGES.INVALID_INPUT);
+      return res.status(STATUS.BAD_REQUEST).redirect("/products");
     }
 
     const product = await Product.findById(productId)
       .populate("category")
-      .populate({
-        path: "coupons",
-        match: { isActive: true, expiryDate: { $gte: new Date() } }
-      });
+      .populate("coupons");
 
     if (!product || product.isDeleted || product.isBlocked || !product.isListed) {
-      req.flash("error", "Product unavailable");
-      return res.redirect("/products");
+      req.flash("error", MESSAGES.PRODUCT_NOT_FOUND);
+      return res.status(STATUS.NOT_FOUND).redirect("/products");
     }
 
     if (product.reviews?.length) {
@@ -219,47 +276,47 @@ export const getProductDetailsPage = async (req, res) => {
       }).sort({ createdAt: -1 }).limit(8);
     }
 
-    res.render("user/productDetails", {
+    res.status(STATUS.SUCCESS).render("user/productDetails", {
       title: product.name,
-       activePage:"product.name",
+      activePage: "product",
       product,
       recommendedProducts,
       flash: req.flash(),
     });
   } catch (err) {
-    console.error(err);
-    req.flash("error", "Something went wrong");
-    res.redirect("/products");
+    console.error("Product Details Error:", err);
+    req.flash("error", MESSAGES.SERVER_ERROR);
+    res.status(STATUS.SERVER_ERROR).redirect("/products");
   }
 };
 
-
-//  Add Product Review 
+// ADD PRODUCT REVIEW
 export const addProductReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
+    const user = req.session.user;
 
-    if (!req.user) {
-      req.flash("error", "You must be logged in to write a review");
-      return res.redirect(`/product/${req.params.id}`);
+    if (!user) {
+      req.flash("error", MESSAGES.USER_NOT_LOGGED_IN);
+      return res.status(STATUS.UNAUTHORIZED).redirect(`/product/${req.params.id}`);
     }
 
     if (!rating || !comment.trim()) {
-      req.flash("error", "Please provide a valid rating and comment");
-      return res.redirect(`/product/${req.params.id}`);
+      req.flash("error", MESSAGES.INVALID_INPUT);
+      return res.status(STATUS.BAD_REQUEST).redirect(`/product/${req.params.id}`);
     }
 
     const product = await Product.findById(req.params.id);
     if (!product) {
-      req.flash("error", "Product not found");
-      return res.redirect("/products");
+      req.flash("error", MESSAGES.PRODUCT_NOT_FOUND);
+      return res.status(STATUS.NOT_FOUND).redirect("/products");
     }
 
     if (!Array.isArray(product.reviews)) product.reviews = [];
 
     product.reviews.push({
-      userId: req.user._id,
-      userName: req.user.name,
+      userId: user._id,
+      userName: user.name,
       rating: parseInt(rating),
       comment: comment.trim(),
       date: new Date(),
@@ -271,10 +328,10 @@ export const addProductReview = async (req, res) => {
 
     await product.save();
     req.flash("success", "Review added successfully");
-    res.redirect(`/product/${product._id}`);
+    res.status(STATUS.CREATED).redirect(`/product/${product._id}`);
   } catch (err) {
-    console.error(err);
-    req.flash("error", "Error adding review");
-    res.redirect(`/product/${req.params.id}`);
+    console.error("Add Review Error:", err);
+    req.flash("error", MESSAGES.SERVER_ERROR);
+    res.status(STATUS.SERVER_ERROR).redirect(`/product/${req.params.id}`);
   }
 };

@@ -1,0 +1,505 @@
+<%- include("../partials/userHeader", { title: "Payment Gateway" }) %>
+
+    <style>
+        body {
+            background: #fafafa;
+            font-family: "Poppins", sans-serif;
+        }
+
+        .payment-container {
+            max-width: 1250px;
+            margin: 120px auto 40px;
+            display: flex;
+            gap: 25px;
+            position: relative;
+        }
+
+        .left-section,
+        .right-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .left-section {
+            width: 50%;
+            max-height: 80vh;
+            overflow-y: auto;
+            scrollbar-width: none;
+            margin-left: 30px;
+        }
+
+        .left-section::-webkit-scrollbar {
+            display: none;
+        }
+
+        .right-section {
+            width: 50%;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            margin-right: 30px;
+        }
+
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .payment-option:hover {
+            border-color: #d14a78;
+            background: #fff0f6;
+        }
+
+        .payment-option input {
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .btn-main,
+        .payment-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            color: #fff;
+            background: #d14a78;
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+
+        .coupon-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3f7;
+            border-radius: 10px;
+        }
+
+        .coupon-box h4 {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .coupon-box input {
+            width: 70%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .coupon-box button {
+            padding: 8px 15px;
+            border: none;
+            background: #d14a78;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .bill-box {
+            background: #fff3f7;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .bill-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(50px);
+            animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
+        }
+
+        .toast.success {
+            background: #4BB543;
+        }
+
+        .toast.error {
+            background: #FF4C4C;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+        }
+    </style>
+
+
+
+    <div class="payment-container">
+        <input type="hidden" id="buyNowProduct">
+        <input type="hidden" id="buyNowQty" value="1">
+        <input type="hidden" id="selectedAddress">
+
+        <!-- LEFT: Payment Options -->
+        <div class="left-section">
+
+            <h3>Select Payment Method</h3>
+
+            <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="COD"> Cash on Delivery (COD)
+            </label>
+
+            <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="ONLINE"> Online Payment (Razorpay)
+            </label>
+
+            <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="WALLET" > Pay Using Wallet
+            </label>
+
+            <div class="wallet-box" style="padding:15px; background:#fff7fb; border-radius:12px; margin:15px 0;">
+
+                <h4 style="margin-bottom:10px;">Wallet Balance: ₹<span id="walletBalance">Loading...</span>
+                </h4>
+
+                <p id="walletAppliedInfo" style="margin-top:10px; font-weight:600;"></p>
+
+            </div>
+
+            <button id="placeOrderBtn" class="btn-main">Place Order</button>
+
+        </div>
+
+        <div class="right-section">
+            <h3 style="text-align:center; margin-bottom:20px;">Bill Details</h3>
+
+            <div class="bill-box">
+                <div class="bill-row">
+                    <span>Items total</span>
+                    <strong id="subtotal">Rs.<%= summary.subtotal %></strong>
+                </div>
+
+                <div class="bill-row">
+                    <span>GST (18%)</span>
+                    <strong id="tax">Rs.<%= summary.tax %></strong>
+                </div>
+
+
+                <% if (summary.couponDiscount && summary.couponDiscount> 0) { %>
+                    <div class="bill-row" id="discountRow">
+                        <span>Coupon Discount</span>
+                        <strong>- ₹<%= summary.couponDiscount %></strong>
+                    </div>
+                    <% } %>
+
+                        <div class="bill-row">
+                            <span>Delivery</span>
+                            <strong id="deliveryChargeDisplay">₹0.00</strong>
+                        </div>
+
+
+                        <hr>
+
+                        <div class="bill-row">
+                            <strong>Grand Total</strong>
+                            <strong id="finalAmountPay">₹<%= summary.finalAmount %></strong>
+                        </div>
+            </div>
+        </div>
+    </div>
+    <div id="toastContainer"></div>
+
+    <%- include("../partials/userFooter") %>
+
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <script>
+            // ---------------------- TOAST ----------------------
+            function showToast(message, type = 'success') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            // ---------------------- UPDATE FINAL AMOUNT ----------------------
+            function updateBillDisplay(newTotal) {
+                document.getElementById("finalAmountPay").textContent = "₹" + newTotal.toFixed(2);
+            }
+
+            // ---------------------- QUERY PARAM ----------------------
+            function getQueryParam(name) {
+                return new URLSearchParams(window.location.search).get(name);
+            }
+
+            // ---------------------- CLEAR OLD PAYMENT DATA ----------------------
+            function clearPaymentMemory() {
+                localStorage.removeItem("lastOrderId");
+                localStorage.removeItem("buyNowProductId");
+                localStorage.removeItem("buyNowQty");
+                sessionStorage.removeItem("buyNowSession");
+            }
+            clearPaymentMemory();
+
+            // ---------------------- INIT PAGE DATA ----------------------
+            (function initPageData() {
+                const queryAddress = getQueryParam("address");
+                const queryBuyNow = getQueryParam("buyNow");
+
+                let savedAddress = queryAddress && queryAddress !== "undefined" && queryAddress !== ""
+                    ? queryAddress
+                    : localStorage.getItem("selectedAddress");
+
+                if (savedAddress && savedAddress.trim() !== "") {
+                    document.getElementById("selectedAddress").value = savedAddress;
+                    localStorage.setItem("selectedAddress", savedAddress);
+                } else {
+                    showToast("No delivery address found! Go back to checkout.", "error");
+                }
+
+                if (queryBuyNow) {
+                    const qty = getQueryParam("qty") || "1";
+                    document.getElementById("buyNowProduct").value = queryBuyNow;
+                    document.getElementById("buyNowQty").value = qty;
+                    localStorage.setItem("buyNowProductId", queryBuyNow);
+                    localStorage.setItem("buyNowQty", qty);
+                }
+            })();
+
+            // ---------------------- GLOBAL VARIABLES ----------------------
+            let appliedDiscount = Number(localStorage.getItem("appliedDiscount")) || 0;
+            const subtotal = Number("<%= summary.subtotal %>");
+            const tax = Number("<%= summary.tax %>");
+            const addressCharge = Number(document.getElementById("selectedAddressCharge")?.value || 0);
+            const paymentRadios = document.querySelectorAll("input[name='paymentMethod']");
+//const walletBalance = Number("<%= user.wallet %>");
+
+            // Placeholder for product delivery charges if needed
+            const productsDelivery = Array.from(document.querySelectorAll(".item-box")).map(box => Number(box.dataset.delivery || 0));
+
+            // ---------------------- DELIVERY CHARGE CALCULATION ----------------------
+            function calculateDeliveryCharge(subtotal, productsDelivery, paymentMethod, addressCharge) {
+                let delivery = 0;
+
+                // Phase 1: Order value based
+                if (subtotal < 999) delivery = 50;
+
+                // Phase 2: Product-based (bulky items)
+                const maxProductCharge = Math.max(...productsDelivery, 0);
+                delivery = Math.max(delivery, maxProductCharge);
+
+                // Phase 3: Address based
+                if (addressCharge) delivery += addressCharge;
+
+                // Phase 4: COD extra
+                if (paymentMethod === "COD") delivery += 50;
+
+                return delivery;
+            }
+
+            let selectedPaymentMethod = "ONLINE"; // default
+            let deliveryCharge = calculateDeliveryCharge(subtotal, productsDelivery, selectedPaymentMethod, addressCharge);
+
+            // ---------------------- UPDATE BILL ----------------------
+            function updateBill() {
+                deliveryCharge = calculateDeliveryCharge(subtotal, productsDelivery, selectedPaymentMethod, addressCharge);
+
+                // Display delivery charge
+                document.getElementById("deliveryChargeDisplay").textContent = "₹" + deliveryCharge.toFixed(2);
+
+                // Show/hide discount row
+                const discountRow = document.getElementById("discountRow");
+                if (appliedDiscount > 0) {
+                    if (discountRow) {
+                        discountRow.style.display = "flex";
+                        discountRow.querySelector("strong").textContent = "- ₹" + appliedDiscount.toFixed(2);
+                    }
+                } else {
+                    if (discountRow) discountRow.style.display = "none";
+                }
+
+                const finalAmountValue = subtotal + tax - appliedDiscount + deliveryCharge;
+                updateBillDisplay(finalAmountValue);
+            }
+
+           updateBill();
+toggleWalletOption();
+
+
+function toggleWalletOption() {
+    const payableAmount = subtotal + tax - appliedDiscount + deliveryCharge;
+    const walletRadio = document.querySelector('input[value="WALLET"]');
+    const walletInfo = document.getElementById("walletAppliedInfo");
+
+    if (!walletRadio) return;
+
+    if (walletBalance < payableAmount) {
+        walletRadio.disabled = true;
+        walletRadio.checked = false;
+        walletInfo.innerText = "Insufficient wallet balance";
+    } else {
+        walletRadio.disabled = false;
+        walletInfo.innerText = "";
+    }
+}
+
+            // ---------------------- PAYMENT METHOD CHANGE ----------------------
+        paymentRadios.forEach(radio => {
+    radio.addEventListener("change", (e) => {
+        selectedPaymentMethod = e.target.value;
+        updateBill();
+        toggleWalletOption();
+    });
+});
+
+async function loadWalletBalance() {
+  const res = await fetch("/wallet/balance");
+  const data = await res.json();
+
+  document.getElementById("walletBalance").innerText = data.balance;
+}
+loadWalletBalance();
+
+            // ---------------------- WALLET ----------------------
+            async function walletSelected() {
+                try {
+                    const total = subtotal + tax - appliedDiscount + deliveryCharge;
+
+                    const res = await fetch("/wallet/apply", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ totalAmount: total })
+                    });
+
+                    const data = await res.json();
+
+                    if (!data.success) {
+                        showToast(data.message, "error");
+                        return;
+                    }
+
+                    document.getElementById("walletAppliedInfo").innerText =
+                        `Wallet Applied: ₹${data.usedAmount}`;
+                    updateBillDisplay(data.newTotal);
+                    showToast(`₹${data.usedAmount} will be used from wallet`, "success");
+
+
+                } catch (err) {
+                    console.error(err);
+                    showToast("Failed to apply wallet", "error");
+                }
+            }
+
+            // ---------------------- PLACE ORDER ----------------------
+            document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+                clearPaymentMemory();
+
+                const addressId = document.getElementById("selectedAddress").value.trim() || localStorage.getItem("selectedAddress");
+                if (!addressId) return showToast("Please select a delivery address!", "error");
+
+                const paymentMethod = document.querySelector("input[name='paymentMethod']:checked")?.value;
+                if (!paymentMethod) return showToast("Please select a payment method!", "error");
+
+                const buyNowProductId = document.getElementById("buyNowProduct").value || null;
+                const buyNowQty = parseInt(document.getElementById("buyNowQty").value || "1");
+
+                const body = {
+                    selectedAddress: addressId,
+                    paymentMethod,
+                    useWallet: paymentMethod === "WALLET",
+                     deliveryCharge: deliveryCharge
+                };
+
+                if (buyNowProductId) {
+                    body.buyNowProductId = buyNowProductId;
+                    body.buyNowQty = buyNowQty;
+                }
+
+                try {
+                    if (paymentMethod === "COD" || paymentMethod === "WALLET") {
+                        const url = paymentMethod === "COD" ? "/checkout/cod" : "/wallet-payment";
+                        const res = await fetch(url, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(body)
+                        });
+                        const data = await res.json();
+                        if (data.success) return window.location.href = `/order-success/${data.orderId}`;
+                        return showToast(data.message, "error");
+                    }
+
+                    if (paymentMethod === "ONLINE") {
+                        const res = await fetch("/checkout/razorpay", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(body)
+                        });
+                        const data = await res.json();
+                        if (!data.success) return showToast(data.message, "error");
+
+                        const options = {
+                            key: data.key,
+                            amount: data.order.amount,
+                            currency: "INR",
+                            order_id: data.order.id,
+                            handler: async function (response) {
+                                const verify = await fetch("/payment/verify", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(response)
+                                });
+                                const result = await verify.json();
+                                if (result.success) return window.location.href = result.redirect;
+                                window.location.href = "/payment/failed";
+                            }
+                        };
+
+                        const rzp = new Razorpay(options);
+                        rzp.on("payment.failed", () => window.location.href = "/payment/failed");
+                        rzp.open();
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast("Something went wrong!", "error");
+                }
+            });
+        </script>

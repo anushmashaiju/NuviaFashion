@@ -7,45 +7,58 @@
 
 </style>
 <div class="sidebar">
-
   <p class="fw-bold text-center">Anushma(Admin)</p>
 
   <ul class="nav flex-column mt-3">
     <li class="nav-item mb-2">
-      <a href="/admin/dashboard" class="nav-link <%= currentPath === '/admin/dashboard' ? 'active' : '' %>">
+      <a href="/admin/dashboard" 
+        class="nav-link <%= currentPath.startsWith('/admin/dashboard') ? 'active' : '' %>">
         <i class="bi bi-house"></i> Dashboard
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/users" class="nav-link <%= currentPath === '/admin/users' ? 'active' : '' %>">
+      <a href="/admin/users" 
+        class="nav-link <%= currentPath.startsWith('/admin/users') ? 'active' : '' %>">
         <i class="bi bi-people"></i> Customers
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/categories" class="nav-link <%= currentPath === '/admin/categories' ? 'active' : '' %>">
+      <a href="/admin/categories" 
+        class="nav-link <%= currentPath.startsWith('/admin/categories') ? 'active' : '' %>">
         <i class="bi bi-tags"></i> Category
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/products" class="nav-link <%= currentPath === '/admin/products' ? 'active' : '' %>">
+      <a href="/admin/products" 
+        class="nav-link <%= currentPath.startsWith('/admin/products') ? 'active' : '' %>">
         <i class="bi bi-bag"></i> Products
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/orders" class="nav-link <%= currentPath === '/admin/orders' ? 'active' : '' %>">
+      <a href="/admin/orders" 
+        class="nav-link <%= currentPath.startsWith('/admin/orders') ? 'active' : '' %>">
         <i class="bi bi-basket"></i> Orders
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/coupons" class="nav-link <%= currentPath === '/admin/coupons' ? 'active' : '' %>">
+      <a href="/admin/coupons" 
+        class="nav-link <%= currentPath.startsWith('/admin/coupons') ? 'active' : '' %>">
         <i class="bi bi-ticket"></i> Coupons
       </a>
     </li>
+
     <li class="nav-item mb-2">
-      <a href="/admin/reports" class="nav-link <%= currentPath === '/admin/reports' ? 'active' : '' %>">
+      <a href="/admin/salesReport" 
+        class="nav-link <%= currentPath.startsWith('/admin/salesReport') ? 'active' : '' %>">
         <i class="bi bi-graph-up"></i> Reports
       </a>
     </li>
+
     <li class="nav-item mt-4">
       <a href="/admin/logout" class="nav-link logout-link">
         <i class="bi bi-box-arrow-right"></i> Log Out

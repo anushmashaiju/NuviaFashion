@@ -11,16 +11,26 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String },
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
-    isDeleted: { type: Boolean, default: false }, 
+    isDeleted: { type: Boolean, default: false },
+    referredBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null
+},
+
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
     profileImage: {
-  type: String,   
-  default: ""
-}
+      type: String,
+      default: ""
+    },
+    firstPurchaseDiscount: {
+      type: Number,
+      default: 0
+    }
 
   },
   { timestamps: true }

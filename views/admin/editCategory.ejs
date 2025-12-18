@@ -132,10 +132,37 @@
           <textarea id="description" name="description" rows="3"><%= category.description %></textarea>
         </div>
 
-        <div class="form-group">
-          <label for="categoryOffer">Category Offer (%)</label>
-          <input type="number" id="categoryOffer" name="categoryOffer" min="0" max="100" value="<%= category.categoryOffer %>">
-        </div>
+       <div class="form-group">
+  <label for="categoryOffer">Category Offer (%)</label>
+  <input 
+    type="number" 
+    id="categoryOffer" 
+    name="categoryOffer" 
+    min="0" max="100" 
+    value="<%= category.categoryOffer?.percentage || 0 %>"
+  >
+</div>
+
+<div class="form-group">
+  <label for="categoryOfferStart">Offer Start Date</label>
+  <input 
+    type="date" 
+    id="categoryOfferStart" 
+    name="categoryOfferStart" 
+    value="<%= category.categoryOffer?.startDate ? category.categoryOffer.startDate.toISOString().split('T')[0] : '' %>"
+  >
+</div>
+
+<div class="form-group">
+  <label for="categoryOfferEnd">Offer End Date</label>
+  <input 
+    type="date" 
+    id="categoryOfferEnd" 
+    name="categoryOfferEnd" 
+    value="<%= category.categoryOffer?.endDate ? category.categoryOffer.endDate.toISOString().split('T')[0] : '' %>"
+  >
+</div>
+
 
         <div class="form-group">
           <label for="thumbnail">Thumbnail Image</label>
@@ -171,35 +198,33 @@
 </script>
 <% } %>
 
-
 <script>
+  // Check if URL has ?success=true
   const params = new URLSearchParams(window.location.search);
+
   if (params.get("success") === "true") {
     Swal.fire({
       icon: "success",
       title: "Category updated successfully!",
       showConfirmButton: false,
       timer: 2000
+    }).then(() => {
+      window.location.href = "/admin/categories";
     });
   }
-</script>
-
-<script>
+  // Thumbnail preview logic (keep this)
   const thumbnailInput = document.getElementById("thumbnail");
   const previewBox = document.getElementById("newThumbnailPreview");
 
   thumbnailInput.addEventListener("change", function () {
     previewBox.innerHTML = "";
-
     if (this.files && this.files[0]) {
       const reader = new FileReader();
-
       reader.onload = function (event) {
         const img = document.createElement("img");
         img.src = event.target.result;
         previewBox.appendChild(img);
       };
-
       reader.readAsDataURL(this.files[0]);
     }
   });

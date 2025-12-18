@@ -131,18 +131,21 @@
     <div class="empty-box">
       <img src="/img/empty-wishlist.png" alt="">
       <h3>Your wishlist is empty</h3>
-      <a href="/shop">Continue Shopping</a>
+      <a href="/products">Continue Shopping</a>
     </div>
   <% } else { %>
 
     <% wishlist.products.forEach(item => { %>
-      <div class="wishlist-item" id="wish-<%= item.productId._id %>">
+     <% if (item.productId) { %>
+  <div class="wishlist-item" id="wish-<%= item.productId._id %>">
+<% } %>
+
 
         <img src="<%= item.productId.images[0] %>" alt="">
 
         <div>
           <h4><%= item.productId.name %></h4>
-          <p>₹ <%= item.productId.salePrice || item.productId.price %></p>
+          <p>₹ <%= item.productId.finalPrice || item.productId.price %></p>
 
           <% if (item.productId.stock > 0) { %>
             <p style="color:green;">In Stock</p>
@@ -214,10 +217,16 @@
 
     if (data.success) {
       removeWishlist(productId);
+      const cartBadge = document.getElementById("cart-count");
+      if (cartBadge) {
+        let currentCount = parseInt(cartBadge.innerText) || 0;
+        cartBadge.innerText = currentCount + 1;
+      }
     }
-});
-
+  })
+  .catch(err => console.error(err));
 }
+
 </script>
 
 <%- include("../partials/userFooter") %>

@@ -173,23 +173,23 @@
         #clearBtn:hover {
             color: #5a2a00;
         }
+
         .icon-with-badge {
-    position: relative;
-    display: inline-block;
-}
+            position: relative;
+            display: inline-block;
+        }
 
-.icon-with-badge .badge {
-    position: absolute;
-    top: -12px;
-    right: -10px;
-    background: #f76f8f;
-    color: white;
-    font-size: 10px;
-    padding: 5px 5px;
-    border-radius: 50%;
-    font-weight: bold;
-}
-
+        .icon-with-badge .badge {
+            position: absolute;
+            top: -12px;
+            right: -10px;
+            background: #f76f8f;
+            color: white;
+            font-size: 10px;
+            padding: 5px 5px;
+            border-radius: 50%;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -241,19 +241,20 @@
                     <div class="header__nav__option">
 
 
-                       <a href="/wishlist" class="icon-with-badge">
-    <i class="fas fa-heart"></i>
-    <% if (wishlistCount > 0) { %>
-        <span class="badge"><%= wishlistCount %></span>
-    <% } %>
-</a>
+                        <a href="/wishlist" class="icon-with-badge">
+                            <i class="fas fa-heart"></i>
+                            <span id="wishlist-count" class="badge">
+                                <%= wishlistCount %>
+                            </span>
+                        </a>
 
-<a href="/cart" class="icon-with-badge">
-    <i class="fas fa-shopping-cart"></i>
-    <% if (cartCount > 0) { %>
-        <span class="badge"><%= cartCount %></span>
-    <% } %>
-</a>
+
+                        <a href="/cart" class="icon-with-badge">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cart-count" class="badge">
+                                <%= cartCount %>
+                            </span>
+                        </a>
 
 
                         <div class="profile-section">
@@ -268,7 +269,10 @@
                                     <li><a href="/coupon">Coupon</a></li>
                                     <li><a href="/wallet">Wallet</a></li>
                                     <li><a href="/support">Support</a></li>
-                                    <li><a href="/refer">Refer & Earn</a></li>
+                                    <li class="<%= activePage === 'referral' ? 'active' : '' %>">
+                                        <a href="/refer">Refer & Earn</a>
+                                    </li>
+
                                     <li><a href="/logout">Logout</a></li>
                                 </ul>
                             </div>

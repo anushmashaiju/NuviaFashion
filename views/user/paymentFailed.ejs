@@ -1,0 +1,94 @@
+<%- include("../partials/userHeader", { title: "Payment Failed", activePage: "paymentFailed" }) %>
+
+<style>
+  .failure-wrapper {
+    max-width: 650px;
+    margin: 120px auto 40px;
+    background: #fff;
+    padding: 30px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-family: "Poppins", sans-serif;
+  }
+
+  .failure-wrapper img {
+    width: 180px;
+    margin-top: 20px;
+  }
+
+  .failure-wrapper h2 {
+    color: #ff4c4c;
+    font-size: 28px;
+  }
+
+  .failure-wrapper p {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #555;
+  }
+
+  .failure-wrapper button,
+  .failure-wrapper a {
+    display: inline-block;
+    margin: 12px 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .failure-wrapper button {
+    background: #d14a78;
+    color: #fff;
+    border: none;
+  }
+
+  .failure-wrapper button:hover,
+  .failure-wrapper a:hover {
+    background: #c0355f;
+  }
+
+  .failure-wrapper a {
+    background: #f76f8f;
+    color: #fff;
+  }
+</style>
+
+<div class="failure-wrapper">
+    <h2>❌ Payment Failed!</h2>
+    <p>Your payment could not be processed. Please try again or choose another payment method.</p>
+
+    <button id="retryPaymentBtn">Retry Payment</button>
+    <a id="goToOrderBtn">Go to Order</a>
+</div>
+
+<%- include("../partials/userFooter") %>
+
+<script>
+  // Retry Payment Button
+  document.getElementById("retryPaymentBtn").addEventListener("click", () => {
+      const buyNowProductId = localStorage.getItem("buyNowProductId");
+      const buyNowQty = localStorage.getItem("buyNowQty") || 1;
+      const selectedAddress = localStorage.getItem("selectedAddress");
+
+      let url = "/payment-gateway?";
+      if (buyNowProductId) url += `buyNow=${buyNowProductId}&qty=${buyNowQty}&address=${selectedAddress}`;
+      else url += `address=${selectedAddress}`;
+
+      window.location.href = url;
+  });
+
+  // Go to specific Order Detail
+const orderId = localStorage.getItem("lastOrderId");
+const goToOrderBtn = document.getElementById("goToOrderBtn");
+
+if (orderId) {
+    goToOrderBtn.href = `/order/${orderId}`;
+} else {
+    goToOrderBtn.href = "/order/list"; // fallback
+}
+
+</script>

@@ -2,7 +2,6 @@
 
   <style>
     body {
-      background-color: #fdf2f5;
       font-family: 'Poppins', sans-serif;
       margin: 0;
       padding: 0;
@@ -15,15 +14,15 @@
 
     .admin-main {
       flex: 1;
-      margin-left: 230px;
-      padding: 30px;
-      background-color: #fff;
+      margin-left: 220px;
+      padding: 20px;
       min-height: calc(100vh - 80px);
     }
 
     .card {
+      width: 100%;
       background: #ffe6eb;
-      padding: 25px;
+      padding: 8px;
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
@@ -32,7 +31,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin: 20px;
     }
 
     .page-top h3 {
@@ -58,7 +57,7 @@
     .search-row {
       display: flex;
       align-items: center;
-      margin-bottom: 15px;
+      margin: 20px;
       gap: 8px;
     }
 
@@ -77,6 +76,7 @@
       padding: 8px 10px;
       cursor: pointer;
     }
+  
 
     .table-custom {
       width: 100%;
@@ -84,11 +84,12 @@
       background: #fff0f4;
       border-radius: 8px;
       overflow: hidden;
+      padding: 0;
     }
 
     .table-custom th,
     .table-custom td {
-      padding: 12px;
+      padding: 9px;
       text-align: center;
       border-bottom: 1px solid #ffd4dd;
     }
@@ -107,7 +108,7 @@
       width: 60px;
       height: 60px;
       border-radius: 8px;
-      object-fit: cover;
+      object-fit: contain;
       border: 2px solid #ff9bb8;
     }
 
@@ -172,13 +173,19 @@
       background-color: #ffc4d6;
       cursor: not-allowed;
     }
+
+    .badge {
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+    }
   </style>
 
   <div class="admin-layout">
     <%- include("../../views/partials/adminSidebar.ejs") %>
 
       <main class="admin-main">
-        <div class="card">
+      
           <div class="page-top">
             <h3>Products</h3>
             <a href="/admin/products/add" class="btn-add">+ Add Product</a>
@@ -203,7 +210,13 @@
                       <th>Name</th>
                       <th>Category</th>
                       <th>Brand</th>
-                      <th>Price</th>
+                      <th>Category Offer (%)</th>
+
+                      <th>Offer (%)</th>
+
+                      <th>Offer Status</th>
+
+                      <th>OfferPrice / Price</th>
                       <th>Stock (A/T)</th>
                       <th>Status</th>
                       <th>Actions</th>
@@ -221,14 +234,18 @@
                         </td>
 
                         <td>
-                          <% if (product.images && product.images.length> 0) { %>
-                            <img
-                              src="<%= product.images[0].includes('http') ? product.images[0] : '/uploads/products/' + product.images[0] %>"
-                              class="avatar" />
-                            <% } else { %>
-                              <span class="text-muted">No Image</span>
-                              <% } %>
+                          <% const firstImage=product.images?.length> 0 ? product.images[0] : null;
+                            %>
+
+                            <% if (firstImage && typeof firstImage==="string" && firstImage.trim() !=="" ) { %>
+                              <img
+                                src="<%= firstImage.startsWith('http') ? firstImage : '/uploads/products/' + firstImage %>"
+                                class="avatar" />
+                              <% } else { %>
+                                <span class="text-muted">No Image</span>
+                                <% } %>
                         </td>
+
 
                         <td>
                           <%= product.name %>
@@ -239,8 +256,89 @@
                         <td>
                           <%= product.brand || "-" %>
                         </td>
-                        <td>₹<%= product.finalPrice ? product.finalPrice.toFixed(2) : product.price.toFixed(2) %>
-                        </td>
+                       <td>
+  <% if (product.category) { %>
+  
+    <% if (product.category.categoryOffer && product.category.categoryOffer.percentage > 0) { %>
+      <%= product.category.categoryOffer.percentage %>%
+
+      <% if (product.category.categoryOffer.isActive) { %>
+        <span class="badge bg-success">
+          <i class="bi bi-check-circle-fill"></i> 
+        </span>
+      <% } else { %>
+        <span class="badge bg-danger">
+          <i class="bi bi-x-circle-fill"></i>
+        </span>
+      <% } %>
+
+    <% } else { %>
+      <span class="badge bg-secondary">No Offer</span>
+    <% } %>
+
+  <% } else { %>
+    —
+  <% } %>
+</td>
+<td>
+  <% 
+    // Extract product offer safely
+    const offer = product.productOffer;
+    let isActive = false;
+
+    if (offer && offer.percentage > 0 && offer.startDate && offer.endDate) {
+      const now = new Date();
+      const start = new Date(offer.startDate);
+      const end = new Date(offer.endDate);
+
+      isActive = now >= start && now <= end;
+    }
+  %>
+
+  <% if (offer) { %>
+
+    <% if (offer.percentage > 0) { %>
+      <%= offer.percentage %>%
+
+      <% if (isActive) { %>
+        <span class="badge bg-success">
+          <i class="bi bi-check-circle-fill"></i>
+        </span>
+      <% } else { %>
+        <span class="badge bg-danger">
+          <i class="bi bi-x-circle-fill"></i>
+        </span>
+      <% } %>
+
+    <% } else { %>
+      <span class="badge bg-secondary">No Offer</span>
+    <% } %>
+
+  <% } else { %>
+    —
+  <% } %>
+</td>
+
+                       <td>
+<% if (product.activeOffer && product.activeOffer.percentage > 0) { %>
+    <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Offer</span>
+<% } else { %>
+    <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> No Offer</span>
+<% } %>
+
+</td>
+
+
+
+
+<td>
+  <span style="color: green; font-weight:600;">₹ <%= product.finalPrice %></span>
+  /
+  <span style="color: red; text-decoration: line-through;">₹ <%= product.price %></span>
+</td>
+
+
+
                         <td>
                           <%= mainStock %> / <%= product.totalStock || 0 %>
                         </td>
@@ -285,6 +383,7 @@
                                       <i class="bi bi-eye"></i>
                                     </a>
                                     <% } %>
+
                         </td>
                       </tr>
                       <% }) %>
@@ -317,7 +416,7 @@
                 </div>
                 <% } %>
           </div>
-        </div>
+ 
       </main>
   </div>
 
@@ -430,6 +529,7 @@
       <td><input type="text" class="form-control" name="variantColor[]" placeholder="Color"></td>
       <td><input type="text" class="form-control" name="variantSize[]" placeholder="Size"></td>
       <td><input type="text" class="form-control" name="variantSKU[]" placeholder="SKU"></td>
+      <td><input type="number" class="form-control" name="variantPrice[]" placeholder="Price" step="0.01"></td>
       <td><input type="number" class="form-control variant-stock" name="variantStock[]" placeholder="Stock"></td>
       <td><input type="file" class="form-control variant-input" name="variantImages" accept="image/*"></td>
       <td class="variant-preview"></td>
