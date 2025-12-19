@@ -17,6 +17,10 @@ const orderedItemSchema = new mongoose.Schema(
     rating: { type: Number, default: null },
     isReturned: { type: Boolean, default: false },
     returnReason: { type: String, default: null },
+    isCancelled: { type: Boolean, default: false },
+cancelReason: { type: String, default: null },
+cancelledAt: { type: Date, default: null },
+
   },
   { _id: false }
 );
@@ -66,10 +70,15 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: { type: String, enum: ["COD", "Razorpay", "Wallet"], required: true },
     paymentStatus: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
-    cancelReason: { type: String, default: null },
+    isCancelled: { type: Boolean, default: false },
+cancelReason: { type: String, default: null },
+cancelledAt: { type: Date, default: null },
+
     returnReason: { type: String, default: null },
     returnRequestedAt: { type: Date, default: null },
     returnApprovedAt: { type: Date, default: null },
+    refundProcessed: {type: Boolean,default: false},
+    returnType: { type: String, enum: ["REFUND", "REPLACEMENT"], default: null},
     orderDate: { type: Date, default: Date.now },
     deliveredAt: { type: Date, default: null }
   },

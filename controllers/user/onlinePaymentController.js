@@ -6,6 +6,7 @@ import Order from "../../models/orderModel.js";
 import { razorpayInstance } from "../../config/razorpay.js";
 import STATUS from "../../utils/statusCodes.js";
 import MESSAGES from "../../utils/messages.js";
+import Coupon from "../../models/couponModel.js";
 
 // CREATE RAZORPAY ORDER
 export const createRazorpayOrder = async (req, res) => {
@@ -17,64 +18,61 @@ export const createRazorpayOrder = async (req, res) => {
         .json({ success: false, message: MESSAGES.LOGIN_REQUIRED });
     }
 
+    // ✅ SAVE USER ID FOR FAILED PAYMENT FLOW
+    req.session.paymentUserId = userId;
+    await req.session.save();
+
     const { selectedAddress: addressId, useWallet } = req.body;
 
-   const summary = req.session.orderSummary;
-if (!summary) {
-  return res.status(400).json({ success: false, message: "Invalid order" });
-}
+    const summary = req.session.orderSummary;
+    if (!summary) {
+      return res.status(400).json({ success: false, message: "Invalid order" });
+    }
 
-// ✅ FORCE delivery charge into session
-summary.deliveryCharge = Number(req.body.deliveryCharge) || 0;
+    // ✅ FORCE delivery charge
+    summary.deliveryCharge = Number(req.body.deliveryCharge) || 0;
 
-// ✅ REBUILD final amount FROM SCRATCH
-let finalAmount =
-  Number(summary.subtotal) +
-  Number(summary.tax) +
-  Number(summary.deliveryCharge) -
-  Number(summary.couponDiscount || 0);
+    // ✅ FINAL AMOUNT CALCULATION
+    let finalAmount =
+      Number(summary.subtotal) +
+      Number(summary.tax) +
+      Number(summary.deliveryCharge) -
+      Number(summary.couponDiscount || 0);
 
-// Safety check
-if (finalAmount <= 0) finalAmount = 1;
+    if (finalAmount <= 0) finalAmount = 1;
 
-// WALLET DEDUCTION
-let walletUsed = 0;
-if (req.body.useWallet) {
-  const wallet = await Wallet.findOne({ userId });
-  walletUsed = Math.min(wallet?.balance || 0, finalAmount);
-  finalAmount -= walletUsed;
+    /* ---------------- WALLET DEDUCTION ---------------- */
+    let walletUsed = 0;
+    if (useWallet) {
+      const wallet = await Wallet.findOne({ userId });
+      walletUsed = Math.min(wallet?.balance || 0, finalAmount);
+      finalAmount -= walletUsed;
 
-  await Wallet.updateOne(
-    { userId },
-    { $inc: { balance: -walletUsed } }
-  );
-}
+      await Wallet.updateOne(
+        { userId },
+        { $inc: { balance: -walletUsed } }
+      );
+    }
 
-// ✅ UPDATE SESSION (MOST IMPORTANT)
-summary.walletUsed = walletUsed;
-summary.finalAmount = finalAmount;
+    // ✅ UPDATE SESSION
+    summary.walletUsed = walletUsed;
+    summary.finalAmount = finalAmount;
+    summary.addressId = addressId;
 
-req.session.orderSummary = summary;
-await req.session.save();
+    req.session.orderSummary = summary;
+    await req.session.save();
 
-
-    /* -------------------------------------------------
-       ✅ RAZORPAY ORDER
-    -------------------------------------------------- */
-
-const amountInPaise = Math.round(finalAmount * 100);
-
-const razorpayOrder = await razorpayInstance.orders.create({
-  amount: amountInPaise,
-  currency: "INR",
-  receipt: "rcpt_" + Date.now(),
-  notes: {
-    userId,
-    addressId,
-    deliveryCharge: summary.deliveryCharge
-  }
-});
-
+    /* ---------------- RAZORPAY ORDER ---------------- */
+    const razorpayOrder = await razorpayInstance.orders.create({
+      amount: Math.round(finalAmount * 100),
+      currency: "INR",
+      receipt: "rcpt_" + Date.now(),
+      notes: {
+        userId,
+        addressId,
+        deliveryCharge: summary.deliveryCharge
+      }
+    });
 
     return res.status(STATUS.CREATED).json({
       success: true,
@@ -96,69 +94,89 @@ export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, redirect: "/payment/failed" });
+    }
 
+    // 🔐 ALWAYS lock userId first
+    const userId = req.session.user?.id || req.session.paymentUserId;
+    if (!userId) {
+      return res.status(401).json({ success: false, redirect: "/login" });
+    }
+
+    const summary = req.session.orderSummary;
+    if (!summary) {
+      return res.status(400).json({ success: false, redirect: "/cart" });
+    }
+
+    // 🔐 Verify Razorpay signature
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body)
       .digest("hex");
 
-    const userId = req.session.user?.id;
-    const summary = req.session.orderSummary || {};
-
-    // ------------------------------
-    // ❗ FAILED PAYMENT → SAVE ORDER
-    // ------------------------------
+    /* =====================================================
+       ❌ FAILED PAYMENT → SAVE FAILED ORDER
+    ====================================================== */
     if (expectedSignature !== razorpay_signature) {
 
-      let items = [];
+      // ❗ Prevent duplicate failed orders
+      const existingFailed = await Order.findOne({
+        orderID: razorpay_order_id,
+        paymentStatus: "failed"
+      });
 
-      if (req.session.buyNow) {
-        const b = req.session.buyNow;
-        items.push({
-          productId: b.productId,
-          variantId: b.variantId || null,
-          quantity: b.quantity,
-          sku: b.sku,
-          productName: b.productName,
-          color: b.color || null,
-          size: b.size || null,
-          basePrice: b.basePrice,
-          discount: b.discount || 0,
-          finalPrice: b.price,
-          subtotal: b.price * b.quantity,
-          image: b.image
+      if (!existingFailed) {
+        let items = [];
+
+        if (req.session.buyNow) {
+          const b = req.session.buyNow;
+          items.push({
+            productId: b.productId,
+            variantId: b.variantId || null,
+            quantity: b.quantity,
+            sku: b.sku,
+            productName: b.productName,
+            color: b.color || null,
+            size: b.size || null,
+            basePrice: b.basePrice,
+            discount: b.discount || 0,
+            finalPrice: b.price,
+            subtotal: b.price * b.quantity,
+            image: b.image
+          });
+        }
+
+        await Order.create({
+          orderID: razorpay_order_id,   // 👈 IMPORTANT (unique & traceable)
+          user_id: userId,
+          shippingAddressId: summary.addressId || null,
+
+          items,
+
+          subtotal: summary.subtotal || 0,
+          tax: summary.tax || 0,
+          couponApplied: summary.appliedCouponId || null,
+          couponName: summary.couponName || null,
+          couponDiscount: summary.couponDiscount || 0,
+          walletUsed: summary.walletUsed || 0,
+          deliveryCharge: summary.deliveryCharge || 0,
+          totalPrice: summary.finalAmount || 0,
+
+          paymentMethod: "Razorpay",
+          paymentStatus: "failed",
+          orderStatus: "Failed",
+
+          statusTimeline: {
+            orderPlaced: new Date()
+          }
         });
       }
 
-      await Order.create({
-        orderID: "ORD-" + Date.now(),
-        user_id: userId,
-        shippingAddressId: summary.addressId || null,
-
-        items: items,
-
-        subtotal: summary.subtotal || 0,
-        tax: summary.tax || 0,
-        couponApplied: summary.couponId || null,
-        couponName: summary.couponName || null,
-        couponDiscount: summary.couponDiscount || 0,
-        walletUsed: summary.walletUsed || 0,
-        deliveryCharge: summary.deliveryCharge || 0,
-        totalPrice: summary.finalAmount || 0,
-
-        paymentMethod: "Razorpay",
-        paymentStatus: "failed",
-        orderStatus: "Failed",
-
-        statusTimeline: {
-          orderPlaced: new Date()
-        }
-      });
-
+      // 🧹 Cleanup
       req.session.buyNow = null;
+      req.session.orderSummary = null;
       await req.session.save();
 
       return res.status(400).json({
@@ -167,17 +185,19 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    // ------------------------------
-    // ✔ SUCCESS PAYMENT → CREATE ORDER
-    // ------------------------------
+    /* =====================================================
+       ✔ SUCCESS PAYMENT → CREATE ORDER
+    ====================================================== */
     const razorpayOrder = await razorpayInstance.orders.fetch(razorpay_order_id);
     const addressId = razorpayOrder.notes.addressId;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, redirect: "/payment/failed" });
-    }
-
     const order = await createOrderAfterPayment(req, userId, addressId);
+
+    // 🧹 Cleanup session
+    req.session.buyNow = null;
+    req.session.orderSummary = null;
+    req.session.paymentUserId = null;
+    await req.session.save();
 
     return res.status(200).json({
       success: true,
@@ -188,6 +208,7 @@ export const verifyPayment = async (req, res) => {
     console.error("Payment Verification Error:", err);
 
     req.session.buyNow = null;
+    req.session.orderSummary = null;
     await req.session.save();
 
     return res.status(500).json({
@@ -197,8 +218,10 @@ export const verifyPayment = async (req, res) => {
   }
 };
 
+
 // CREATE ORDER AFTER PAYMENT
 const createOrderAfterPayment = async (req, userId, addressId) => {
+  
   const summary = req.session.orderSummary;
   if (!summary) throw new Error("Order summary missing");
 
@@ -277,7 +300,8 @@ const createOrderAfterPayment = async (req, userId, addressId) => {
     tax: summary.tax,
     deliveryCharge: summary.deliveryCharge || 0,
 
-    couponApplied: summary.couponId || null,
+  couponApplied: summary.appliedCouponId,
+
     couponName: summary.couponName || null,
     couponDiscount: summary.couponDiscount || 0,
 
@@ -292,5 +316,14 @@ const createOrderAfterPayment = async (req, userId, addressId) => {
   });
 
   await order.save();
+   // ---------------- MARK COUPON AS USED ----------------
+
+if (summary.appliedCouponId) {
+  await Coupon.findByIdAndUpdate(summary.appliedCouponId, {
+    $addToSet: { usedBy: userId }
+  });
+}
+
   return order;
+ 
 };

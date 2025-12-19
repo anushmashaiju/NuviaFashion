@@ -6,44 +6,24 @@ import MESSAGES from "../../utils/messages.js";
 // GET AVAILABLE COUPONS
 export const getAvailableCoupons = async (req, res) => {
   try {
-    const userId = req.session.user?.id || req.session.user?._id;
+    const userId = req.session.user?._id;
+    const summary = req.session.orderSummary;
 
-    if (!userId) 
-      return res.status(STATUS.UNAUTHORIZED).json({ coupons: [], message: MESSAGES.USER_NOT_LOGGED_IN });
-
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart) 
-      return res.status(STATUS.NOT_FOUND).json({ coupons: [], message: MESSAGES.CART_EMPTY });
-
- let subtotal = 0;
-
-if (req.session.buyNow) {
-  const b = req.session.buyNow;
-  subtotal = b.price * (b.quantity || 1);
-} else {
-  const cart = await Cart.findOne({ userId }).populate("items.productId");
-  if (!cart || !cart.items.length) 
-    return res.status(STATUS.NOT_FOUND).json({ coupons: [], message: MESSAGES.CART_EMPTY });
-
-  cart.items.forEach(i => {
-    const price = i.productId.finalPrice ?? i.productId.price;
-    subtotal += price * i.quantity;
-  });
-}
-
+    if (!userId || !summary)
+      return res.json({ coupons: [] });
 
     const coupons = await Coupon.find({
       expireOn: { $gte: new Date() },
-      minimumPrice: { $lte: subtotal },
+      minimumPrice: { $lte: summary.subtotal },
       usedBy: { $ne: userId },
       isList: true
     });
 
-    return res.status(STATUS.SUCCESS).json({ coupons });
+    res.json({ coupons });
 
   } catch (err) {
-    console.error("Coupon fetch error:", err);
-    return res.status(STATUS.SERVER_ERROR).json({ coupons: [], message: MESSAGES.SERVER_ERROR });
+    console.error(err);
+    res.json({ coupons: [] });
   }
 };
 
@@ -69,7 +49,6 @@ export const applyCoupon = async (req, res) => {
 
     // Apply coupon only if valid
     summary.couponDiscount = coupon.offerPrice || 0;
-    summary.finalAmount = summary.subtotal + summary.tax - summary.couponDiscount;
     summary.appliedCouponId = couponId;
 
     req.session.orderSummary = summary;
@@ -115,5 +94,26 @@ export const paymentPage = async (req, res) => {
   } catch (err) {
     console.error("Payment page error:", err);
     return res.status(STATUS.SERVER_ERROR).redirect("/cart");
+  }
+};
+
+export const userCouponPage = async (req, res) => {
+  try {
+    const user = req.session.user;
+
+    const coupons = await Coupon
+      .find({ isList: true })
+      .sort({ createdAt: -1 });
+
+    res.render("user/coupon", {
+      coupons,
+      userId: user._id,
+      user,                  // ✅ REQUIRED
+      activePage: "coupons"  // optional
+    });
+
+  } catch (err) {
+    console.error("User coupon page error:", err);
+    res.redirect("/");
   }
 };

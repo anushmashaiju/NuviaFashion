@@ -177,7 +177,7 @@ export const verifyOtp = async (req, res) => {
             $inc: { balance: rewardAmount },
             $push: {
               transactions: {
-                type: "credit",
+                type: "CREDIT",
                 amount: rewardAmount,
                 description: `Referral bonus for inviting ${newUser.email}`
               }
@@ -192,7 +192,7 @@ export const verifyOtp = async (req, res) => {
             $inc: { balance: rewardAmount },
             $push: {
               transactions: {
-                type: "credit",
+                type: "CREDIT",
                 amount: rewardAmount,
                 description: `Signup bonus for using referral code`
               }
@@ -602,9 +602,21 @@ export const getReferralPage = async (req, res) => {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/login");
 
-    const referral = await ReferralCode.findOne({ user: userId });
+    // 🔥 ALWAYS ensure referral exists
+    let referral = await ReferralCode.findOne({ user: userId });
+
     if (!referral) {
-      return res.render("user/referral", { errorMessage: "No referral info found." });
+      const newCode = generateReferralCode();
+      const baseUrl = process.env.BASE_URL;
+      const referralLink = `${baseUrl}/signup?ref=${newCode}`;
+
+      referral = await ReferralCode.create({
+        user: userId,
+        code: newCode,
+        referralLink,
+        usedCount: 0,
+        rewardAmount: 100   // default reward
+      });
     }
 
     const referralUsers = await User.find({ referredBy: userId })
@@ -619,15 +631,13 @@ export const getReferralPage = async (req, res) => {
       reward: rewardPerUser
     }));
 
-    res.render("user/referral", {
-      title: "Referral",
-
+    return res.render("user/referral", {
+      title: "Refer & Earn",
       referralCode: referral.code,
-      referralLink: referral.referralLink,  
+      referralLink: referral.referralLink,
       usedCount: referral.usedCount,
       rewardAmount: referral.usedCount * rewardPerUser,
       referralUsers: formattedUsers,
-
       activePage: "referral"
     });
 

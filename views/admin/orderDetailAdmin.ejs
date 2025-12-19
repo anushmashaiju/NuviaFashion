@@ -177,13 +177,14 @@
 
         <div class="box">
           <h4>Price Details</h4>
-          <p>Items Total: Rs.<%= order.subtotal %>
+          <p>Items Total: Rs.<%= order.subtotal.toFixed(2) %>
           </p>
           <p>Delivery Charge: Rs.<%= order.deliveryCharge || 0 %>
           </p>
-          <p>Tax: Rs.<%= order.tax || 0 %>
+          <p>Tax: Rs.<%= order.tax.toFixed(2) %>
           </p>
-          <p>Grand Total: Rs.<%= order.totalPrice %>
+          <p>Coupon Discount:- Rs.<%= order.couponDiscount.toFixed(2) %> </p>
+          <p>Grand Total: Rs.<%= order.totalPrice.toFixed(2) %>
           </p>
         </div>
       </div>
@@ -264,9 +265,10 @@
   .then(res => res.json())
   .then(data => {
     if(data.success){
-      Swal.fire("Success!", "Return Approved", "success").then(() => {
-        window.location.reload();
-      });
+     Swal.fire("Success!", "Return Approved", "success").then(() => {
+    window.location.href = '/admin/orders/list';
+});
+
     } else {
       Swal.fire("Error", data.message, "error");
     }

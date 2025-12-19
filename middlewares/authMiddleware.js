@@ -1,29 +1,41 @@
 import User from "../models/userModel.js"; 
 
-export const isUserAuthenticated = async (req, res, next) => {
-  if (!req.session.user) return res.redirect("/login");
 
+export const isUserAuthenticated = async (req, res, next) => {
   try {
-    const user = await User.findById(req.session.user.id);
+    if (!req.session?.user) {
+      return res.redirect("/login");
+    }
+
+    // ✅ Normalize ID
+    const userId = req.session.user._id || req.session.user.id;
+    if (!userId) return res.redirect("/login");
+
+    const user = await User.findById(userId);
     if (!user || !user.isActive) {
       req.session.destroy(err => {
         if (err) console.error("Session destroy error:", err);
         return res.redirect("/login?blocked=true");
       });
-    } else {
-      req.session.user = {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      };
-      next();
+      return;
     }
+
+    // ✅ Always store both
+    req.session.user = {
+      _id: user._id,
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    next();
   } catch (err) {
     console.error("Auth middleware error:", err);
-    res.redirect("/login");
+    return res.redirect("/login");
   }
 };
+
 
 
 export const isGuest = (req, res, next) => {

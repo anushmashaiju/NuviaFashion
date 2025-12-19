@@ -3,7 +3,7 @@ import Product from "../../models/productModel.js";
 import User from "../../models/userModel.js";
 import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
-import { refundCancelledOrder, refundReturnedOrder } from "../../utils/walletRefund.js";
+import { processWalletRefund } from "../../utils/walletRefund.js";
 
 // ADMIN — LIST ALL ORDERS
 export const getOrdersPage = async (req, res) => {
@@ -228,42 +228,41 @@ export const getSingleReturnRequest = async (req, res) => {
   }
 };
 
-// APPROVE RETURN
 export const approveReturnRequest = async (req, res) => {
-  console.log("Approve return called for orderID:", req.params.orderID);
-  
   try {
     const { orderID } = req.params;
-    const order = await Order.findOne({ orderID }).populate("user_id");
+    const order = await Order.findOne({ orderID });
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (!order.deliveredAt) return res.status(400).json({ success: false, message: "Order not delivered yet" });
 
-    if (!order.deliveredAt) {
-      return res.status(400).json({ success: false, message: "Order not delivered yet" });
-    }
+    const diffDays = Math.ceil((Date.now() - new Date(order.deliveredAt)) / (1000 * 60 * 60 * 24));
+    if (diffDays > 7) return res.status(400).json({ success: false, message: "Return period expired" });
 
-    const now = new Date();
-    const diffDays = Math.ceil((now - order.deliveredAt) / (1000 * 60 * 60 * 24));
+    // Approve return
+    order.orderStatus = "Returned"; // matches frontend checks
+    order.returnApprovedAt = new Date();
 
-    if (diffDays > 7) {
-      return res.status(400).json({ success: false, message: "Return period expired" });
-    }
+    // Process refund if applicable
+   if (order.returnType === "REFUND" && !order.refundProcessed && ["COD", "Razorpay", "Wallet"].includes(order.paymentMethod)) {
+  await processWalletRefund({ order }); 
+  // processWalletRefund now adds back coupon discount automatically
+}
 
-    order.orderStatus = "Return Approved";
-    order.returnApprovedAt = now;
+
+    // Restock products
+    await Promise.all(order.items.map(item =>
+      Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+    ));
+
     await order.save();
 
-    for (let item of order.items) {
-      if (item.productId) {
-        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
-      }
-    }
-
-    await refundReturnedOrder(order.user_id._id, order.totalPrice);
-
-    return res.status(200).json({ success: true, message: "Return approved and amount refunded to wallet" });
+    return res.json({
+      success: true,
+      message: order.returnType === "REFUND"
+        ? "Return approved and refund credited to wallet"
+        : "Return approved. Replacement initiated"
+    });
 
   } catch (err) {
     console.error("Approve Return Error:", err);
@@ -302,20 +301,21 @@ export const adminCancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).send(MESSAGES.ORDER_NOT_FOUND);
 
-    if (order.orderStatus !== "Cancelled") {
-      for (let item of order.items) {
-        await Product.findByIdAndUpdate(item.productId, {
-          $inc: { stock: item.quantity }
-        });
-      }
+    if (!order.refundProcessed) {
+      await processWalletRefund(order, "Refund for cancelled order");
+    }
 
-      await refundCancelledOrder(order.user_id._id, order.totalPrice);
+    // Restock
+    for (let item of order.items) {
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: item.quantity }
+      });
     }
 
     order.orderStatus = "Cancelled";
     await order.save();
 
-    res.status(200).redirect("/admin/orders");
+    res.redirect("/admin/orders");
   } catch (err) {
     console.error(err);
     res.status(500).send(MESSAGES.SERVER_ERROR);

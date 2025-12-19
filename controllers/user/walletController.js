@@ -4,125 +4,126 @@ import Order from "../../models/orderModel.js";
 import Address from "../../models/addressModel.js";
 import STATUS from "../../utils/statusCodes.js";
 import MESSAGES from "../../utils/messages.js";
-
-// Helper: round to 2 decimals
+import Coupon from "../../models/couponModel.js";
 
 const round2 = (value) => Number((value || 0).toFixed(2));
 
 // WALLET PAYMENT
 export const walletPayment = async (req, res) => {
   try {
-    const userId = req.session.user?.id;
+    const userId = req.session.user?._id;
+
     if (!userId) {
       return res.status(401).json({ success: false, message: "Login required" });
     }
 
-    const { selectedAddress } = req.body;
+    const { selectedAddress, deliveryCharge } = req.body;
     const summary = req.session.orderSummary;
     if (!summary) {
       return res.status(400).json({ success: false, message: "Invalid order" });
     }
 
+    // ✅ FORCE DELIVERY CHARGE INTO SUMMARY
+    summary.deliveryCharge = round2(Number(deliveryCharge) || 0);
+
+    // ✅ REBUILD FINAL AMOUNT (JUST LIKE RAZORPAY)
+    let finalAmount =
+      round2(summary.subtotal) +
+      round2(summary.tax) +
+      summary.deliveryCharge -
+      round2(summary.couponDiscount || 0);
+
+    if (finalAmount <= 0) finalAmount = 1;
+
+    summary.finalAmount = finalAmount;
+    req.session.orderSummary = summary;
+    await req.session.save();
+
     const wallet = await Wallet.findOne({ userId });
-    if (!wallet || wallet.balance < summary.finalAmount) {
-      return res.status(400).json({ success: false, message: "Insufficient wallet balance" });
+    if (!wallet || wallet.balance < finalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: "Insufficient wallet balance"
+      });
     }
 
     /* ---------------- WALLET DEDUCTION ---------------- */
-    wallet.balance = round2(wallet.balance - summary.finalAmount);
+    wallet.balance = round2(wallet.balance - finalAmount);
     wallet.transactions.push({
       type: "DEBIT",
-      amount: round2(summary.finalAmount),
+      amount: round2(finalAmount),
       description: "Order payment via Wallet"
     });
     await wallet.save();
 
-   const sessionItems = req.session.orderItems;
-if (!sessionItems || sessionItems.length === 0) {
-  return res.status(400).json({ success: false, message: "Order items missing" });
-}
 
-const orderItems = sessionItems.map(item => ({
-  productId: item.productId,
-  quantity: item.quantity,
-  basePrice: round2(item.basePrice),
-  discount: round2(item.discount || 0),
-  finalPrice: round2(item.finalPrice),
-  subtotal: round2(item.subtotal),
-  sku: item.sku,
-  productName: item.productName,
-  color: item.color || null,
-  size: item.size || null,
-  image: item.image || "",
-  deliveryCharge: round2(item.deliveryCharge || 0)
-}));
+    const sessionItems = req.session.orderItems;
+    if (!sessionItems || sessionItems.length === 0) {
+      return res.status(400).json({ success: false, message: "Order items missing" });
+    }
+
+    const orderItems = sessionItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      basePrice: round2(item.basePrice),
+      discount: round2(item.discount || 0),
+      finalPrice: round2(item.finalPrice),
+      subtotal: round2(item.subtotal),
+      sku: item.sku,
+      productName: item.productName,
+      color: item.color || null,
+      size: item.size || null,
+      image: item.image || "",
+      deliveryCharge: round2(item.deliveryCharge || 0)
+    }));
 
 
     /* ---------------- CREATE ORDER ---------------- */
- const order = await Order.create({
-  orderID: "ORD" + Date.now(),
-  user_id: userId, // ✅ important
-  shippingAddressId: selectedAddress,
-  items: orderItems,
-  subtotal: round2(summary.subtotal),
-  tax: round2(summary.tax),
-  deliveryCharge: round2(summary.deliveryCharge || 0),
-  couponDiscount: round2(summary.couponDiscount || 0),
-  walletUsed: round2(summary.finalAmount),
-  totalPrice: round2(summary.finalAmount),
-  paymentMethod: "Wallet",
-  paymentStatus: "success",
-  orderStatus: "Order Placed",
-  statusTimeline: {
-    orderPlaced: new Date()
-  }
-});
-
-    /* ---------------- CLEAR CART ---------------- */
-   if (!req.session.buyNow) {
-  await Cart.updateOne({ userId }, { $set: { items: [] } });
+    const order = await Order.create({
+      orderID: "ORD" + Date.now(),
+      user_id: userId, // ✅ important
+      shippingAddressId: selectedAddress,
+      items: orderItems,
+      subtotal: round2(summary.subtotal),
+      tax: round2(summary.tax),
+      deliveryCharge: round2(summary.deliveryCharge || 0),
+      couponDiscount: round2(summary.couponDiscount || 0),
+      couponApplied: summary.appliedCouponId,
+      walletUsed: round2(summary.finalAmount),
+      totalPrice: round2(summary.finalAmount),
+      paymentMethod: "Wallet",
+      paymentStatus: "success",
+      orderStatus: "Order Placed",
+      statusTimeline: {
+        orderPlaced: new Date()
+      }
+    });
+if (summary.appliedCouponId) {
+  await Coupon.findByIdAndUpdate(summary.appliedCouponId, {
+    $addToSet: { usedBy: userId }
+  });
 }
 
+    /* ---------------- CLEAR CART ---------------- */
+    if (!req.session.buyNow) {
+      await Cart.updateOne({ userId }, { $set: { items: [] } });
+    }
 
-// ✅ CLEAN SESSION
-delete req.session.orderItems;
-delete req.session.orderSummary;
-delete req.session.buyNow;
 
-await req.session.save();
+    // ✅ CLEAN SESSION
+    delete req.session.orderItems;
+    delete req.session.orderSummary;
+    delete req.session.buyNow;
 
-res.json({ success: true, orderId: order.orderID });
+    await req.session.save();
+
+    res.json({ success: true, orderId: order.orderID });
 
   } catch (err) {
     console.error("Wallet Payment Error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
-};
-
-
-// REFUND ON CANCEL
-export const refundOnCancel = async (order) => {
-  const wallet = await Wallet.findOne({ userId: order.userId });
-  wallet.balance = round2(wallet.balance + order.totalPrice);
-  wallet.transactions.push({
-    type: "CREDIT",
-    amount: round2(order.totalPrice),
-    description: "Refund for canceled order"
-  });
-  await wallet.save();
-};
-
-// REFUND ON RETURN (ADMIN)
-export const approveReturnRefund = async (orderId) => {
-  const order = await Order.findById(orderId);
-  const wallet = await Wallet.findOne({ userId: order.userId });
-  wallet.balance = round2(wallet.balance + order.totalPrice);
-  wallet.transactions.push({
-    type: "CREDIT",
-    amount: round2(order.totalPrice),
-    description: "Refund for returned order (Admin Approved)"
-  });
-  await wallet.save();
+ 
 };
 
 // GET USER WALLET PAGE
@@ -130,7 +131,8 @@ export const getWalletPage = async (req, res) => {
   try {
     if (!req.session.user) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
-    const userId = req.session.user.id;
+ const userId = req.session.user?._id;
+
 
     let wallet = await Wallet.findOne({ userId });
     if (!wallet) wallet = await Wallet.create({ userId, balance: 0, transactions: [] });
@@ -197,7 +199,8 @@ export const addMoneyToWallet = async (req, res) => {
 // APPLY WALLET
 export const applyWallet = async (req, res) => {
   try {
-    const userId = req.session.user?.id;
+    const userId = req.session.user?._id;
+
     if (!userId) return res.status(401).json({ success: false, message: "Login required" });
 
     const { totalAmount } = req.body;
@@ -221,6 +224,15 @@ export const applyWallet = async (req, res) => {
 
 // GET WALLET BALANCE
 export const getWalletBalance = async (req, res) => {
-  const wallet = await Wallet.findOne({ userId: req.session.user.id });
-  res.json({ balance: round2(wallet?.balance || 0) });
+  try {
+    const userId = req.session.user?._id;
+    if (!userId) return res.status(401).json({ balance: 0 });
+
+    const wallet = await Wallet.findOne({ userId });
+    res.json({ balance: Number(wallet?.balance || 0).toFixed(2) });
+
+  } catch (err) {
+    console.error("Wallet Balance Error:", err);
+    res.status(500).json({ balance: 0 });
+  }
 };

@@ -9,6 +9,7 @@ import STATUS from "../../utils/statusCodes.js";
 import crypto from "crypto";
 import { razorpayInstance } from "../../config/razorpay.js";
 import Cart from "../../models/cartModel.js";
+import { processWalletRefund } from "../../utils/walletRefund.js";
 
 // LIST ORDERS
 export const listOrders = async (req, res) => {
@@ -21,7 +22,20 @@ export const listOrders = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch all orders for the user
-    const filterCondition = { user_id: userId };
+  const twoDaysAgo = new Date();
+twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+const filterCondition = {
+  user_id: userId,
+  $or: [
+    { paymentStatus: { $ne: "failed" } },
+    {
+      paymentStatus: "failed",
+      createdAt: { $gte: twoDaysAgo }
+    }
+  ]
+};
+
 
     const totalOrders = await Order.countDocuments(filterCondition);
 
@@ -96,26 +110,41 @@ export const cancelOrder = async (req, res) => {
   try {
     const { reason } = req.body;
     const userId = req.session.user?.id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.USER_NOT_LOGGED_IN });
+    if (!userId) return res.status(401).json({ success: false, message: "Login required" });
 
     const order = await Order.findOne({ orderID: req.params.id, user_id: userId });
-    if (!order) return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.ORDER_NOT_FOUND });
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     if (order.orderStatus === "Cancelled")
-      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: MESSAGES.ORDER_CANCELLED });
+      return res.status(400).json({ success: false, message: "Order already cancelled" });
+
+    // Only refund if order was paid
+// Only refund if order was paid
+if (order.paymentStatus === "success") {
+  const refundAmount = Number((order.subtotal + order.tax + order.deliveryCharge).toFixed(2));
+  await processWalletRefund({
+    userId: order.user_id,
+    amount: refundAmount,
+    description: "Refund for cancelled order (coupon excluded)"
+  });
+}
+
+
 
     order.orderStatus = "Cancelled";
     order.cancelReason = reason || null;
     await order.save();
 
+    // Restore stock
     for (let item of order.items) {
       await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
     }
 
-    res.status(STATUS.SUCCESS).json({ success: true, message: MESSAGES.ORDER_CANCELLED });
+    res.status(200).json({ success: true, message: "Order cancelled and refunded to wallet" });
+
   } catch (err) {
     console.error("Cancel Order Error:", err);
-    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -124,39 +153,100 @@ export const cancelProduct = async (req, res) => {
   try {
     const { productId, reason } = req.body;
     const userId = req.session.user?.id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.USER_NOT_LOGGED_IN });
 
-    const order = await Order.findOne({ orderID: req.params.id, user_id: userId });
-    if (!order) return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.ORDER_NOT_FOUND });
+    const order = await Order.findOne({
+      orderID: req.params.id,
+      user_id: userId
+    });
 
-    const itemIndex = order.items.findIndex(i => i.productId.toString() === productId);
-    if (itemIndex === -1) return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_NOT_FOUND });
-
-    const item = order.items[itemIndex];
-    await Product.findByIdAndUpdate(productId, { $inc: { stock: item.quantity } });
-
-    order.items.splice(itemIndex, 1);
-
-    order.subtotal = order.items.reduce((sum, i) => sum + i.subtotal, 0);
-    order.totalPrice =
-      order.subtotal -
-      (order.discount || 0) -
-      (order.couponDiscount || 0) +
-      (order.tax || 0) +
-      (order.deliveryCharge || 0);
-
-    if (order.items.length === 0) {
-      order.orderStatus = "Cancelled";
-      order.cancelReason = reason || null;
-      order.totalPrice = 0;
-      order.subtotal = 0;
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
+    const item = order.items.find(
+      i => i.productId.toString() === productId
+    );
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Item not found" });
+    }
+
+    if (item.isCancelled) {
+      return res.status(400).json({ success: false, message: "Item already cancelled" });
+    }
+
+    /* ================= REFUND LOGIC ================= */
+
+/* ================= REFUND LOGIC ================= */
+const GST_RATE = 0.18;
+
+
+const calculateTaxFromItems = (items) => {
+  return Number(
+    items.reduce((sum, item) => {
+      return sum + (item.finalPrice * GST_RATE);
+    }, 0).toFixed(2)
+  );
+};
+
+if (order.paymentStatus === "success") {
+  const itemTax = Number((item.finalPrice * GST_RATE).toFixed(2));
+  const refundAmount = Number((item.finalPrice + itemTax).toFixed(2));
+
+  if (refundAmount > 0) {
+    await processWalletRefund({
+      userId: order.user_id,
+      amount: refundAmount,
+      description: `Refund for cancelled item: ${item.productName}`
+    });
+  }
+}
+
+    /* ================= UPDATE ITEM ================= */
+
+    item.isCancelled = true;
+    item.cancelReason = reason || null;
+    item.cancelledAt = new Date();
+
+    /* ================= RESTORE STOCK ================= */
+
+    await Product.findByIdAndUpdate(item.productId, {
+      $inc: { stock: item.quantity }
+    });
+
+    /* ================= RECALCULATE ORDER ================= */
+
+   const activeItems = order.items.filter(
+  i => !i.isCancelled && !i.isReturned
+);
+
+// Recalculate subtotal
+order.subtotal = activeItems.reduce((sum, i) => sum + i.finalPrice, 0);
+
+// Recalculate tax ONLY from active items
+order.tax = calculateTaxFromItems(activeItems);
+
+// Coupon applies only if items exist
+const couponDiscount = activeItems.length > 0 ? order.couponDiscount : 0;
+const deliveryCharge = activeItems.length > 0 ? order.deliveryCharge : 0;
+
+order.totalPrice =
+  order.subtotal +
+  order.tax +
+  deliveryCharge -
+  couponDiscount;
+
+if (activeItems.length === 0) {
+  order.orderStatus = "Cancelled";
+}
+
     await order.save();
-    res.status(STATUS.SUCCESS).json({ success: true, message: MESSAGES.ORDER_CANCELLED, order });
+
+    return res.json({ success: true, order });
+
   } catch (err) {
     console.error("Cancel Product Error:", err);
-    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -222,7 +312,7 @@ export const requestReturn = async (req, res) => {
     if (!userId)
       return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: "Login required" });
 
-    const { reason } = req.body;
+ const { reason, returnType } = req.body;
     if (!reason)
       return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "Reason required" });
 
@@ -240,7 +330,7 @@ export const requestReturn = async (req, res) => {
     order.orderStatus = "Return Requested";
     order.returnReason = reason;
     order.returnRequestedAt = new Date();
-
+order.returnType = returnType || "REFUND";
     await order.save();
 
     res.status(STATUS.SUCCESS).json({ success: true, message: "Return request submitted to admin" });

@@ -1,4 +1,7 @@
-<%- include("../partials/userHeader", { title: "Refer & Earn" }) %>
+<%- include("../partials/userHeader", {
+  title: "Refer & Earn",
+  activePage: "referral"
+}) %>
 
 <style>
   .referral-wrapper {
@@ -111,7 +114,8 @@
   }
 </style>
 
-<%- include("../partials/userHeader", { title: "Refer & Earn" }) %>
+
+
 
 <div class="referral-wrapper">
   <h2 class="referral-title">🎁 Refer & Earn</h2>
@@ -122,8 +126,11 @@
 </div>
 
 
+<% if (referralCode) { %>
   <button class="referral-btn" onclick="copyCode()">Copy Code</button>
   <button class="referral-btn share-btn" onclick="shareLink()">Share Link</button>
+<% } %>
+
 
   <div class="info-box">
     <p><strong>Total Referred Users:</strong> <%= usedCount %></p>

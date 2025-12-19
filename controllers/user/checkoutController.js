@@ -112,7 +112,7 @@ export const checkoutPage = async (req, res) => {
     let items = [];
     let isBuyNow = false;
 
-    // BUY NOW MODE
+    // ---------------- BUY NOW ----------------
     if (req.session.buyNow) {
       const b = req.session.buyNow;
 
@@ -138,7 +138,7 @@ export const checkoutPage = async (req, res) => {
       isBuyNow = true;
 
     } else {
-
+      // ---------------- CART ----------------
       const cart = await Cart.findOne({ userId }).populate("items.productId");
 
       if (!cart || !cart.items.length) {
@@ -146,7 +146,7 @@ export const checkoutPage = async (req, res) => {
         return res.status(STATUS.BAD_REQUEST).redirect("/cart");
       }
 
-      items = cart.items.map((i) => {
+      items = cart.items.map(i => {
         const product = i.productId;
 
         const price = product.price;
@@ -179,6 +179,7 @@ export const checkoutPage = async (req, res) => {
       });
     }
 
+    // ---------------- STOCK CHECK ----------------
     for (let item of items) {
       const product = await Product.findById(item.productId._id);
 
@@ -201,59 +202,70 @@ export const checkoutPage = async (req, res) => {
       }
     }
 
+    // ---------------- BASE CALCULATION ONLY ----------------
     const subtotal = parseFloat(items.reduce((s, i) => s + i.subtotal, 0).toFixed(2));
     const tax = parseFloat((subtotal * 0.18).toFixed(2));
-    const finalAmount = parseFloat((subtotal + tax).toFixed(2));
+const deliveryCharge = calculateDeliveryCharge({
+  subtotal,
+  products: items.map(i => ({ deliveryCharge: i.deliveryCharge || 0 })),
+  paymentMethod: "ONLINE", // default
+  address: null
+});
+
+const finalAmount = parseFloat(
+  (subtotal + tax + deliveryCharge).toFixed(2)
+);
+
+req.session.orderSummary = {
+  subtotal,
+  tax,
+  deliveryCharge,
+  couponDiscount: 0,
+  appliedCouponId: null,
+  finalAmount
+};
+
+    // ---------------- COUPONS ----------------
     const coupons = await Coupon.find({
       isActive: true,
+      usedBy: { $ne: userId },
       expiryDate: { $gte: new Date() }
     });
 
-    req.session.orderSummary = {
-      subtotal,
-      tax,
-      finalAmount,
-      couponDiscount: 0,
-      appliedCouponId: null
-    };
+    // Save items for wallet / order
+    req.session.orderItems = items.map(i => ({
+      productId: i.productId._id,
+      quantity: i.quantity,
+      basePrice: i.basePrice,
+      discount: i.discount || 0,
+      finalPrice: i.finalPrice,
+      subtotal: i.subtotal,
+      sku: i.sku,
+      productName: i.productName,
+      color: i.color || null,
+      size: i.size || null,
+      image: i.image || "",
+      deliveryCharge: 0
+    }));
 
-    req.session.save();
-// ✅ SAVE ORDER ITEMS FOR WALLET PAYMENT
-req.session.orderItems = items.map(i => ({
-  productId: i.productId._id,
-  quantity: i.quantity,
-  basePrice: i.basePrice,
-  discount: i.discount || 0,
-  finalPrice: i.finalPrice,
-  subtotal: i.subtotal,
-  sku: i.sku,
-  productName: i.productName,
-  color: i.color || null,
-  size: i.size || null,
-  image: i.image || "",
-  deliveryCharge: i.deliveryCharge || 0
-}));
+    await req.session.save();
 
-req.session.save();
-
-res.status(STATUS.SUCCESS).render("user/checkout", {
-  activePage: "Checkout",
-  cart: { items },
-  addresses,
-  summary: req.session.orderSummary,
-  isBuyNow,
-  buyNowProductId: req.session.buyNow?.productId || null, // <-- added
-  coupons,
-  user: req.session.user
-});
-
+    return res.status(STATUS.SUCCESS).render("user/checkout", {
+      activePage: "Checkout",
+      cart: { items },
+      addresses,
+      summary: req.session.orderSummary,
+      isBuyNow,
+      buyNowProductId: req.session.buyNow?.productId || null,
+      coupons,
+      user: req.session.user
+    });
 
   } catch (err) {
     console.error("Checkout Page Error:", err);
     res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
 };
-
 
 // ORDER SUCCESS PAGE
 export const orderSuccessPage = async (req, res) => {
@@ -396,11 +408,9 @@ export const placeOrder = async (req, res) => {
     const subtotal = parseFloat(summary.subtotal.toFixed(2));
     const tax = parseFloat(summary.tax.toFixed(2));
     const couponDiscount = parseFloat(summary.couponDiscount || 0);
-
     const products = items.map(i => ({
       deliveryCharge: i.deliveryCharge || 0
     }));
-
     const deliveryCharge = calculateDeliveryCharge({
       subtotal,
       products,
@@ -503,3 +513,4 @@ export const placeOrder = async (req, res) => {
 };
 
 export const placeCODOrder = placeOrder;
+

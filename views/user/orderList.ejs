@@ -71,6 +71,34 @@
       border: none;
       cursor: pointer;
     }
+    .pagination-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 25px;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.page-btn.active {
+  background: #f76f8f;
+  color: #fff;
+  border-color: #f76f8f;
+}
+
+.page-btn:disabled {
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+}
+
   </style>
 
   <div class="orders-container">
@@ -94,11 +122,21 @@
                 <p><strong>Date:</strong>
                   <%= order.createdAt.toDateString() %>
                 </p>
-                <p><strong>Status:</strong> <span class="order-status">
-                    <%= order.orderStatus %>
-                  </span></p>
-              <!-- <p><strong>Total:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p> -->
-<!-- <p><strong>Price:</strong> Rs.<%= order.subtotal.toFixed(2) %></p>
+             <p>
+  <strong>Status:</strong>
+  <span class="order-status"
+    style="color:<%= order.orderStatus === 'Failed' ? 'red' : '#333' %>; font-weight:600;">
+    <%= order.orderStatus %>
+  </span>
+</p>
+<% if(order.orderStatus === "Failed") { %>
+  <p style="color:red; font-size:0.85rem;">
+    Payment failed. This order will be removed automatically after 48 hours.
+  </p>
+<% } %>
+
+                <!-- <p><strong>Total:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p> -->
+                <!-- <p><strong>Price:</strong> Rs.<%= order.subtotal.toFixed(2) %></p>
 <p><strong>GST:</strong> Rs.<%= order.tax.toFixed(2) %></p>
 <% if(order.couponDiscount > 0) { %>
   <p><strong>Coupon Discount:</strong> Rs.<%= order.couponDiscount.toFixed(2) %></p>
@@ -106,8 +144,11 @@
 <% if(order.walletUsed > 0) { %>
   <p><strong>Wallet Used:</strong>  Rs.<%= order.walletUsed.toFixed(2) %></p>
 <% } %> -->
-<p><strong>Total Paid:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p>
- <p>Paid by: <strong><%= order.paymentMethod %></strong></p>
+                <p><strong>Total Paid:</strong> Rs.<%= order.totalPrice.toFixed(2) %>
+                </p>
+                <p>Paid by: <strong>
+                    <%= order.paymentMethod %>
+                  </strong>
                 </p>
 
                 <div class="ordered-items" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
@@ -119,50 +160,60 @@
                         style="font-size:0.8rem; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         <%= item.productName %>
                       </p>
-            <% if(order.orderStatus !== "Cancelled" && order.orderStatus !== "Returned" && 
-            order.orderStatus !== "Delivered" && order.orderStatus !== "Return Approved" && 
-            order.orderStatus !== "Return Requested") { %>
-  <button class="cancel-btn"
-    onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">Cancel Item</button>
-<% } %>
+                      <% if(item.isCancelled) { %>
+                        <span style="color:red; font-weight:600;">Cancelled</span>
+                       <% } else if(
+  !["Cancelled","Returned","Delivered","Return Approved","Return Requested","Failed"]
+  .includes(order.orderStatus)
+) { %>
 
-
+                          <button class="cancel-btn"
+                            onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">
+                            Cancel Item
+                          </button>
+                          <% } %>
                     </div>
                     <% }) %>
                 </div>
               </div>
 
               <div class="order-actions">
-  <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
+                <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
 
-  <% if(order.orderStatus !== "Cancelled" && order.orderStatus !== "Returned" && 
-  order.orderStatus !== "Delivered" && order.orderStatus !== "Return Approved" &&
-   order.orderStatus !== "Return Requested") { %>
-  <button class="cancel-btn" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
-<% } %>
+                <% if(
+  !["Cancelled","Returned","Delivered","Return Approved","Return Requested","Failed"]
+  .includes(order.orderStatus)
+) { %>
 
-
-</div>
+                  <button class="cancel-btn" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
+                  <% } %>
+              </div>
 
             </div>
             <% }) %>
+<% if (totalPages > 1) { %>
+  <div class="pagination-wrap">
+    <button class="page-btn"
+      <%= currentPage > 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
+      &laquo; Prev
+    </button>
 
-              <% if(totalPages>1){ %>
-                <div style="text-align:center; margin-top:20px;">
-                  <% if(currentPage>1){ %>
-                    <a href="/order/list?page=<%= currentPage-1 %>" class="btn">Prev</a>
-                    <% } %>
-                      <% for(let i=1;i<=totalPages;i++){ %>
-                        <a href="/order/list?page=<%= i %>" class="btn"
-                          style="<%= i===currentPage?'font-weight:bold':'' %>">
-                          <%= i %>
-                        </a>
-                        <% } %>
-                          <% if(currentPage<totalPages){ %>
-                            <a href="/order/list?page=<%= currentPage+1 %>" class="btn">Next</a>
-                            <% } %>
-                </div>
-                <% } %>
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <button
+        class="page-btn <%= i === currentPage ? 'active' : '' %>"
+        onclick="changePage(<%= i %>)">
+        <%= i %>
+      </button>
+    <% } %>
+
+    <button class="page-btn"
+      <%= currentPage < totalPages ? `onclick="changePage(${currentPage + 1})"` : "disabled" %>>
+      Next &raquo;
+    </button>
+  </div>
+<% } %>
+
+
                   <% } %>
     </div>
   </div>
@@ -239,22 +290,27 @@
 
                   const card = document.querySelector(`[data-orderid="${orderID}"]`);
                   const itemDiv = card.querySelector(`[data-productid="${productID}"]`);
-                  if (itemDiv) itemDiv.remove();
+
+                  if (itemDiv) {
+                    // Remove cancel button only
+                    const cancelBtn = itemDiv.querySelector(".cancel-btn");
+                    if (cancelBtn) cancelBtn.remove();
+
+                    // Add cancelled text below image
+                    const statusSpan = document.createElement("span");
+                    statusSpan.style.color = "red";
+                    statusSpan.style.fontWeight = "600";
+                    statusSpan.textContent = "Cancelled";
+
+                    itemDiv.appendChild(statusSpan);
+                  }
 
                   // If no items left, mark order cancelled
-                  const remainingItems = card.querySelectorAll(".ordered-items > div");
-                  if (remainingItems.length === 0) {
+                  if (data.order.orderStatus === "Cancelled") {
                     card.querySelector(".order-status").textContent = "Cancelled";
-                    card.querySelectorAll(".cancel-btn, .return-btn").forEach(b => b.remove());
+                    card.querySelectorAll(".cancel-btn").forEach(b => b.remove());
                   }
 
-                  // Update totals dynamically if provided
-                  if (data.order) {
-                    const subtotalEl = document.querySelector(".bill-box .bill-row span:nth-child(2)");
-                    const totalEl = document.querySelector(".bill-box .bill-row strong:nth-child(2)");
-                    if (subtotalEl) subtotalEl.textContent = `Rs.${data.order.subtotal}`;
-                    if (totalEl) totalEl.textContent = `Rs.${data.order.totalPrice}`;
-                  }
 
                 } else {
                   Swal.fire("Error", data.message, "error");
@@ -311,4 +367,9 @@
         const query = document.getElementById("searchQuery").value;
         window.location.href = `/order/search/${encodeURIComponent(query)}`;
       }
+
+      function changePage(page) {
+  window.location.href = `/order/list?page=${page}`;
+}
+
     </script>

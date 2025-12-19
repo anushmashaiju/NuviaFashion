@@ -56,7 +56,7 @@ import { processProfileImage, uploadProfileImage } from "../utils/imageHelper.js
 import { changePasswordLogged, editUserProfile, getChangePasswordPage, getEditUserProfile, getUserProfile, resendEditEmailOtp, verifyEditProfileOtp } from "../controllers/user/loggedUserController.js";
 import { createRazorpayOrder, verifyPayment } from "../controllers/user/onlinePaymentController.js";
 import { addMoneyToWallet, applyWallet,  getWalletBalance,  getWalletPage, walletPayment } from "../controllers/user/walletController.js";
-import { applyCoupon, getAvailableCoupons, paymentPage } from "../controllers/user/couponController.js";
+import { applyCoupon, getAvailableCoupons, paymentPage, userCouponPage } from "../controllers/user/couponController.js";
 
 
 
@@ -170,5 +170,6 @@ router.post("/payment-gateway/place-order", isUserAuthenticated, placeOrder);
 
 router.get("/coupon/available", isUserAuthenticated, getAvailableCoupons);
 router.post("/coupon/apply", isUserAuthenticated, applyCoupon);
+router.get("/coupons", isUserAuthenticated, userCouponPage);
 router.get("/payment-gateway", isUserAuthenticated, paymentPage);
 export default router;
