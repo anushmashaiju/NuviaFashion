@@ -26,7 +26,7 @@ export const error404Handler = (req, res) => {
   });
 };
 
-// GLOBAL ERROR HANDLER (for thrown errors & async errors)
+// GLOBAL ERROR HANDLER 
 export const globalErrorHandler = (err, req, res, next) => {
   console.error("🔥 SERVER ERROR:", err.message);
   console.error(err.stack);

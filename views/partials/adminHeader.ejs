@@ -112,6 +112,7 @@
       color: white !important;
       background-color: #dc3545;
     }
+  
   </style>
 </head>
 
@@ -122,13 +123,58 @@
     <img src="/img/Nuvia.png" alt="Logo" width="60" class="me-2">
   </div>
 
+
   <div class="d-flex align-items-center">
+    
     <i class="bi bi-person-circle me-2 fs-5 text-dark"></i>
     <span class="fw-semibold text-dark">
       <%= admin ? admin.name : "Admin" %>
     </span>
   </div>
 </header>
+<button class="sidebar-toggle" style="font-size:10px" onclick="toggleSidebar()">
+<i class="bi bi-layout-sidebar-inset" style="font-size:10px"></i>
+</button>
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <%- include('./adminSidebar') %>
   <div class="main-content">
+    <script>
+  const sidebar = document.querySelector(".sidebar");
+  const overlay = document.querySelector(".sidebar-overlay");
+
+  function toggleSidebar() {
+    sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove("show");
+    overlay.classList.remove("show");
+  }
+
+  /* =====================
+     SWIPE / DRAG SUPPORT
+  ===================== */
+  let startX = 0;
+
+  document.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX;
+  });
+
+  document.addEventListener("touchmove", (e) => {
+    const diffX = e.touches[0].clientX - startX;
+
+    // Swipe right to open
+    if (startX < 40 && diffX > 80) {
+      sidebar.classList.add("show");
+      overlay.classList.add("show");
+    }
+
+    // Swipe left to close
+    if (diffX < -80) {
+      closeSidebar();
+    }
+  });
+</script>

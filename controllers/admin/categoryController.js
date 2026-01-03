@@ -7,7 +7,7 @@ export const getCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
-    const search = req.query.search ? req.query.search.trim() : "";
+    const search = req.query.search?.trim() || "";
 
     const query = {
       isActive: true,
@@ -21,21 +21,44 @@ export const getCategories = async (req, res) => {
     const categories = await Category.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean(); // ✅ IMPORTANT
 
-    res.status(STATUS.SUCCESS).render("admin/category", {
+    const now = new Date();
+
+    const enrichedCategories = categories.map(cat => {
+      let offerActive = false;
+
+      if (
+        cat.categoryOffer?.percentage > 0 &&
+        cat.categoryOffer.startDate &&
+        cat.categoryOffer.endDate &&
+        now >= new Date(cat.categoryOffer.startDate) &&
+        now <= new Date(cat.categoryOffer.endDate)
+      ) {
+        offerActive = true;
+      }
+
+      return {
+        ...cat,
+        offerActive   // ✅ dynamic field
+      };
+    });
+
+    res.render("admin/category", {
       title: "Category Management",
-      categories,
+      categories: enrichedCategories,
       currentPage: page,
       totalPages,
       search,
       admin: req.session.user,
     });
   } catch (error) {
-    console.error("Error fetching categories:", error);
-    res.status(STATUS.SERVER_ERROR).render("partials/errorPage", { errorMessage: MESSAGES.SERVER_ERROR });
+    console.error(error);
+    res.status(500).send("Server Error");
   }
 };
+
 
 // Render Add Category Page
 export const getAddCategoryPage = (req, res) => {

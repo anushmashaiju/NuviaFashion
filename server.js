@@ -5,17 +5,11 @@ import { fileURLToPath } from "url";
 import session from "express-session";
 import passport from "passport";
 import flash from "connect-flash";
-
 import connectDB from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-
 import { fetchActiveCategories, addUserCounts } from "./middlewares/categoryProductMiddleware.js";
 import { setCurrentPath } from "./middlewares/isAdmin.js";
-
-import STATUS from "./utils/statusCodes.js";
-import MESSAGES from "./utils/messages.js";
-
 import "./config/passport.js";
 import { error403Handler, error404Handler, globalErrorHandler } from "./middlewares/errorHandler.js";
 
@@ -89,11 +83,9 @@ app.use(setCurrentPath);
 app.use("/admin", adminRoutes);
 app.use("/", userRoutes);
 
-
 app.get("/error", error403Handler);
 app.use(error404Handler);
 app.use(globalErrorHandler);
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>

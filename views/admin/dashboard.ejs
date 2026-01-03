@@ -42,6 +42,80 @@
       width: 100% !important;
       height: 300px !important;
     }
+    .filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 20px;
+}
+
+.filter-row label {
+  font-weight: 500;
+  color: #333;
+}
+
+#revenueFilter {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  background: #fff;
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    margin-left: 0 !important;
+    padding: 20px;
+  }
+
+  .dashboard-content > div:first-child {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .dashboard-content .card,
+  .dashboard-content a.card {
+    flex: 1 1 100% !important;
+  }
+
+  .charts {
+    grid-template-columns: 1fr; 
+    gap: 20px;
+  }
+
+  canvas {
+    height: 250px !important;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #revenueFilter {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .card,
+  a.card {
+    padding: 15px;
+  }
+
+  canvas {
+    height: 200px !important;
+  }
+
+  .filter-row label {
+    font-size: 14px;
+  }
+
+  #revenueFilter {
+    font-size: 14px;
+  }
+}
   </style>
 
   <section class="dashboard-content">
@@ -65,8 +139,21 @@
         <h3>Total Revenue</h3>
         <p><strong>₹<%= totalRevenue.toLocaleString() %></strong></p>
       </div>
+      
+<a href="/admin/ledger" class="card" style="flex:1; text-decoration:none; color:inherit;">
+  <h3>Ledger</h3>
+  <p><strong>View Sales Ledger</strong></p>
+</a>
 
     </div>
+<div class="filter-row">
+  <label for="revenueFilter">Revenue View:</label>
+  <select id="revenueFilter">
+    <option value="monthly">Monthly</option>
+    <option value="yearly">Yearly</option>
+    <option value="weekly">Weekly</option>
+  </select>
+</div>
 
     <div class="charts">
       <div class="chart-container">
@@ -79,68 +166,149 @@
         <canvas id="orderChart"></canvas>
       </div>
     </div>
+
+<div class="charts">
+
+  <!-- Best Selling Products -->
+  <div class="chart-container">
+    <h3>Top 10 Best Selling Products</h3>
+    <canvas id="productChart"></canvas>
+  </div>
+
+  <!-- Best Selling Categories -->
+  <div class="chart-container">
+    <h3>Top 10 Best Selling Categories</h3>
+    <canvas id="categoryChart"></canvas>
+  </div>
+
+  <!-- Best Selling Brands -->
+  <div class="chart-container">
+    <h3>Top 10 Best Selling Brands</h3>
+    <canvas id="brandChart"></canvas>
+  </div>
+
+</div>
+
   </section>
   </div>
   <%- include("../partials/adminFooter") %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(async function () {
 
-   <script>
   const monthlyRevenue = <%- JSON.stringify(monthlyRevenue) %>;
   const statusCounts = <%- JSON.stringify(statusCounts) %>;
 
+  // ======================
   // Revenue Chart
-  const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-  const revenueChart = new Chart(revenueCtx, {
-    type: 'bar',
-    data: {
-      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-      datasets: [{
-        label: 'Revenue (₹)',
-        data: monthlyRevenue,
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 1,
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } },
-      plugins: {
-        legend: { position: 'top' },
-        title: { display: true, text: 'Revenue Growth (Last 12 Months)' }
+  // ======================
+  const revenueCtx = document.getElementById('revenueChart');
+  if (revenueCtx) {
+    window.revenueChart = new Chart(revenueCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: monthlyRevenue,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
       }
+    });
+  }
+
+  // ======================
+  // Order Status Pie Chart
+  // ======================
+  const orderCtx = document.getElementById('orderChart');
+  if (orderCtx) {
+    new Chart(orderCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Delivered', 'Pending', 'Cancelled'],
+        datasets: [{
+          data: [
+            statusCounts.Delivered,
+            statusCounts.Pending,
+            statusCounts.Cancelled
+          ]
+        }]
+      }
+    });
+  }
+
+  // ======================
+  // Revenue Filter
+  // ======================
+  document.getElementById("revenueFilter").addEventListener("change", async (e) => {
+    const res = await fetch(`/admin/revenue-stats?filter=${e.target.value}`);
+    const result = await res.json();
+
+    revenueChart.data.labels = result.data.map(d =>
+      d._id.month ?? d._id.year ?? d._id.week
+    );
+
+    revenueChart.data.datasets[0].data =
+      result.data.map(d => d.revenue);
+
+    revenueChart.update();
+  });
+
+  // ======================
+  // Best Selling Products
+  // ======================
+  const productRes = await fetch("/admin/best-selling-products");
+  const productData = await productRes.json();
+
+  new Chart(document.getElementById("productChart"), {
+    type: "bar",
+    data: {
+      labels: productData.map(p => p.productName),
+      datasets: [{
+        label: "Units Sold",
+        data: productData.map(p => p.totalSold)
+      }]
     }
   });
 
-  const orderCtx = document.getElementById('orderChart').getContext('2d');
-  const orderChart = new Chart(orderCtx, {
-    type: 'pie',
+  // ======================
+  // Best Selling Categories
+  // ======================
+  const categoryRes = await fetch("/admin/best-selling-categories");
+  const categoryData = await categoryRes.json();
+
+  new Chart(document.getElementById("categoryChart"), {
+    type: "bar",
     data: {
-      labels: ['Delivered', 'Pending', 'Cancelled'],
+      labels: categoryData.map(c => c.categoryName),
       datasets: [{
-        label: 'Orders',
-        data: [statusCounts.Delivered, statusCounts.Pending, statusCounts.Cancelled],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(255, 205, 86, 0.7)',
-          'rgba(255, 99, 132, 0.7)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 205, 86, 1)',
-          'rgba(255, 99, 132, 1)'
-        ],
-        borderWidth: 1
+        label: "Units Sold",
+        data: categoryData.map(c => c.totalSold)
       }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom' },
-        title: { display: true, text: 'Order Status Breakdown' }
-      }
     }
   });
+
+  // ======================
+  // Best Selling Brands
+  // ======================
+  const brandRes = await fetch("/admin/best-selling-brands");
+  const brandData = await brandRes.json();
+
+  new Chart(document.getElementById("brandChart"), {
+    type: "bar",
+    data: {
+      labels: brandData.map(b => b._id),
+      datasets: [{
+        label: "Units Sold",
+        data: brandData.map(b => b.totalSold)
+      }]
+    }
+  });
+
+})();
 </script>

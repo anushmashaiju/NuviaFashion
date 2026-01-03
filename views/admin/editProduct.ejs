@@ -130,6 +130,69 @@
       font-size: 13px;
       margin-top: 4px;
     }
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .card {
+    margin: 15px 10px;
+    padding: 20px;
+  }
+
+  .row.g-3 {
+    flex-direction: column;
+  }
+
+  .col-md-2,
+  .col-md-3,
+  .col-md-4,
+  .col-md-5,
+  .col-md-6 {
+    width: 100% !important;
+  }
+
+  .variant-table,
+  .variant-table th,
+  .variant-table td {
+    font-size: 13px;
+  }
+
+  .preview-thumb {
+    width: 80px;
+    height: 80px;
+  }
+
+  .add-variant-btn {
+    font-size: 16px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-control,
+  .form-select,
+  textarea {
+    font-size: 14px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .variant-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
   </style>
 
   <div class="admin-layout">
@@ -149,16 +212,13 @@
                   value="<%= (_formData.images || []).join(',') %>">
 
                 <div class="row g-3">
-
-             
+          
                   <div class="col-md-5">
                     <label>Product Name</label>
                     <input type="text" name="name" class="form-control" value="<%= _formData.name || '' %>">
                     <div class="field-error" data-field="name"></div>
                   </div>
-
-
-               
+     
                   <div class="col-md-5">
                     <label>Category</label>
                     <select name="category" class="form-select">
@@ -185,19 +245,16 @@
                     <div class="field-error" data-field="category"></div>
                   </div>
 
-
                   <div class="col-md-2">
                     <label>Category Offer (%)</label>
                     <input type="number" id="categoryOffer" class="form-control" readonly>
                   </div>
-
-   
+  
                   <div class="col-md-6">
                     <label>Brand</label>
                     <input type="text" name="brand" class="form-control" value="<%= _formData.brand || '' %>">
                     <div class="field-error" data-field="brand"></div>
                   </div>
-
 
                   <div class="col-md-4">
                     <label>Price</label>
@@ -205,7 +262,6 @@
                       value="<%= _formData.price || '' %>">
                     <div class="field-error" data-field="price"></div>
                   </div>
-
 
                   <div class="col-md-4">
                     <label>Offer Start Date</label>
@@ -225,20 +281,17 @@
                       value="<%= _formData.productOffer?.percentage || 0 %>" min="0" max="90">
                   </div>
 
-
                   <div class="col-md-4">
                     <label>Final Price</label>
                     <input type="number" name="finalPrice" class="form-control" id="finalPrice" readonly
                       value="<%= _formData.finalPrice || '' %>">
                   </div>
 
-
                   <div class="col-md-3">
                     <label>Color</label>
-                    <input type="text" name="color" class="form-control" value="<%= _formData.color || '' %>">
+                    <input type="text" name="color" class="form-control image-input" value="<%= _formData.color || '' %>">
                      <div class="field-error" data-field="color"></div>
                   </div>
-
                   
                   <div class="col-md-3">
                     <label>Size</label>
@@ -262,7 +315,6 @@
                     <label>Total Stock</label>
                     <input type="number" name="totalStock" id="totalStock" class="form-control" readonly>
                   </div>
-
 
                   <div class="col-12">
                     <label>Description</label>
@@ -291,9 +343,8 @@
 </div>
 <div class="col-12 mt-3">
   <label>Upload New Images (Optional)</label>
-  <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control mt-1">
+  <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control image-input mt-1">
 
-  <!-- Corrected new image preview container -->
   <div id="preview" class="d-flex flex-wrap mt-2"></div>
 </div>
 
@@ -326,7 +377,7 @@
                                 readonly value="<%= v.finalPrice %>"></td>
                             <td><input type="number" class="form-control" name="variantStock[]" value="<%= v.stock %>">
                             </td>
-                           <td><input  type="file" name="variantImages[]" class="form-control variant-input" accept="image/*" ></td>
+                           <td><input  type="file" name="variantImages[]" class="form-control image-input variant-input" accept="image/*" ></td>
 <td class="variant-preview"> <% if (v.image) { %>
     <img src="<%= v.image %>" style="width:70px;height:70px;border-radius:6px;"> <% } %></td>
 
@@ -353,26 +404,55 @@
 
 
    <script>
+         const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg"
+  ];
+
+  document.addEventListener("change", function (e) {
+    const input = e.target;
+
+    if (!input.classList.contains("image-input")) return;
+
+    const files = Array.from(input.files);
+    if (!files.length) return;
+
+    const invalidFile = files.find(
+      file => !allowedTypes.includes(file.type)
+    );
+
+    if (invalidFile) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File",
+        text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+        confirmButtonColor: "#e63946",
+      });
+
+      input.value = "";
+    }
+  });
 document.addEventListener("DOMContentLoaded", () => {
-  // -------------------- ELEMENTS --------------------
+
   const form = document.getElementById("productForm");
   const priceInput = document.getElementById("price");
   const finalPriceInput = document.getElementById("finalPrice");
-  const imageInput = document.getElementById("imageInput"); // main images
+  const imageInput = document.getElementById("imageInput");
   const mainStockInput = document.getElementById("mainStock");
   const totalStockInput = document.getElementById("totalStock");
-  const preview = document.getElementById("preview"); // new main images preview
-  const existingPreview = document.getElementById("existingPreview"); // existing main images (edit)
-  const imageFilenamesInput = document.getElementById("imageFilenames"); // comma separated existing images
+  const preview = document.getElementById("preview"); 
+  const existingPreview = document.getElementById("existingPreview"); 
+  const imageFilenamesInput = document.getElementById("imageFilenames"); 
   const categorySelect = document.querySelector("select[name='category']");
   const categoryOfferInput = document.getElementById("categoryOffer");
   const offerPercentageInput = document.getElementById("offerPercentage");
   const offerStartDateInput = document.getElementById("offerStartDate");
   const offerEndDateInput = document.getElementById("offerEndDate");
 
-  let uploadedFiles = []; // main images new uploads
+  let uploadedFiles = []; 
 
-  // -------------------- UTIL --------------------
   function clearFieldErrors() {
     document.querySelectorAll(".field-error").forEach(el => el.innerHTML = "");
   }
@@ -381,7 +461,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (container) container.innerHTML = `<p class="error-text">${msg}</p>`;
   }
 
-  // -------------------- CATEGORY OFFER --------------------
   function updateCategoryOffer() {
     if (!categorySelect) return;
     const selected = categorySelect.selectedOptions[0];
@@ -394,7 +473,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCategoryOffer();
   }
 
-  // -------------------- FINAL PRICE CALC --------------------
   function updateFinalPrice() {
     const price = parseFloat(priceInput?.value || 0);
     const productOffer = parseFloat(offerPercentageInput?.value || 0);
@@ -423,8 +501,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const applicableOffer = Math.max(productActive ? productOffer : 0, catActive ? categoryOffer : 0);
 
     if (finalPriceInput) finalPriceInput.value = price > 0 ? (price - (price * applicableOffer) / 100).toFixed(2) : "";
-
-    // Update variant final prices
     document.querySelectorAll(".variant-price").forEach((vp, i) => {
       const vf = document.querySelectorAll(".variantFinalPrice")[i];
       if (!vf) return;
@@ -438,7 +514,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (offerEndDateInput) offerEndDateInput.addEventListener("input", updateFinalPrice);
   if (categorySelect) categorySelect.addEventListener("change", updateFinalPrice);
 
-  // -------------------- MAIN IMAGE PREVIEW --------------------
   function updateInputFiles() {
     const dt = new DataTransfer();
     uploadedFiles.forEach(file => dt.items.add(file));
@@ -475,7 +550,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // -------------------- EXISTING IMAGE REMOVE --------------------
   window.removeExistingImage = function (imgUrl) {
     if (!existingPreview || !imageFilenamesInput) return;
     const nodes = Array.from(existingPreview.querySelectorAll(".image-wrapper"));
@@ -485,7 +559,6 @@ document.addEventListener("DOMContentLoaded", () => {
     imageFilenamesInput.value = updated.join(",");
   };
 
-  // -------------------- TOTAL STOCK --------------------
   function updateTotalStock() {
     let total = parseInt(mainStockInput?.value || 0);
     document.querySelectorAll('input[name="variantStock[]"]').forEach(input => {
@@ -496,7 +569,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (mainStockInput) mainStockInput.addEventListener("input", updateTotalStock);
   updateTotalStock();
 
-  // -------------------- VARIANT IMAGE PREVIEW --------------------
   function attachVariantPreview(row) {
     if (!row) return;
     const fileInput = row.querySelector(".variant-input");
@@ -530,7 +602,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   document.querySelectorAll("#variantBody tr").forEach(row => attachVariantPreview(row));
 
-  // -------------------- ENSURE VARIANT INPUT NAMES --------------------
   function ensureVariantInputNames() {
     document.querySelectorAll(".variant-input").forEach(inp => {
       if (!inp.getAttribute("name")) inp.setAttribute("name", "variantImages[]");
@@ -546,7 +617,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   ensureVariantInputNames();
 
-  // -------------------- ADD VARIANT ROW --------------------
   window.addVariant = function () {
     const tbody = document.getElementById("variantBody");
     if (!tbody) return;
@@ -566,7 +636,6 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.appendChild(row);
     attachVariantPreview(row);
 
-    // Variant final price calc
     const variantPriceInput = row.querySelector(".variant-price");
     const variantFinalInput = row.querySelector(".variantFinalPrice");
     function calculateVariantFinal() {
@@ -592,16 +661,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (offerEndDateInput) offerEndDateInput.addEventListener("input", calculateVariantFinal);
     if (categorySelect) categorySelect.addEventListener("change", calculateVariantFinal);
 
-    // Variant stock listener
     row.querySelector('input[name="variantStock[]"]').addEventListener("input", updateTotalStock);
 
-    // Remove row
     row.querySelector("i.bi-trash").addEventListener("click", () => { row.remove(); updateTotalStock(); });
 
     updateTotalStock();
   };
 
-  // -------------------- FORM SUBMIT --------------------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearFieldErrors();
@@ -679,7 +745,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Run on load
   updateFinalPrice();
   ensureVariantInputNames();
 });

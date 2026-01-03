@@ -2,24 +2,79 @@ import Coupon from "../../models/couponModel.js";
 import Cart from "../../models/cartModel.js";
 import STATUS from "../../utils/statusCodes.js";
 import MESSAGES from "../../utils/messages.js";
-
+import Order from "../../models/orderModel.js";
 // GET AVAILABLE COUPONS
+// export const getAvailableCoupons = async (req, res) => {
+//   try {
+//     const userId = req.session.user?._id;
+//     const summary = req.session.orderSummary;
+
+//     if (!userId || !summary)
+//       return res.json({ coupons: [] });
+
+//     const coupons = await Coupon.find({
+//       expireOn: { $gte: new Date() },
+//       minimumPrice: { $lte: summary.subtotal },
+//       usedBy: { $ne: userId },
+//       isList: true
+//     });
+
+//     res.json({ coupons });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.json({ coupons: [] });
+//   }
+// };
 export const getAvailableCoupons = async (req, res) => {
   try {
-    const userId = req.session.user?._id;
-    const summary = req.session.orderSummary;
+    const userId = req.session.user?.id;
+    let summary = req.session.orderSummary;
 
-    if (!userId || !summary)
+    if (!userId) {
       return res.json({ coupons: [] });
+    }
 
-    const coupons = await Coupon.find({
-      expireOn: { $gte: new Date() },
-      minimumPrice: { $lte: summary.subtotal },
-      usedBy: { $ne: userId },
-      isList: true
+    // ✅ Ensure subtotal exists
+    if (!summary) {
+      const cart = await Cart.findOne({ userId }).populate("items.productId");
+      if (!cart || cart.items.length === 0) {
+        return res.json({ coupons: [] });
+      }
+
+      const subtotal = cart.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      summary = { subtotal };
+    }
+
+    const orderCount = await Order.countDocuments({
+      userId,
+      paymentStatus: "success"
     });
 
-    res.json({ coupons });
+    const coupons = await Coupon.find({
+      $or: [{ isActive: true }, { isActive: { $exists: false } }],
+      isList: true,
+      expireOn: { $gte: new Date() },
+      minimumPrice: { $lte: summary.subtotal }
+    });
+
+    const filteredCoupons = coupons.filter(c => {
+      if (c.type === "FIRST_ORDER" && orderCount > 0) return false;
+
+      if (
+        c.type === "ONE_TIME" &&
+        Array.isArray(c.usedBy) &&
+        c.usedBy.some(id => id.toString() === userId.toString())
+      ) return false;
+
+      return true;
+    });
+
+    res.json({ coupons: filteredCoupons });
 
   } catch (err) {
     console.error(err);
@@ -27,76 +82,101 @@ export const getAvailableCoupons = async (req, res) => {
   }
 };
 
+
 // APPLY COUPON
+// export const applyCoupon = async (req, res) => {
+//   try {
+//     const { couponId } = req.body;
+//     const summary = req.session.orderSummary;
+
+//     if (!summary) 
+//       return res.status(STATUS.BAD_REQUEST).json({ success: false, message: MESSAGES.INVALID_INPUT });
+
+//     const coupon = await Coupon.findById(couponId);
+//     if (!coupon) 
+//       return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_OFFER_NOT_FOUND });
+
+//     if (summary.subtotal < coupon.minimumPrice) {
+//       return res.status(STATUS.BAD_REQUEST).json({
+//         success: false,
+//         message: `Minimum purchase ₹${coupon.minimumPrice} required`
+//       });
+//     }
+
+//    summary.couponDiscount = coupon.offerPrice || 0;
+// summary.appliedCouponId = couponId;
+
+// summary.finalAmount = +(
+//   summary.subtotal +
+//   summary.tax +
+//   summary.deliveryCharge -
+//   summary.couponDiscount
+// ).toFixed(2);
+
+// req.session.orderSummary = summary;
+// await req.session.save();
+
+
+//     await Coupon.findByIdAndUpdate(couponId, { $addToSet: { usedBy: req.session.user._id } });
+
+//     return res.status(STATUS.SUCCESS).json({ success: true, summary });
+
+//   } catch (err) {
+//     console.error("Coupon apply error:", err);
+//     return res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+//   }
+// };
+
 export const applyCoupon = async (req, res) => {
   try {
     const { couponId } = req.body;
     const summary = req.session.orderSummary;
 
-    if (!summary) 
-      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: MESSAGES.INVALID_INPUT });
-
     const coupon = await Coupon.findById(couponId);
-    if (!coupon) 
-      return res.status(STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_OFFER_NOT_FOUND });
-
-    if (summary.subtotal < coupon.minimumPrice) {
-      return res.status(STATUS.BAD_REQUEST).json({
-        success: false,
-        message: `Minimum purchase ₹${coupon.minimumPrice} required`
-      });
+    if (!coupon) {
+      return res.status(404).json({ success: false });
     }
 
-    // Apply coupon only if valid
-    summary.couponDiscount = coupon.offerPrice || 0;
-    summary.appliedCouponId = couponId;
+    let discount = 0;
+
+    if (coupon.discountType === "FLAT") {
+      discount = coupon.offerPrice;
+    } else {
+      discount = (summary.subtotal * coupon.offerPrice) / 100;
+      if (coupon.maxDiscount) {
+        discount = Math.min(discount, coupon.maxDiscount);
+      }
+    }
+
+   summary.couponDiscount = +discount.toFixed(2);
+summary.appliedCouponId = coupon._id;
+
+summary.couponOfferPrice = coupon.offerPrice;
+summary.couponMinimumPrice = coupon.minimumPrice;
+summary.couponName = coupon.couponName;
+
+    summary.finalAmount = +(
+      summary.subtotal +
+      summary.tax +
+      summary.deliveryCharge -
+      summary.couponDiscount
+    ).toFixed(2);
 
     req.session.orderSummary = summary;
     await req.session.save();
 
-    await Coupon.findByIdAndUpdate(couponId, { $addToSet: { usedBy: req.session.user._id } });
+    // ❌ DO NOT UPDATE usedBy HERE
 
-    return res.status(STATUS.SUCCESS).json({ success: true, summary });
+    res.json({ success: true, summary });
 
   } catch (err) {
-    console.error("Coupon apply error:", err);
-    return res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 };
 
 
-// PAYMENT PAGE
-export const paymentPage = async (req, res) => {
-  try {
-    const userId = req.session.user?._id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
-
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart) return res.status(STATUS.NOT_FOUND).redirect("/cart");
-
-    const subtotal = cart.items.reduce((sum, item) => {
-      const price = item.productId.finalPrice || item.productId.price;
-      return sum + price * item.quantity;
-    }, 0);
-
-    const tax = +(subtotal * 0.18).toFixed(2);
-    const summary = req.session.orderSummary || {};
-    const couponDiscount = summary.couponDiscount || 0;
-    const finalAmount = +(subtotal + tax - couponDiscount).toFixed(2);
-
-    return res.status(STATUS.SUCCESS).render("payment-gateway", {
-      user: req.session.user,
-      summary: { subtotal, tax, finalAmount },
-      couponDiscount,
-      cart
-    });
-
-  } catch (err) {
-    console.error("Payment page error:", err);
-    return res.status(STATUS.SERVER_ERROR).redirect("/cart");
-  }
-};
-
+//COUPON PAGE
 export const userCouponPage = async (req, res) => {
   try {
     const user = req.session.user;
@@ -108,8 +188,8 @@ export const userCouponPage = async (req, res) => {
     res.render("user/coupon", {
       coupons,
       userId: user._id,
-      user,                  // ✅ REQUIRED
-      activePage: "coupons"  // optional
+      user,                  
+      activePage: "coupons"  
     });
 
   } catch (err) {

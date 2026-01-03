@@ -125,8 +125,6 @@
 
   <div class="order-page">
     <div class="left-section">
-
-      <!-- Order Header -->
       <div class="section-card order-header">
         <h2>Order Details - <%= order.orderID %>
         </h2>
@@ -137,7 +135,6 @@
             <% } %>
       </div>
 
-      <!-- Ordered Items -->
       <div class="section-card">
         <h3>Ordered Items</h3>
         <table class="items-table">
@@ -179,7 +176,6 @@
         </table>
       </div>
 
-      <!-- Shipping Timeline -->
       <div class="section-card">
         <h3>Shipping Details</h3>
         <div class="timeline">
@@ -198,7 +194,6 @@
           <% } %>
       </div>
 
-      <!-- Invoice / Actions -->
       <div class="section-card">
         <a href="/order/<%= order.orderID %>/invoice" class="btn btn-download">Download Invoice</a>
         <% if(!["Cancelled","Returned","Delivered"].includes(order.orderStatus)) { %>
@@ -214,10 +209,8 @@
                     <p style="color:red;">Return Rejected.</p>
                     <% } %>
       </div>
-
     </div>
 
-    <!-- Right Section: Price & Delivery -->
     <div class="right-section">
       <h3>Delivery Details</h3>
       <hr>
@@ -242,19 +235,18 @@
            <%
 const billItems = order.items.filter(i => !i.isCancelled && !i.isReturned);
 
-const subtotal = billItems.reduce((s, i) => s + i.finalPrice, 0);
-
+const subtotal = billItems.reduce(
+  (s, i) => s + (i.finalPrice * i.quantity),
+  0
+);
 const GST_RATE = 0.18;
-const tax = billItems.reduce((s, i) => s + (i.finalPrice * GST_RATE), 0);
+const tax = subtotal * GST_RATE;
 
 const couponDiscount = billItems.length > 0 ? order.couponDiscount : 0;
 const deliveryCharge = billItems.length > 0 ? order.deliveryCharge : 0;
 
 const total = subtotal + tax + deliveryCharge - couponDiscount;
 %>
-
-
-
               <h3>Price Details</h3>
               <div class="bill-box">
                 <div class="bill-row">

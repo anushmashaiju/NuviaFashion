@@ -2,8 +2,6 @@ import User from "../../models/userModel.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import { generateOtp, sendVerificationEmail } from "../../utils/otpHelper.js";
-import Address from "../../models/addressModel.js";
-import cloudinary from "../../config/cloudinary.js";
 import ReferralCode from "../../models/referralModel.js";
 import Wallet from "../../models/walletModel.js";
 import { generateReferralCode } from "../../utils/referralHelper.js";
@@ -602,7 +600,6 @@ export const getReferralPage = async (req, res) => {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/login");
 
-    // 🔥 ALWAYS ensure referral exists
     let referral = await ReferralCode.findOne({ user: userId });
 
     if (!referral) {
@@ -615,7 +612,7 @@ export const getReferralPage = async (req, res) => {
         code: newCode,
         referralLink,
         usedCount: 0,
-        rewardAmount: 100   // default reward
+        rewardAmount: 100   
       });
     }
 

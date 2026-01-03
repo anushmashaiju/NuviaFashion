@@ -1,20 +1,18 @@
-import mongoose from "mongoose";
 import Cart from "../../models/cartModel.js";
 import Address from "../../models/addressModel.js";
 import Product from "../../models/productModel.js";
-import Order from "../../models/orderModel.js";
-import crypto from "crypto";
 import STATUS from "../../utils/statusCodes.js";
 import MESSAGES from "../../utils/messages.js";
 import Coupon from "../../models/couponModel.js";
-import Wallet from "../../models/walletModel.js";
-import { calculateDeliveryCharge } from "../../utils/deliveryCharge.js";
+import { calculateDeliveryCharge,calculateFinalPrice } from "../../utils/charges.js";
 
 // BUY NOW
 export const buyNow = async (req, res) => {
   try {
     const userId = req.session.user?.id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).redirect("/login");
+    }
 
     const productId = req.params.id;
     const variantId = req.query.variantId || null;
@@ -28,7 +26,6 @@ export const buyNow = async (req, res) => {
     let finalItem = {};
     let variant = null;
 
-    // BUYING VARIANT
     if (variantId) {
       variant = product.variants.id(variantId);
 
@@ -42,8 +39,10 @@ export const buyNow = async (req, res) => {
         return res.status(STATUS.BAD_REQUEST).redirect(`/product/${productId}`);
       }
 
-      const price = variant.price;
-      const discountPercentage = product.activeOffer?.percentage ? Number(product.activeOffer.percentage) : 0;
+      const price = Number(variant.price);
+      const discountPercentage = product.activeOffer?.percentage
+        ? Number(product.activeOffer.percentage)
+        : 0;
 
       const discountAmount = (price * discountPercentage) / 100;
       const finalPrice = price - discountAmount;
@@ -54,9 +53,9 @@ export const buyNow = async (req, res) => {
         name: product.name,
         image: variant.image || product.images?.[0],
         price: parseFloat(finalPrice.toFixed(2)),
-        quantity: 1,
         basePrice: parseFloat(price.toFixed(2)),
         discount: parseFloat(discountAmount.toFixed(2)),
+        quantity: 1,
         sku: variant.sku,
         color: variant.color,
         size: variant.size,
@@ -64,14 +63,16 @@ export const buyNow = async (req, res) => {
       };
 
     } else {
-      // BUYING BASE PRODUCT
       if (product.stock <= 0) {
         req.flash("error", MESSAGES.PRODUCT_OUT_OF_STOCK);
         return res.status(STATUS.BAD_REQUEST).redirect(`/product/${productId}`);
       }
 
-      const price = product.price;
-      const discountPercentage = product.activeOffer?.percentage || 0;
+      const price = Number(product.price);
+      const discountPercentage = product.activeOffer?.percentage
+        ? Number(product.activeOffer.percentage)
+        : 0;
+
       const discountAmount = (price * discountPercentage) / 100;
       const finalPrice = price - discountAmount;
 
@@ -81,12 +82,12 @@ export const buyNow = async (req, res) => {
         name: product.name,
         image: product.images?.[0],
         price: parseFloat(finalPrice.toFixed(2)),
-        quantity: 1,
         basePrice: parseFloat(price.toFixed(2)),
         discount: parseFloat(discountAmount.toFixed(2)),
+        quantity: 1,
         sku: product.sku,
-        color: product.color,
-        size: product.size,
+        color: product.color || null,
+        size: product.size || null,
         isVariant: false
       };
     }
@@ -96,90 +97,204 @@ export const buyNow = async (req, res) => {
 
   } catch (err) {
     console.error("Buy Now Error:", err);
-    res.status(STATUS.SERVER_ERROR).redirect("/error");
+    return res.status(STATUS.SERVER_ERROR).redirect("/error");
+  }
+};
+
+// controllers/user/buyNowController.js
+export const updateBuyNowQty = async (req, res) => {
+  try {
+    console.log("updateBuyNowQty called with body:", req.body);
+
+    const { action } = req.body;
+    const buyNow = req.session.buyNow;
+
+    if (!buyNow) {
+      console.log("No buyNow item in session");
+      return res.json({ success: false, message: "No Buy Now item found" });
+    }
+
+    // 🔹 Update quantity
+    let qty = buyNow.quantity || 1;
+    if (action === "inc") qty++;
+    if (action === "dec" && qty > 1) qty--;
+    buyNow.quantity = qty;
+    req.session.buyNow = buyNow;
+
+    console.log("Updated buyNow quantity:", qty);
+
+    // 🔹 Recalculate subtotal, tax, delivery
+    const subtotal = Number((buyNow.price * qty).toFixed(2));
+    const tax = Number((subtotal * 0.18).toFixed(2));
+    const deliveryCharge = req.session.orderSummary?.deliveryCharge || 0;
+
+    console.log("Recalculated prices -> Subtotal:", subtotal, "Tax:", tax, "Delivery:", deliveryCharge);
+
+    // 🔹 Coupon revalidation
+    const summary = req.session.orderSummary || {};
+    let couponDiscount = summary.couponDiscount || 0;
+
+    if (summary.appliedCouponId && subtotal < summary.couponMinimumPrice) {
+      console.log("Coupon removed due to minimum price not met");
+      couponDiscount = 0;
+      summary.appliedCouponId = null;
+      summary.couponOfferPrice = 0;
+      summary.couponMinimumPrice = 0;
+      summary.couponName = null;
+    }
+
+    // 🔹 Update summary
+    summary.subtotal = subtotal;
+    summary.tax = tax;
+    summary.couponDiscount = couponDiscount;
+    summary.finalAmount = Number((subtotal + tax + deliveryCharge - couponDiscount).toFixed(2));
+
+    req.session.orderSummary = summary;
+
+    // ✅ Log full summary
+    console.log("Updated SUMMARY:", req.session.orderSummary);
+
+    // 🔹 Save session
+    await req.session.save();
+
+    return res.json({
+      success: true,
+      quantity: qty,
+      summary
+    });
+
+  } catch (err) {
+    console.error("updateBuyNowQty error:", err);
+    return res.json({ success: false });
   }
 };
 
 
-// CHECKOUT PAGE
+
 export const checkoutPage = async (req, res) => {
   try {
     const userId = req.session.user?.id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
-
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).redirect("/login");
+    }
+    let stockAdjusted = false; 
     const addresses = await Address.find({ userId }).sort({ isDefault: -1 });
 
     let items = [];
     let isBuyNow = false;
 
-    // ---------------- BUY NOW ----------------
     if (req.session.buyNow) {
       const b = req.session.buyNow;
-
       const discountAmount = b.discount || 0;
-      const subtotal = parseFloat((b.price * b.quantity).toFixed(2));
+      const quantity = b.quantity || 1;
+      const subtotalItem = parseFloat((b.price * quantity).toFixed(2));
 
       items.push({
-        productId: { _id: b.productId, name: b.name, images: [b.image], price: b.basePrice, finalPrice: b.price },
+        productId: {
+          _id: b.productId,
+          name: b.name,
+          images: [b.image],
+          price: b.basePrice,
+          finalPrice: b.price
+        },
         variantId: b.variantId || null,
-        quantity: 1,
+        quantity,
         basePrice: b.basePrice,
         discount: discountAmount,
         finalPrice: b.price,
-        subtotal,
+        subtotal: subtotalItem,
         sku: b.sku,
         productName: b.name,
         color: b.color,
         size: b.size,
         image: b.image,
-        isVariant: b.isVariant
+        isVariant: !!b.variantId
+
       });
 
       isBuyNow = true;
 
+} else {
+
+  const cart = await Cart.findOne({ userId }).populate("items.productId");
+
+  if (!cart || !cart.items.length) {
+    req.flash("error", MESSAGES.CART_EMPTY);
+    return res.status(STATUS.BAD_REQUEST).redirect("/cart");
+  }
+
+  stockAdjusted = false;
+
+  for (const item of cart.items) {
+    const product = item.productId;
+
+    let availableStock = 0;
+
+    if (item.variantId) {
+      const variant = product.variants.id(item.variantId);
+      availableStock = variant ? variant.stock : 0;
     } else {
-      // ---------------- CART ----------------
-      const cart = await Cart.findOne({ userId }).populate("items.productId");
-
-      if (!cart || !cart.items.length) {
-        req.flash("error", MESSAGES.CART_EMPTY);
-        return res.status(STATUS.BAD_REQUEST).redirect("/cart");
-      }
-
-      items = cart.items.map(i => {
-        const product = i.productId;
-
-        const price = product.price;
-        const discountPercentage = product.activeOffer?.percentage || 0;
-        const discountAmount = (price * discountPercentage) / 100;
-
-        const finalPrice = parseFloat((price - discountAmount).toFixed(2));
-        const subtotal = parseFloat((finalPrice * i.quantity).toFixed(2));
-
-        return {
-          productId: {
-            _id: product._id,
-            name: product.name,
-            images: product.images,
-            price,
-            finalPrice,
-          },
-          quantity: i.quantity,
-          basePrice: price,
-          discount: parseFloat(discountAmount.toFixed(2)),
-          finalPrice,
-          subtotal,
-          sku: product.sku,
-          productName: product.name,
-          color: product.color,
-          size: product.size,
-          image: product.images?.[0] || "",
-          isVariant: false
-        };
-      });
+      availableStock = product.stock;
     }
 
-    // ---------------- STOCK CHECK ----------------
+    if (item.quantity > availableStock) {
+      item.quantity = availableStock > 0 ? availableStock : 1;
+      stockAdjusted = true;
+    }
+
+    const basePrice = item.variantId
+      ? product.variants.id(item.variantId)?.price
+      : product.price;
+
+    item.price = calculateFinalPrice(basePrice, product);
+  }
+
+  if (stockAdjusted) {
+    await cart.save();
+    req.flash("error", "Some items were updated due to stock changes");
+  }
+
+  items = cart.items.map(i => {
+    const product = i.productId;
+
+    const finalPrice = i.price;
+    let basePrice = product.price;
+    let image = product.images?.[0] || "";
+
+    if (i.variantId) {
+      const variant = product.variants.id(i.variantId);
+      if (variant) {
+        basePrice = variant.price;
+        image = variant.image || image;
+      }
+    }
+
+    const discountAmount = basePrice - finalPrice;
+
+    return {
+      productId: {
+        _id: product._id,
+        name: product.name,
+        images: product.images,
+        price: basePrice,
+        finalPrice
+      },
+      variantId: i.variantId || null,
+      quantity: i.quantity,
+      basePrice,
+      discount: +discountAmount.toFixed(2),
+      finalPrice,
+      subtotal: +(finalPrice * i.quantity).toFixed(2),
+      sku: product.sku,
+      productName: product.name,
+      color: i.variantId ? product.variants.id(i.variantId)?.color : product.color,
+      size: i.variantId ? product.variants.id(i.variantId)?.size : product.size,
+      image,
+      isVariant: !!i.variantId,
+      deliveryCharge: 0
+    };
+  });
+}
     for (let item of items) {
       const product = await Product.findById(item.productId._id);
 
@@ -202,37 +317,39 @@ export const checkoutPage = async (req, res) => {
       }
     }
 
-    // ---------------- BASE CALCULATION ONLY ----------------
     const subtotal = parseFloat(items.reduce((s, i) => s + i.subtotal, 0).toFixed(2));
     const tax = parseFloat((subtotal * 0.18).toFixed(2));
-const deliveryCharge = calculateDeliveryCharge({
-  subtotal,
-  products: items.map(i => ({ deliveryCharge: i.deliveryCharge || 0 })),
-  paymentMethod: "ONLINE", // default
-  address: null
+   const coupons = await Coupon.find({
+  isActive: true,
+  expireOn: { $gte: new Date() }
 });
 
-const finalAmount = parseFloat(
-  (subtotal + tax + deliveryCharge).toFixed(2)
-);
+    const productsForDelivery = items.map(i => ({ deliveryCharge: i.deliveryCharge || 0 }));
+    const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
+
+    const deliveryCharge = calculateDeliveryCharge({
+      subtotal,
+      products: productsForDelivery,
+      paymentMethod: "Razorpay",
+      address: defaultAddress
+    });
+
+    const finalAmount = parseFloat((subtotal + tax + deliveryCharge).toFixed(2));
+
+const existingSummary = req.session.orderSummary || {};
 
 req.session.orderSummary = {
+  ...(req.session.orderSummary || {}),
   subtotal,
   tax,
   deliveryCharge,
-  couponDiscount: 0,
-  appliedCouponId: null,
   finalAmount
 };
 
-    // ---------------- COUPONS ----------------
-    const coupons = await Coupon.find({
-      isActive: true,
-      usedBy: { $ne: userId },
-      expiryDate: { $gte: new Date() }
-    });
+console.log("SUMMARY:", req.session.orderSummary);
 
-    // Save items for wallet / order
+    req.session.save();
+
     req.session.orderItems = items.map(i => ({
       productId: i.productId._id,
       quantity: i.quantity,
@@ -245,12 +362,12 @@ req.session.orderSummary = {
       color: i.color || null,
       size: i.size || null,
       image: i.image || "",
-      deliveryCharge: 0
+      deliveryCharge: i.deliveryCharge || 0
     }));
 
-    await req.session.save();
+    req.session.save();
 
-    return res.status(STATUS.SUCCESS).render("user/checkout", {
+    res.status(STATUS.SUCCESS).render("user/checkout", {
       activePage: "Checkout",
       cart: { items },
       addresses,
@@ -258,6 +375,7 @@ req.session.orderSummary = {
       isBuyNow,
       buyNowProductId: req.session.buyNow?.productId || null,
       coupons,
+      stockAdjusted,
       user: req.session.user
     });
 
@@ -266,251 +384,3 @@ req.session.orderSummary = {
     res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
 };
-
-// ORDER SUCCESS PAGE
-export const orderSuccessPage = async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    const order = await Order.findOne({ orderID: id })
-      .populate("items.productId")
-      .populate("user_id")
-      .populate("shippingAddressId");
-
-    if (!order) {
-      return res.status(STATUS.NOT_FOUND).send("Order not found");
-    }
-
-    res.status(STATUS.SUCCESS).render("user/orderSuccess", { order, activePage: "" });
-  } catch (error) {
-    console.error("Order Success Page Error:", error);
-    res.status(STATUS.SERVER_ERROR).send("Server Error");
-  }
-};
-
-
-
-// Render Payment Gateway Page
-export const renderPaymentPage = async (req, res) => {
-  try {
-    const summary = req.session.orderSummary;
-    if (!summary) return res.status(STATUS.BAD_REQUEST).redirect("/checkout");
-
-    const userId = req.session.user?._id;
-    const addressId = req.query.address;
-
-    const walletDoc = await Wallet.findOne({ userId });
-    const walletBalance = walletDoc ? walletDoc.balance : 0;
-
-    return res.status(STATUS.SUCCESS).render("user/paymentGateway", {
-      summary,
-      addressId,
-      activePage: "checkout",
-      user: {
-        ...req.session.user,
-        wallet: walletBalance
-      }
-    });
-
-  } catch (err) {
-    console.error("Render Payment Page Error:", err);
-    return res.status(STATUS.SERVER_ERROR).redirect("/checkout");
-  }
-};
-
-
-export const placeOrder = async (req, res) => {
-  try {
-    const userId = req.session.user?._id || req.session.user?.id;
-
-    if (!userId)
-      return res.status(STATUS.UNAUTHORIZED).json({
-        success: false,
-        message: "User not logged in"
-      });
-
-    const { selectedAddress, paymentMethod, useWallet } = req.body;
-
-    if (!selectedAddress || !paymentMethod)
-      return res.status(STATUS.BAD_REQUEST).json({
-        success: false,
-        message: "Address and Payment Method required"
-      });
-
-    const summary = req.session.orderSummary;
-    if (!summary)
-      return res.status(STATUS.BAD_REQUEST).json({
-        success: false,
-        message: "Missing order summary"
-      });
-
-    const address = await Address.findById(selectedAddress);
-    if (!address)
-      return res.status(STATUS.BAD_REQUEST).json({
-        success: false,
-        message: "Address not found"
-      });
-
-    // ---------------- BUILD ITEMS ----------------
-    let items = [];
-
-    if (req.session.buyNow) {
-      const b = req.session.buyNow;
-      items.push({
-        productId: b.productId,
-        quantity: b.quantity || 1,
-        basePrice: b.basePrice,
-        discount: b.discount || 0,
-        finalPrice: b.price,
-        subtotal: parseFloat((b.price * (b.quantity || 1)).toFixed(2)),
-        sku: b.sku,
-        productName: b.name,
-        color: b.color,
-        size: b.size,
-        image: b.image || "",
-        deliveryCharge: 0
-      });
-    } else {
-      const cart = await Cart.findOne({ userId }).populate("items.productId");
-      if (!cart || cart.items.length === 0)
-        return res.status(STATUS.BAD_REQUEST).json({
-          success: false,
-          message: "Cart is empty"
-        });
-
-      items = cart.items.map(i => {
-        const p = i.productId;
-        const price = p.finalPrice || p.price;
-        const discountAmount = p.activeOffer
-          ? (price * p.activeOffer.percentage) / 100
-          : 0;
-
-        const finalPrice = parseFloat((price - discountAmount).toFixed(2));
-
-        return {
-          productId: p._id,
-          quantity: i.quantity,
-          basePrice: p.price,
-          discount: discountAmount,
-          finalPrice,
-          subtotal: parseFloat((finalPrice * i.quantity).toFixed(2)),
-          sku: p.sku || `SKU-${p._id.toString().slice(-6)}`,
-          productName: p.name,
-          color: p.color || null,
-          size: p.size || null,
-          image: p.images?.[0] || "",
-          deliveryCharge: p.deliveryCharge || 0
-        };
-      });
-    }
-
-    // ---------------- AMOUNT CALCULATION ----------------
-    const subtotal = parseFloat(summary.subtotal.toFixed(2));
-    const tax = parseFloat(summary.tax.toFixed(2));
-    const couponDiscount = parseFloat(summary.couponDiscount || 0);
-    const products = items.map(i => ({
-      deliveryCharge: i.deliveryCharge || 0
-    }));
-    const deliveryCharge = calculateDeliveryCharge({
-      subtotal,
-      products,
-      paymentMethod,
-      address
-    });
-
-    let totalAmount = subtotal + tax - couponDiscount + deliveryCharge;
-
-    // ---------------- WALLET (CALCULATION ONLY) ----------------
-    let walletUsed = 0;
-
-    if (useWallet) {
-      const walletDoc = await Wallet.findOne({ userId });
-      const walletBalance = walletDoc ? walletDoc.balance : 0;
-
-      if (walletBalance > 0) {
-        walletUsed = Math.min(walletBalance, totalAmount);
-        totalAmount -= walletUsed;
-      }
-    }
-
-    // ---------------- CREATE ORDER ----------------
-    const orderID = "ORD-" + crypto.randomBytes(4).toString("hex").toUpperCase();
-
-    const newOrder = new Order({
-      user_id: userId,
-      shippingAddressId: selectedAddress,
-      items,
-      subtotal,
-      tax,
-      couponDiscount,
-      deliveryCharge,
-      walletUsed,
-      totalPrice: parseFloat(totalAmount.toFixed(2)),
-      orderID,
-      paymentMethod,
-      orderStatus:
-        paymentMethod === "COD" || useWallet ? "Processing" : "Order Placed",
-      paymentStatus:
-        paymentMethod === "COD" || useWallet ? "success" : "pending"
-    });
-
-    await newOrder.save();
-
-    // ---------------- WALLET DEDUCTION + TRANSACTION ----------------
-    if (useWallet && walletUsed > 0) {
-      await Wallet.updateOne(
-        { userId },
-        {
-          $inc: { balance: -walletUsed },
-          $push: {
-            transactions: {
-              type: "DEBIT",
-              amount: walletUsed,
-              description: "Used for order payment"
-            }
-          }
-        }
-      );
-    }
-
-    // ---------------- COUPON MARK USED ----------------
-    if (summary.appliedCouponId) {
-      await Coupon.findByIdAndUpdate(summary.appliedCouponId, {
-        $addToSet: { usedBy: userId }
-      });
-    }
-
-    // ---------------- STOCK UPDATE ----------------
-    for (let i of items) {
-      await Product.updateOne(
-        { _id: i.productId },
-        { $inc: { stock: -i.quantity } }
-      );
-    }
-
-    // ---------------- CLEAR CART / BUY NOW ----------------
-    if (req.session.buyNow) {
-      delete req.session.buyNow;
-    } else {
-      await Cart.findOneAndUpdate({ userId }, { items: [] });
-    }
-
-    req.session.orderSummary = null;
-
-    // ---------------- RESPONSE ----------------
-    return res.status(STATUS.CREATED).json({
-      success: true,
-      orderId: orderID
-    });
-
-  } catch (err) {
-    console.error("Place Order Error:", err);
-    return res.status(STATUS.SERVER_ERROR).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-export const placeCODOrder = placeOrder;
-

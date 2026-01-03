@@ -154,6 +154,81 @@
       color: #aaa;
       cursor: not-allowed;
     }
+ 
+@media (max-width: 992px) {
+  .page-container {
+    margin: 100px 15px 40px 15px;
+  }
+
+  .page-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .filters input,
+  .filters select,
+  .filters button,
+  .filters a {
+    width: 100%;
+    min-width: unset;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  th, td {
+    white-space: nowrap;
+  }
+
+  .order-status {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-top h3 {
+    font-size: 18px;
+  }
+
+  th, td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .filters input,
+  .filters select,
+  .filters button,
+  .filters a {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .page-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .order-status {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
   </style>
 
   <div class="page-container">
@@ -261,7 +336,6 @@
 
                   <% } else { %>
 
-                    <!-- Normal Select Dropdown -->
                     <select class="order-status" data-id="<%= order._id %>">
                       <% const statuses=['Pending','Shipped','Out for Delivery','Delivered']; %>
                         <% statuses.forEach((status)=> { %>
@@ -287,7 +361,6 @@
     </table>
     <div class="pagination-wrap">
 
-      <!-- Calculate the 2-page sliding window -->
       <% let start=currentPage - 1; let end=currentPage; if (start < 1) { start=1; end=2; } if (end> totalPages) {
         end = totalPages;
         start = totalPages - 1;
@@ -295,7 +368,6 @@
 
         if (start < 1) start=1; %>
 
-          <!-- Previous Button -->
           <% let prevParams=new URLSearchParams({ page: currentPage> 1 ? currentPage - 1 : 1
             });
             if(search) prevParams.set("search", search);
@@ -309,9 +381,6 @@
               <% } else { %>
                 <button class="page-btn" disabled>&laquo; Prev</button>
                 <% } %>
-
-
-                  <!-- Sliding window: (start to end) -->
                   <% for(let p=start; p <=end; p++) { let btnParams=new URLSearchParams({ page: p }); if(search)
                     btnParams.set("search", search); if(sort) btnParams.set("sort", sort); if(statusFilter)
                     btnParams.set("status", statusFilter); %>
@@ -323,8 +392,6 @@
 
                     <% } %>
 
-
-                      <!-- Next Button -->
                       <% let nextParams=new URLSearchParams({ page: currentPage < totalPages ? currentPage + 1 :
                         totalPages }); if(search) nextParams.set("search", search); if(sort) nextParams.set("sort",
                         sort); if(statusFilter) nextParams.set("status", statusFilter); %>
@@ -385,11 +452,9 @@
         });
       });
 
-
-      // Redirect to Return Request Detail Page
       document.querySelectorAll(".return-requested-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-          const orderID = btn.dataset.orderId; // orderID from button
+          const orderID = btn.dataset.orderId;
           window.location.href = `/admin/return-requests/${orderID}`;
         });
       });

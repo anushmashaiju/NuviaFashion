@@ -2,7 +2,6 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/categoryModel.js";
 import Cart from "../../models/cartModel.js";
 import Wishlist from "../../models/wishlistModel.js";
-import Coupon from "../../models/couponModel.js";
 import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
 
@@ -15,7 +14,6 @@ export const getHomePage = async (req, res) => {
     let maxOfferProduct = null;
 
     if (categoryId) {
-      // When category is selected
       maxOfferProduct = await Product.findOne({
         category: categoryId,
         isDeleted: false,
@@ -26,7 +24,7 @@ export const getHomePage = async (req, res) => {
         .sort({ "activeOffer.percentage": -1, createdAt: -1 })
         .populate("category");
     } else {
-      // Highest offer across all products
+
       maxOfferProduct = await Product.findOne({
         isDeleted: false,
         isBlocked: false,
@@ -66,7 +64,6 @@ export const getHomePage = async (req, res) => {
       { $limit: 3 }
     ]);
 
-    // 3-day expiry timer
     const offerExpiry = new Date();
     offerExpiry.setDate(offerExpiry.getDate() + 3);
 
@@ -87,6 +84,40 @@ export const getHomePage = async (req, res) => {
   }
 };
 
+//CATEGORY OFFER
+export const getCategoryOffer = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const product = await Product.findOne({
+      category: categoryId,
+      isDeleted: false,
+      isBlocked: false,
+      isListed: true,
+      activeOffer: { $gt: 0 },
+    })
+      .sort({ activeOffer: -1, createdAt: -1 })
+      .populate("category");
+
+    if (!product) {
+      return res
+        .status(STATUS.NOT_FOUND)
+        .json({ success: false, errorMessage: MESSAGES.CATEGORY_OFFER_NOT_FOUND });
+    }
+
+    return res
+      .status(STATUS.SUCCESS)
+      .json({ success: true, product });
+
+  } catch (err) {
+    console.error("Category Offer Fetch Error:", err);
+    return res
+      .status(STATUS.SERVER_ERROR)
+      .json({ success: false, errorMessage: MESSAGES.SERVER_ERROR });
+  }
+};
+
+//GET MAX OFFER
 export const getMaxOfferProductByCategory = async (req, res) => {
   try {
     const categoryId = req.params.categoryId;
@@ -124,7 +155,6 @@ export const getUserProductListPage = async (req, res) => {
     const sort = req.query.sort || "";
     const minPrice = parseFloat(req.query.minPrice) || 0;
     const maxPrice = parseFloat(req.query.maxPrice) || Infinity;
-    const minRating = parseFloat(req.query.minRating) || 0;
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
 
@@ -149,7 +179,6 @@ export const getUserProductListPage = async (req, res) => {
     if (brand) query.brand = brand;
 
     query.price = { $gte: minPrice, $lte: maxPrice };
-    if (minRating > 0) query.rating = { $gte: minRating };
 
     let sortOption = {};
     switch (sort) {
@@ -158,7 +187,6 @@ export const getUserProductListPage = async (req, res) => {
       case "aToZ": sortOption.name = 1; break;
       case "zToA": sortOption.name = -1; break;
       case "popularity": sortOption.soldCount = -1; break;
-      case "averageRating": sortOption.rating = -1; break;
       case "newArrivals": sortOption.createdAt = -1; break;
       case "featured": sortOption.isFeatured = -1; break;
       default: sortOption.createdAt = -1;
@@ -219,7 +247,6 @@ export const getUserProductListPage = async (req, res) => {
         sort,
         minPrice,
         maxPrice,
-        minRating,
       },
       totalPages,
       currentPage: page,
@@ -248,15 +275,6 @@ export const getProductDetailsPage = async (req, res) => {
     if (!product || product.isDeleted || product.isBlocked || !product.isListed) {
       req.flash("error", MESSAGES.PRODUCT_NOT_FOUND);
       return res.status(STATUS.NOT_FOUND).redirect("/products");
-    }
-
-    if (product.reviews?.length) {
-      const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0);
-      product.rating = sum / product.reviews.length;
-      product.reviewCount = product.reviews.length;
-    } else {
-      product.rating = 0;
-      product.reviewCount = 0;
     }
 
     let recommendedProducts = await Product.find({
@@ -290,48 +308,3 @@ export const getProductDetailsPage = async (req, res) => {
   }
 };
 
-// ADD PRODUCT REVIEW
-export const addProductReview = async (req, res) => {
-  try {
-    const { rating, comment } = req.body;
-    const user = req.session.user;
-
-    if (!user) {
-      req.flash("error", MESSAGES.USER_NOT_LOGGED_IN);
-      return res.status(STATUS.UNAUTHORIZED).redirect(`/product/${req.params.id}`);
-    }
-
-    if (!rating || !comment.trim()) {
-      req.flash("error", MESSAGES.INVALID_INPUT);
-      return res.status(STATUS.BAD_REQUEST).redirect(`/product/${req.params.id}`);
-    }
-
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      req.flash("error", MESSAGES.PRODUCT_NOT_FOUND);
-      return res.status(STATUS.NOT_FOUND).redirect("/products");
-    }
-
-    if (!Array.isArray(product.reviews)) product.reviews = [];
-
-    product.reviews.push({
-      userId: user._id,
-      userName: user.name,
-      rating: parseInt(rating),
-      comment: comment.trim(),
-      date: new Date(),
-    });
-
-    const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0);
-    product.rating = sum / product.reviews.length;
-    product.reviewCount = product.reviews.length;
-
-    await product.save();
-    req.flash("success", "Review added successfully");
-    res.status(STATUS.CREATED).redirect(`/product/${product._id}`);
-  } catch (err) {
-    console.error("Add Review Error:", err);
-    req.flash("error", MESSAGES.SERVER_ERROR);
-    res.status(STATUS.SERVER_ERROR).redirect(`/product/${req.params.id}`);
-  }
-};

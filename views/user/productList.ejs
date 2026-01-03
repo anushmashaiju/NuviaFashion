@@ -12,19 +12,19 @@
       color: #a04c74;
     }
 
-    .search-row {
-      display: flex;
-      gap: 10px;
-      justify-content: right;
-      margin-bottom: 20px;
-    }
+   .search-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
-    .search-row input {
-      width: 60%;
-      border: 2px solid #a04c74;
-      border-radius: 8px;
-      padding: 8px 12px;
-    }
+
+.search-row input {
+  width: 100%;
+  max-width: 420px;
+}
+
 
     .btn-add {
       background-color: #a04c74;
@@ -63,7 +63,7 @@
       min-height: 100vh;
       padding: 30px 20px 0;
       position: sticky;
-      top: 90px;
+  
     }
 
     .filter-section {
@@ -173,11 +173,20 @@
       transform: translateY(-3px);
     }
 
-    .product-card img {
-      width: 100%;
-      height: 250px;
-      object-fit: contain;
-    }
+   .product-card img {
+  height: 220px;
+  max-height: 220px;
+  width: 100%;
+  object-fit: contain;
+}
+.product-actions {
+  flex-wrap: wrap;
+}
+
+.product-actions .btn-add {
+  padding: 6px 12px;
+  font-size: 14px;
+}
 
     .card-body {
       padding: 12px;
@@ -214,15 +223,13 @@
       margin-left: 3px;
     }
 
-    .rating-stars {
-      color: #ffcc00;
-      margin: 6px 0;
-    }
+   .pagination-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
 
-    .pagination-wrap {
-      text-align: center;
-      margin-top: 25px;
-    }
 
     .page-btn {
       display: inline-block;
@@ -272,22 +279,60 @@
   transition: color 0.3s ease;
 }
 
-
-/* ACTIVE / ADDED TO WISHLIST */
 .product-actions .wishlist-btn.active i {
   color: #ff4f8a !important;
 }
-
-
-    @media (max-width: 992px) {
-      .filter-sidebar {
-        position: relative;
-        min-height: auto;
-        border-right: none;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 20px;
-      }
+@media (max-width: 992px) {
+.product-listing {
+      padding: 100px 20px;
     }
+  .filter-sidebar {
+    position: relative;
+    min-height: auto;
+    margin-top: 0;
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  .filter-sidebar form {
+    display: none;
+  }
+
+  .filter-sidebar.show form {
+    display: block;
+  }
+
+  .filter-toggle {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+    }
+    @media (max-width: 576px) {
+
+  h2 {
+    font-size: 1.4rem;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+  }
+
+  .brand {
+    font-size: 0.85rem;
+  }
+
+  .product-price {
+    font-size: 1rem;
+  }
+
+  .wishlist-toast {
+    right: 10px;
+    bottom: 10px;
+    transform: none;
+  }
+}
   </style>
 
   <div class="container-fluid mt-4 mb-5">
@@ -301,18 +346,25 @@
     </form>
 
     <div class="row">
+             <div class="col-12 d-lg-none mb-2">
+  <button type="button" class="btn-add filter-toggle w-100" id="filterToggle">
+    Filters
+  </button>
+</div>
+     
       <div class="col-lg-3 filter-sidebar">
         <form method="GET" action="/products">
           <input type="hidden" name="search" value="<%= currentFilters.search || '' %>">
 
           <div class="filter-section">
-            <div class="filter-title">Sort by:</div>
+       <div class="filter-title">Sort by:</div>
             <% const sortOptions=[ { value: 'priceAsc' , label: 'Price: low to high' }, { value: 'priceDesc' ,
-              label: 'Price: high to low' }, { value: 'aToZ' , label: 'Alphabetical A→Z' }, { value: 'zToA' ,
-              label: 'Alphabetical Z→A' }, { value: 'popularity' , label: 'Popularity' }, { value: 'averageRating' ,
-              label: 'Average Ratings' }, { value: 'newArrivals' , label: 'New Arrivals' }, { value: 'featured' ,
+              label: 'Price: high to low' }, { value: 'aToZ' , label: 'A→Z' }, { value: 'zToA' ,
+              label: 'Z→A' }, { value: 'popularity' , label: 'Popularity' }, { value: 'newArrivals' , label: 'New Arrivals' }, { value: 'featured' ,
               label: 'Featured' } ]; %>
               <% sortOptions.forEach((opt, idx)=> { %>
+               
+
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="sort" value="<%= opt.value %>"
                     <%=currentFilters.sort===opt.value ? 'checked' : '' %> id="sort<%= idx %>">
@@ -367,21 +419,6 @@
             </div>
           </div>
 
-          <div class="filter-section">
-            <div class="filter-title">Minimum Rating</div>
-            <% for (let r=5; r>= 1; r--) { %>
-              <div class="form-check d-flex align-items-center">
-                <input class="form-check-input me-2" type="radio" name="minRating" value="<%= r %>"
-                  <%=parseFloat(currentFilters.minRating || 0)===r ? 'checked' : '' %> id="rating<%= r %>">
-                  <label class="form-check-label" for="rating<%= r %>">
-                    <% for (let i=1; i <=r; i++) { %>
-                      <i class="fa fa-star" style="color: #FFD700;"></i>
-                      <% } %>
-                  </label>
-              </div>
-              <% } %>
-          </div>
-
           <div class="filter-footer mt-3">
             <button type="submit" class="btn-add">Apply</button>
             <a href="/products" class="reset-btn">Clear</a>
@@ -395,7 +432,8 @@
             <p class="text-center">No products found.</p>
             <% } else { %>
               <% products.forEach(product=> { %>
-                <div class="col-md-4">
+              <div class="col-lg-4 col-md-6 col-sm-12">
+
                   <div class="product-card">
                     <img
                       src="<%= product.images && product.images.length ? product.images[0] : '/images/placeholder.png' %>"
@@ -410,26 +448,18 @@
                        <p class="<%= product.stock>0 ? 'in-stock':'out-stock' %>">
                     <%= product.stock>0 ? 'In Stock':'Out of Stock' %>
                   </p>
-                      <div class="rating-stars">
-                        <% let rating=product.rating || 0; %>
-                          <% for (let i=1; i <=5; i++) { %>
-                            <i class="fa <%= i <= Math.floor(rating) ? 'fa-star' : 'fa-star-o' %>"></i>
-                            <% } %> (<%= rating.toFixed(1) %>)
-                      </div>
+                 
                      <p>
   <% if (product.activeOffer && product.activeOffer.type) { %>
 
-    <!-- final price -->
     <span class="product-price" style="color: green; font-weight:600;">
       ₹<%= product.finalPrice.toFixed(2) %>
     </span>
 
-    <!-- original price -->
     <span class="old-price" style="color: red; text-decoration: line-through;">
       ₹<%= product.price.toFixed(2) %>
     </span>
 
-    <!-- offer badge -->
     <span class="discount">
       <%= product.activeOffer.percentage %>% off
       
@@ -437,7 +467,6 @@
 
   <% } else { %>
 
-    <!-- no offer -->
     <span class="product-price">
       ₹<%= product.price.toFixed(2) %>
     </span>
@@ -486,7 +515,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Price slider
+
   const minSlider = document.getElementById('minPrice');
   const maxSlider = document.getElementById('maxPrice');
   const minLabel = document.getElementById('minPriceLabel');
@@ -519,7 +548,6 @@ document.addEventListener("DOMContentLoaded", () => {
   maxSlider.addEventListener("input", updateSlider);
   updateSlider();
 
-  // Toast
   const toast = document.getElementById("action-toast");
   const wishlistBadge = document.getElementById("wishlist-count");
   const cartBadge = document.getElementById("cart-count");
@@ -532,18 +560,16 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
   };
 
-  // Wishlist
   document.querySelectorAll(".wishlist-btn").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
       const productId = btn.dataset.productId;
 
       try {
-        const res = await fetch(`/add-to-wishlist/${productId}`, { method: "POST" });
+        const res = await fetch(`/wishlist/add/${productId}`, { method: "POST" });
         const data = await res.json();
 
         if (data.success) {
-          // Ensure boolean type
           const inWishlist = data.inWishlist === true || data.inWishlist === "true";
           btn.classList.toggle("active", inWishlist);
           btn.dataset.inWishlist = inWishlist;
@@ -563,7 +589,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Cart
 document.querySelectorAll(".cart-btn").forEach(btn => {
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
@@ -577,7 +602,7 @@ document.querySelectorAll(".cart-btn").forEach(btn => {
       const data = await res.json();
 
       if (data.success) {
-        // Use correct server key
+
         if (cartBadge) {
           cartBadge.innerText = data.cartCount || 0; 
         }
@@ -593,4 +618,12 @@ document.querySelectorAll(".cart-btn").forEach(btn => {
 });
 
 });
+ const filterToggle = document.getElementById("filterToggle");
+  const filterSidebar = document.querySelector(".filter-sidebar");
+
+  if (filterToggle) {
+    filterToggle.addEventListener("click", () => {
+      filterSidebar.classList.toggle("show");
+    });
+  }
 </script>

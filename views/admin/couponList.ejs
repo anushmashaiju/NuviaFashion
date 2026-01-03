@@ -101,6 +101,81 @@
     .action-btn i {
       font-size: 12px;
     }
+  
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .page-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-top h3 {
+    font-size: 1.3rem;
+  }
+
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-row input {
+    width: 100%;
+  }
+
+  .reset-btn {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .table-custom {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .table-custom th,
+  .table-custom td {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .action-btn i {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 576px) {
+  .table-custom th,
+  .table-custom td {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .search-row input,
+  .reset-btn {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .page-top h3 {
+    font-size: 1.1rem;
+  }
+
+  .action-btn {
+    padding: 4px 6px;
+  }
+}
+
   </style>
 
   <div class="admin-layout">
@@ -123,6 +198,7 @@
               <th>Expire On</th>
               <th>Offer Price</th>
               <th>Minimum Price</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Used Count</th>
               <th>Actions</th>
@@ -140,6 +216,14 @@
                 <td><input type="number" class="form-control offer-input" value="<%= c.offerPrice %>"></td>
 
                 <td><input type="number" class="form-control min-input" value="<%= c.minimumPrice %>"></td>
+<td>
+  <select class="form-control type-input">
+    <option value="MIN_PURCHASE" <%= c.type === "MIN_PURCHASE" ? "selected" : "" %>>Min Purchase</option>
+    <option value="ONE_TIME" <%= c.type === "ONE_TIME" ? "selected" : "" %>>One Time</option>
+    <option value="FIRST_ORDER" <%= c.type === "FIRST_ORDER" ? "selected" : "" %>>First Order</option>
+    <option value="FESTIVAL" <%= c.type === "FESTIVAL" ? "selected" : "" %>>Festival</option>
+  </select>
+</td>
 
                 <td>
                   <% if (new Date(c.expireOn) < new Date()) { %>
@@ -155,7 +239,7 @@
 
                 <td>
                   <button type="button" class="action-btn edit-btn" onclick="saveCoupon('<%= c._id %>', this)">
-                    <i class="bi bi-pencil-square"></i>
+                   <i class="bi bi-save"></i>
                   </button>
 
                   <button type="button" class="action-btn delete-btn" onclick="deleteCoupon('<%= c._id %>')">
@@ -172,6 +256,16 @@
                   <td><input type="date" class="form-control expire-input"></td>
                   <td><input type="number" class="form-control offer-input" placeholder="Offer Price"></td>
                   <td><input type="number" class="form-control min-input" placeholder="Minimum Price"></td>
+                  <td>
+  <select class="form-control type-input">
+    <option value="">Select</option>
+    <option value="MIN_PURCHASE">Min Purchase</option>
+    <option value="ONE_TIME">One Time</option>
+    <option value="FIRST_ORDER">First Order</option>
+    <option value="FESTIVAL">Festival</option>
+  </select>
+</td>
+
                   <td>—</td>
                   <td>0</td>
                   <td><button class="action-btn add-btn" onclick="addCoupon()">
@@ -197,13 +291,13 @@
       window.location.href = "/admin/coupons";
     });
 
-    // ADD COUPON
     async function addCoupon() {
       const row = document.getElementById("addCouponRow");
       const couponName = row.querySelector(".coupon-code").value.trim();
       const expireOn = row.querySelector(".expire-input").value;
       const offerPrice = row.querySelector(".offer-input").value;
       const minimumPrice = row.querySelector(".min-input").value;
+const type = row.querySelector(".type-input").value;
 
       if (
         couponName === "" ||
@@ -217,19 +311,46 @@
           text: 'Please fill all fields',
         });
       }
+if (!type) {
+  return Swal.fire({
+    icon: 'warning',
+    title: 'Oops!',
+    text: 'Please select coupon type'
+  });
+}
 
       const res = await fetch("/admin/coupons/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ couponName, expireOn, offerPrice, minimumPrice })
+       body: JSON.stringify({
+  couponName,
+  expireOn,
+  offerPrice,
+  minimumPrice,
+  type
+})
+
       });
 
       const data = await res.json();
-      if (data.success) location.reload();
-      else alert(data.error);
+      if (data.success) {
+  Swal.fire({
+    icon: 'success',
+    title: 'Coupon Added',
+    text: 'Coupon created successfully!',
+    timer: 1500,
+    showConfirmButton: false
+  }).then(() => location.reload());
+} else {
+  Swal.fire({
+    icon: 'error',
+    title: 'Error',
+    text: data.error
+  });
+}
+
     }
 
-    // SAVE COUPON
     async function saveCoupon(id, btn) {
       const row = btn.closest("tr");
 
@@ -237,7 +358,7 @@
       const expireOn = row.querySelector(".expire-input").value;
       const offerPrice = row.querySelector(".offer-input").value;
       const minimumPrice = row.querySelector(".min-input").value;
-
+const type = row.querySelector(".type-input").value;
       if (
         couponName === "" ||
         expireOn === "" ||
@@ -251,15 +372,34 @@
       const res = await fetch(`/admin/coupons/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ couponName, expireOn, offerPrice, minimumPrice })
+       body: JSON.stringify({
+  couponName,
+  expireOn,
+  offerPrice,
+  minimumPrice,
+  type
+})
       });
 
       const data = await res.json();
-      if (data.success) location.reload();
-      else alert(data.error);
+     if (data.success) {
+  Swal.fire({
+    icon: 'success',
+    title: 'Coupon Updated',
+    text: 'Coupon details saved successfully!',
+    timer: 1500,
+    showConfirmButton: false
+  }).then(() => location.reload());
+} else {
+  Swal.fire({
+    icon: 'error',
+    title: 'Error',
+    text: data.error
+  });
+}
+
     }
 
-    // DELETE COUPON
     async function deleteCoupon(id) {
       const result = await Swal.fire({
         title: 'Are you sure?',

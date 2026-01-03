@@ -1,10 +1,7 @@
 import express from "express";
-
-
 import {
   getAdminLoginPage,
   adminLogin,
-  getAdminDashboard,
   getAllUsers,
   toggleUserStatus,
   adminLogout,
@@ -46,11 +43,37 @@ import {
   processProductImagesForEdit,
 } from "../utils/imageHelper.js";
 import { validateProduct } from "../middlewares/categoryProductMiddleware.js";
-
-import { isAdmin, setCurrentPath } from "../middlewares/isAdmin.js"; 
-import { adminCancelOrder,approveReturn,approveReturnRequest,getOrdersPage, getReturnRequests, getSingleReturnRequest, rejectReturnRequest, updateOrderStatus, viewSingleOrder } from "../controllers/admin/orderController.js";
-import { createCoupon, deleteCoupon,  getCouponListPage, updateCoupon} from "../controllers/admin/couponController.js";
-import { downloadSalesReportExcel, downloadSalesReportPDF, getSalesReport } from "../controllers/admin/reportController.js";
+import { isAdmin, setCurrentPath } from "../middlewares/isAdmin.js";
+import {
+  adminCancelOrder,
+  approveReturn,
+  approveReturnRequest,
+  getOrdersPage,
+  getReturnRequests,
+  getSingleReturnRequest,
+  rejectReturnRequest,
+  updateOrderStatus,
+  viewSingleOrder
+} from "../controllers/admin/orderController.js";
+import {
+  createCoupon,
+  deleteCoupon,
+  getCouponListPage,
+  updateCoupon
+} from "../controllers/admin/couponController.js";
+import {
+  downloadSalesReportExcel,
+  downloadSalesReportPDF,
+  getSalesReport
+} from "../controllers/admin/reportController.js";
+import {
+  getAdminDashboard,
+  getBestSellingBrands,
+  getBestSellingCategories,
+  getBestSellingProducts,
+  getLedger,
+  getRevenueStats
+} from "../controllers/admin/dashboardController.js";
 
 const router = express.Router();
 
@@ -68,11 +91,16 @@ router.get("/resend-forgot-otp", resendAdminForgotOtp);
 router.get("/reset-password", getAdminResetPasswordPage);
 router.post("/reset-password", resetAdminPassword);
 
-router.use(isAdmin);          
-router.use(setCurrentPath);   
+router.use(isAdmin);
+router.use(setCurrentPath);
 
 // Dashboard
 router.get("/dashboard", getAdminDashboard);
+router.get("/revenue-stats", getRevenueStats);
+router.get("/best-selling-products", getBestSellingProducts);
+router.get("/best-selling-categories", getBestSellingCategories);
+router.get("/best-selling-brands", getBestSellingBrands);
+router.get("/ledger", getLedger);
 
 // Users
 router.get("/users", getAllUsers);
@@ -90,7 +118,7 @@ router.post("/categories/toggle/:id", toggleCategory);
 // Products
 router.get("/products", showAllProducts);
 router.get("/products/add", getAddProductPage);
-router.post("/products/add", uploadProductImages, processProductImages, validateProduct,addProduct);
+router.post("/products/add", uploadProductImages, processProductImages, validateProduct, addProduct);
 router.get("/products/edit/:id", getEditProductPage);
 router.post("/products/edit/:id", uploadProductImages, processProductImagesForEdit, validateProduct, updateProduct);
 router.get("/products/delete/:id", deleteProduct);
@@ -98,20 +126,16 @@ router.get("/products/:id/toggle-block", toggleBlockProduct);
 router.get("/products/:id/toggle-list", toggleListProduct);
 
 // Orders
-router.get("/orders", getOrdersPage);                            
-router.get("/orders/:id", viewSingleOrder);                      
-router.post("/orders/update-status/:id", updateOrderStatus);     
-router.get("/orders/cancel/:id", adminCancelOrder);                  
+router.get("/orders", getOrdersPage);
+router.get("/orders/:id", viewSingleOrder);
+router.post("/orders/update-status/:id", updateOrderStatus);
+router.get("/orders/cancel/:id", adminCancelOrder);
 router.post("/orders/approve-return/:id", approveReturn);
 
+//Return
 router.get("/return-requests", getReturnRequests);
-// View single return request
 router.get("/return-requests/:orderID", getSingleReturnRequest);
-
-// Approve return
 router.post("/return-requests/approve/:orderID", approveReturnRequest);
-
-// Reject return
 router.post("/return-requests/reject/:orderID", rejectReturnRequest);
 
 //coupon
@@ -120,14 +144,9 @@ router.post("/coupons/create", createCoupon);
 router.put("/coupons/update/:id", updateCoupon);
 router.delete("/coupons/delete/:id", deleteCoupon);
 
-
-// Render Sales Report Page
+// Sales Report 
 router.get("/salesReport", getSalesReport);
-
-// Download PDF
 router.get("/salesReport/download/pdf", downloadSalesReportPDF);
-
-// Download Excel
 router.get("/salesReport/download/excel", downloadSalesReportExcel);
 
 export default router;

@@ -77,80 +77,82 @@
 
 <body>
   <h2>Sales Report</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>
-          <h6>Total Orders</h6>
-          <p class="mb-0 fs-5">
-            <%= grandTotal.totalOrders %>
-          </p>
-        </th>
-        <th>
-          <h6>Total Sales</h6>
-          <p class="mb-0 fs-5">₹ <%= grandTotal.totalAmount.toFixed(2) %>
-          </p>
-        </th>
-        <th>
-          <h6>Total Discounts</h6>
-          <p class="mb-0 fs-5">₹ <%= grandTotal.totalDiscount.toFixed(2) %>
-          </p>
-        </th>
-        <th>
-          <h6>Total Delivery Charges</h6>
-          <p class="mb-0 fs-5">₹ <%= grandTotal.deliveryCharge.toFixed(2) %>
-          </p>
-        </th>
-        <th>
-          <h6>Net Revenue</h6>
-          <p class="mb-0 fs-5">₹ <%= grandTotal.finalAmount.toFixed(2) %>
-          </p>
-        </th>
+ <table>
+  <thead>
+    <tr>
+      <th>
+        <h6>Total Orders</h6>
+        <p><%= grandTotal.totalOrders %></p>
+      </th>
 
-      </tr>
-    </thead>
-  </table>
+      <th>
+        <h6>Total Sales (Subtotal)</h6>
+        <p>₹ <%= grandTotal.totalAmount.toFixed(2) %></p>
+      </th>
+
+      <th>
+        <h6>Total Tax</h6>
+        <p>₹ <%= grandTotal.totalTax.toFixed(2) %></p>
+      </th>
+
+      <th>
+        <h6>Total Delivery</h6>
+        <p>₹ <%= grandTotal.deliveryCharge.toFixed(2) %></p>
+      </th>
+
+  <th>
+        <h6>Total Discounts</h6>
+        <p>₹ <%= grandTotal.totalDiscount.toFixed(2) %></p>
+      </th>
+
+      <th>
+        <h6>Net Revenue</h6>
+        <p>₹ <%= grandTotal.finalAmount.toFixed(2) %></p>
+      </th>
+    </tr>
+  </thead>
+</table>
+
   <div class="section-card">
     <table>
       <thead>
-        <tr>
-          <th>Date</th>
-          <th>Order ID</th>
-          <th>Customer</th>
-          <th>Total</th>
-          <th>Discount</th>
-          <th>Delivery Charge</th>
-          <th>Final</th>
-          <th>Payment</th>
-        </tr>
-      </thead>
+  <tr>
+    <th>Date</th>
+    <th>Order ID</th>
+    <th>Customer</th>
+    <th>Subtotal</th>
+    <th>Tax</th>
+    <th>Delivery</th>
+       <th>Discount</th>
+    <th>Final Amount</th>
+    <th>Payment</th>
+  </tr>
+</thead>
+
       <tbody>
-        <% orders.forEach(order=> { %>
-          <tr>
-            <td>
-              <%= order.createdAt.toLocaleDateString() %>
-            </td>
-            <td>
-              <%= order.orderID %>
-            </td>
-            <td>
-              <%= order.user_id?.name || "Unknown" %>
-            </td>
-            <td>₹ <%= order.totalPrice.toFixed(2) %>
-            </td>
-            <td>₹ <%= ((order.discount || 0) + (order.couponDiscount || 0)).toFixed(2) %>
-            </td>
-            <td>₹ <%= order.deliveryCharge || 0 %>
-            </td>
-            <td>₹ <%= (order.totalPrice - ((order.discount || 0) + (order.couponDiscount || 0)) + (order.deliveryCharge
-                || 0)).toFixed(2) %>
-            </td>
-            <td>
-              <%= order.paymentMethod %>
-            </td>
-          </tr>
-          <% }) %>
-      </tbody>
+  <% orders.forEach(order => { %>
+    <tr>
+      <td><%= order.createdAt.toLocaleDateString() %></td>
+
+      <td><%= order.orderID %></td>
+
+      <td><%= order.user_id?.name || "Unknown" %></td>
+
+      <td>₹ <%= order.subtotal.toFixed(2) %></td>  
+
+      <td>₹ <%= (order.tax || 0).toFixed(2) %></td>
+
+      <td>₹ <%= (order.deliveryCharge || 0).toFixed(2) %></td>
+
+       <td>₹ <%= (order.couponDiscount || 0).toFixed(2) %></td>
+
+      <td>₹ <%= order.totalPrice.toFixed(2) %></td>
+
+      <td><%= order.paymentMethod %></td>
+    </tr>
+  <% }) %>
+</tbody>
+
     </table>
   </div>
 </body>

@@ -61,11 +61,8 @@ const MESSAGES = {
     PRODUCT_CANCELLED_SUCCESS: "Product cancelled successfully",
     ONLY_DELIVERED_CAN_RETURN: "Only delivered orders can be returned",
     PRODUCT_UNAVAILABLE: "Product unavailable",
-    REVIEW_ADDED_SUCCESS: "Review added successfully",
-    REVIEW_ERROR: "Error adding review",
     ALREADY_IN_WISHLIST: "Already in Wishlist",
     REMOVED_FROM_WISHLIST: "Removed from wishlist",
-    LOGIN_REQUIRED_REVIEW: "You must be logged in to write a review",
 
 };
 

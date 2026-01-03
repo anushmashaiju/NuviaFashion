@@ -46,7 +46,7 @@ export const validateProduct = async (req, res, next) => {
   next();
 };
 
-
+//user counts
 export const addUserCounts = async (req, res, next) => {
   try {
     if (!req.session.user) {

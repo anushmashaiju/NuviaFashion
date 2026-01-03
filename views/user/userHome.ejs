@@ -1,102 +1,5 @@
 <%- include("../../views/partials/userHeader",{ activePage: activePage }) %>
-
     <div id="wishlist-toast" class="wishlist-toast">Added to Wishlist!</div>
-
-    <style>
-        .wishlist-toast,
-        #cart-toast {
-            position: fixed;
-            bottom: 20px;
-            right: -320px;
-            background-color: #28a745;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 9999;
-            opacity: 0;
-            transition: transform 0.5s ease, opacity 0.5s ease;
-            font-weight: 500;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .wishlist-toast.show,
-        #cart-toast.show {
-            transform: translateX(-320px);
-            opacity: 1;
-        }
-
-        .product__hover .hover-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            padding: 5px 5px;
-            background: #f76f8f;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            /* makes <a> look like button */
-            transition: 0.3s;
-        }
-
-        .product__hover .hover-btn:hover {
-            background: #ff5f83;
-        }
-
-        .product__hover .hover-btn i {
-            font-size: 16px;
-        }
-
-        .product__item__pic {
-            height: 360px;
-            background-size: contain !important;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        .brand__item {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            transition: 0.3s ease;
-            border: 1px solid #f0f0f0;
-            height: 100%;
-            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .brand__item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0px 4px 18px rgba(0, 0, 0, 0.1);
-        }
-
-        .brand__item__pic {
-            width: 100%;
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .brand__item__pic img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .brand__item__text h5 {
-            margin-top: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-        }
-    </style>
     <!-- Hero Section Begin -->
     <section class="hero">
         <div class="hero__slider owl-carousel">
@@ -190,15 +93,19 @@
                                         + Add To Cart
                                     </a>
 
-                                    <div class="rating">
-                                        <% for(let i=1; i <=5; i++) { %>
-                                            <i
-                                                class="fa <%= i <= Math.round(product.rating || 0) ? 'fa-star' : 'fa-star-o' %>"></i>
+                                    <% if (product.activeOffer && product.activeOffer.percentage> 0) { %>
+                                        <div class="product__price">
+                                            <span class="original-price">
+                                                ₹<%= product.price.toFixed(2) %>
+                                            </span>
+                                            <span class="offer-price">
+                                                ₹<%= product.finalPrice.toFixed(2) %>
+                                            </span>
+                                        </div>
+                                        <% } else { %>
+                                            <h5>₹<%= product.price.toFixed(2) %>
+                                            </h5>
                                             <% } %>
-                                    </div>
-                                    <h5>₹<%= product.finalPrice ? product.finalPrice.toFixed(2) :
-                                            product.price.toFixed(2) %>
-                                    </h5>
                                 </div>
                             </div>
                         </div>
@@ -243,17 +150,21 @@
                                                             + Add To Cart
                                                         </a>
 
-                                                       
 
-                                                        <div class="rating">
-                                                            <% for(let i=1; i <=5; i++) { %>
-                                                                <i
-                                                                    class="fa <%= i <= Math.round(product.rating || 0) ? 'fa-star' : 'fa-star-o' %>"></i>
+                                                        <% if (product.activeOffer && product.activeOffer.percentage> 0)
+                                                            { %>
+                                                            <div class="product__price">
+                                                                <span class="original-price">
+                                                                    ₹<%= product.price.toFixed(2) %>
+                                                                </span>
+                                                                <span class="offer-price">
+                                                                    ₹<%= product.finalPrice.toFixed(2) %>
+                                                                </span>
+                                                            </div>
+                                                            <% } else { %>
+                                                                <h5>₹<%= product.price.toFixed(2) %>
+                                                                </h5>
                                                                 <% } %>
-                                                        </div>
-                                                        <h5>₹<%= product.finalPrice ? product.finalPrice.toFixed(2) :
-                                                                product.price.toFixed(2) %>
-                                                        </h5>
                                                     </div>
                                                 </div>
                                             </div>
@@ -268,7 +179,7 @@
         </div>
     </section>
     <!-- Product Section End -->
- <div id="cart-toast" class="wishlist-toast"></div>
+    <div id="cart-toast" class="wishlist-toast"></div>
 
     <!-- Offer Section Begin -->
     <section class="categories spad">
@@ -293,39 +204,52 @@
 
                 <!-- Offer Product Section -->
                 <div class="col-lg-9" id="offerSection">
-                   <% if (maxOfferProduct) { %>
-  <div class="row">
-    <div class="col-lg-5">
-      <div class="categories__hot__deal">
-        <img src="<%= maxOfferProduct.images?.length ? maxOfferProduct.images[0] : '/img/placeholder.png' %>"
-             alt="<%= maxOfferProduct.name %>">
+                    <% if (maxOfferProduct) { %>
+                        <div class="row">
+                            <div class="col-lg-5">
+                                <div class="categories__hot__deal">
+                                    <img src="<%= maxOfferProduct.images?.length ? maxOfferProduct.images[0] : '/img/placeholder.png' %>"
+                                        alt="<%= maxOfferProduct.name %>">
 
-        <div class="hot__deal__sticker">
-          <span>Sale Of</span>
-          <h5><%= maxOfferProduct.activeOffer?.percentage || 0 %>% OFF</h5>
-        </div>
-      </div>
-    </div>
+                                    <div class="hot__deal__sticker">
+                                        <span>Sale Of</span>
+                                        <h5>
+                                            <%= maxOfferProduct.activeOffer?.percentage || 0 %>% OFF
+                                        </h5>
+                                    </div>
+                                </div>
+                            </div>
 
-    <div class="col-lg-6 offset-lg-1">
-      <div class="categories__deal__countdown">
-        <span><%= maxOfferProduct.category?.categoryName || "Deal of the Week" %></span>
-        <h2><%= maxOfferProduct.name %></h2>
-        <p>Exclusive deal for a limited time!</p>
+                            <div class="col-lg-6 offset-lg-1">
+                                <div class="categories__deal__countdown">
+                                    <span>
+                                        <%= maxOfferProduct.category?.categoryName || "Deal of the Week" %>
+                                    </span>
+                                    <h2>
+                                        <%= maxOfferProduct.name %>
+                                    </h2>
+                                    <p>Exclusive deal for a limited time!</p>
 
-        <div class="categories__deal__countdown__timer" id="countdown">
-          <div class="cd-item"><span id="days">0</span><p>Days</p></div>
-          <div class="cd-item"><span id="hours">0</span><p>Hours</p></div>
-          <div class="cd-item"><span id="minutes">0</span><p>Minutes</p></div>
-          <div class="cd-item"><span id="seconds">0</span><p>Seconds</p></div>
-        </div>
+                                    <div class="categories__deal__countdown__timer" id="countdown">
+                                        <div class="cd-item"><span id="days">0</span>
+                                            <p>Days</p>
+                                        </div>
+                                        <div class="cd-item"><span id="hours">0</span>
+                                            <p>Hours</p>
+                                        </div>
+                                        <div class="cd-item"><span id="minutes">0</span>
+                                            <p>Minutes</p>
+                                        </div>
+                                        <div class="cd-item"><span id="seconds">0</span>
+                                            <p>Seconds</p>
+                                        </div>
+                                    </div>
 
-        <a href="/product/<%= maxOfferProduct._id %>" class="primary-btn">Shop now</a>
-      </div>
-    </div>
-  </div>
-<% } 
- else { %>
+                                    <a href="/product/<%= maxOfferProduct._id %>" class="primary-btn">Shop now</a>
+                                </div>
+                            </div>
+                        </div>
+                        <% } else { %>
                             <p>No offers available right now.</p>
                             <% } %>
                 </div>
@@ -434,23 +358,23 @@
             }
             startCountdown();
 
-          document.querySelectorAll('.category-link').forEach(link => {
-  link.addEventListener('click', async (e) => {
-    e.preventDefault();
+            document.querySelectorAll('.category-link').forEach(link => {
+                link.addEventListener('click', async (e) => {
+                    e.preventDefault();
 
-    document.querySelectorAll('.category-link').forEach(a => a.classList.remove('active'));
-    e.target.classList.add('active');
+                    document.querySelectorAll('.category-link').forEach(a => a.classList.remove('active'));
+                    e.target.classList.add('active');
 
-    const categoryId = e.target.dataset.id;
+                    const categoryId = e.target.dataset.id;
 
-    try {
-      const res = await fetch(`/max-offer-product/${categoryId}`);
-      const data = await res.json();
+                    try {
+                        const res = await fetch(`/max-offer-product/${categoryId}`);
+                        const data = await res.json();
 
-      if (data.success && data.product) {
-        const p = data.product;
+                        if (data.success && data.product) {
+                            const p = data.product;
 
-        document.getElementById('offerSection').innerHTML = `
+                            document.getElementById('offerSection').innerHTML = `
           <div class="row">
             <div class="col-lg-5">
               <div class="categories__hot__deal">
@@ -478,110 +402,130 @@
             </div>
           </div>
         `;
-
-        startCountdown();
-      } else {
-        document.getElementById('offerSection').innerHTML = `<p>No offers found for this category.</p>`;
-      }
-    } catch (err) {
-      console.error("Error fetching offer:", err);
-    }
-  });
-});
+                            startCountdown();
+                        } else {
+                            document.getElementById('offerSection').innerHTML = `<p>No offers found for this category.</p>`;
+                        }
+                    } catch (err) {
+                        console.error("Error fetching offer:", err);
+                    }
+                });
+            });
 
 
             document.addEventListener("DOMContentLoaded", () => {
-    const toast = document.getElementById("wishlist-toast");
-    const wishlistCountElement = document.getElementById("wishlist-count");
+                const toast = document.getElementById("wishlist-toast");
+                const wishlistCountElement = document.getElementById("wishlist-count");
 
-    document.querySelectorAll(".wishlist-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            e.preventDefault();
+                document.querySelectorAll(".wishlist-btn").forEach(btn => {
+                    btn.addEventListener("click", async (e) => {
+                        e.preventDefault();
 
-            const productId = btn.dataset.productId;
+                        const productId = btn.dataset.productId;
 
-            try {
-                const res = await fetch(`/add-to-wishlist/${productId}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }
+                        try {
+                            const res = await fetch(`/wishlist/add/${productId}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" }
+                            });
+
+                            const data = await res.json();
+
+                            if (data.success) {
+                  
+                                if (!data.already) {
+                                    let currentCount = parseInt(wishlistCountElement.innerText) || 0;
+                                    wishlistCountElement.innerText = currentCount + 1;
+                                }
+
+                                showToast(data.message || "Added to Wishlist!");
+                            } else {
+                                showToast(data.message || "Something went wrong", true);
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            showToast("Something went wrong", true);
+                        }
+                    });
                 });
 
-                const data = await res.json();
+                function showToast(message, isError = false) {
+                    toast.innerText = message;
+                    toast.style.backgroundColor = isError ? "#dc3545" : "#28a745";
+                    toast.classList.add("show");
 
-                if (data.success) {
-                    // Increment the badge count if it’s added
-                    if (!data.already) {
-                        let currentCount = parseInt(wishlistCountElement.innerText) || 0;
-                        wishlistCountElement.innerText = currentCount + 1;
-                    }
+                    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
 
-                    showToast(data.message || "Added to Wishlist!");
-                } else {
-                    showToast(data.message || "Something went wrong", true);
+                    toast.hideTimeout = setTimeout(() => {
+                        toast.classList.remove("show");
+                    }, 2000);
                 }
-            } catch (err) {
-                console.error(err);
-                showToast("Something went wrong", true);
-            }
-        });
-    });
+            });
 
-    function showToast(message, isError = false) {
-        toast.innerText = message;
-        toast.style.backgroundColor = isError ? "#dc3545" : "#28a745";
-        toast.classList.add("show");
+            document.addEventListener("DOMContentLoaded", () => {
+                const cartToast = document.getElementById("cart-toast");
+                const cartCountElement = document.getElementById("cart-count");
 
-        if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+                function showCartToast(message, isError = false) {
+                    cartToast.innerText = message;
+                    cartToast.style.backgroundColor = isError ? "#dc3545" : "#28a745";
+                    cartToast.classList.add("show");
 
-        toast.hideTimeout = setTimeout(() => {
-            toast.classList.remove("show");
-        }, 2000);
-    }
-});
+                    if (cartToast.hideTimeout) clearTimeout(cartToast.hideTimeout);
+
+                    cartToast.hideTimeout = setTimeout(() => {
+                        cartToast.classList.remove("show");
+                    }, 2000);
+                }
+
+                document.querySelectorAll(".cart-btn").forEach(btn => {
+                    btn.addEventListener("click", async (e) => {
+                        e.preventDefault();
+                        const productId = btn.dataset.productId;
+
+                        try {
+                            const res = await fetch(`/cart/add-ajax/${productId}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" }
+                            });
+
+                            const data = await res.json();
+                            showCartToast(data.message || "Added to Cart!", !data.success);
 
 
-            
-    document.addEventListener("DOMContentLoaded", () => {
-    const cartToast = document.getElementById("cart-toast");
-    const cartCountElement = document.getElementById("cart-count");
+                            if (data.success && data.cartCount !== undefined) {
+                                cartCountElement.innerText = data.cartCount;
+                            }
 
-    function showCartToast(message, isError = false) {
-        cartToast.innerText = message;
-        cartToast.style.backgroundColor = isError ? "#dc3545" : "#28a745";
-        cartToast.classList.add("show");
+                        } catch (err) {
+                            console.error(err);
+                            showCartToast("Something went wrong", true);
+                        }
+                    });
+                });
+            });
 
-        if (cartToast.hideTimeout) clearTimeout(cartToast.hideTimeout);
-
-        cartToast.hideTimeout = setTimeout(() => {
-            cartToast.classList.remove("show");
-        }, 2000);
-    }
-
-    document.querySelectorAll(".cart-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            e.preventDefault();
-            const productId = btn.dataset.productId;
-
-            try {
-                const res = await fetch(`/cart/add-ajax/${productId}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }
+            $(document).ready(function () {
+                $(".hero__slider").owlCarousel({
+                    items: 1,
+                    loop: true,
+                    autoplay: true,
+                    autoplayTimeout: 5000,
+                    smartSpeed: 900,
+                    nav: true,
+                    dots: false,
+                    navText: [
+                        "<span class='hero-arrow'><i class='fa fa-angle-left'></i></span>",
+                        "<span class='hero-arrow'><i class='fa fa-angle-right'></i></span>"
+                    ]
                 });
 
-                const data = await res.json();
-                showCartToast(data.message || "Added to Cart!", !data.success);
+                $(document).on("click", ".hero__slider .owl-nav button", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                });
+            });
 
-                // ✨ UPDATE CART BADGE INSTANTLY
-                if (data.success && data.cartCount !== undefined) {
-                    cartCountElement.innerText = data.cartCount;
-                }
-
-            } catch (err) {
-                console.error(err);
-                showCartToast("Something went wrong", true);
-            }
-        });
-    });
-});
 
         </script>

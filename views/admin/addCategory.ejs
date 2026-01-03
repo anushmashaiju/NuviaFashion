@@ -80,6 +80,7 @@
     text-decoration: none;
     color: #a04c74;
   }
+ 
 </style>
 
 <div class="admin-layout">
@@ -162,7 +163,7 @@
 
 <div class="form-group">
   <label for="thumbnail">Thumbnail Image</label>
-  <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+<input type="file" id="thumbnail" name="thumbnail" class="image-input" accept="image/*"/>
   <div id="preview" class="d-flex flex-wrap mt-2"></div>
   
   <% if (errors && errors.thumbnail) { %>
@@ -178,8 +179,50 @@
     </div>
   </main>
 </div>
-
 <script>
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg"
+  ];
+
+  document.querySelectorAll(".image-input").forEach(input => {
+    input.addEventListener("change", function () {
+      const file = this.files[0];
+      const preview = document.getElementById("preview");
+
+      preview.innerHTML = "";
+
+      if (!file) return;
+
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: "error",
+          title: "Invalid File",
+          text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+          confirmButtonColor: "#e63946",
+        });
+
+        this.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.style.width = "150px";
+        img.style.height = "150px";
+        img.style.objectFit = "contain";
+        img.style.border = "1px solid #ccc";
+        img.style.borderRadius = "8px";
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
   const params = new URLSearchParams(window.location.search);
 
   if (params.get("success") === "true") {
@@ -213,6 +256,7 @@
       reader.readAsDataURL(this.files[0]);
     }
   });
+
 </script>
 
 <%- include("../partials/adminFooter") %>

@@ -1,9 +1,7 @@
 import User from "../../models/userModel.js";
 import bcrypt from "bcrypt";
-import passport from "passport";
 import { generateOtp, sendVerificationEmail } from "../../utils/otpHelper.js";
 import Address from "../../models/addressModel.js";
-import cloudinary from "../../config/cloudinary.js";
 import STATUS from "../../utils/statusCodes.js";
 
 // Render User Profile Page by logged user

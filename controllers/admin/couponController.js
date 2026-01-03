@@ -1,6 +1,6 @@
 import Coupon from "../../models/couponModel.js";
 
-// LIST PAGE + SEARCH
+// COUPON PAGE
 export const getCouponListPage = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -29,46 +29,133 @@ export const getCouponListPage = async (req, res) => {
 
 
 // CREATE COUPON (AJAX)
+// export const createCoupon = async (req, res) => {
+//   try {
+//     const { couponName, expireOn, offerPrice, minimumPrice } = req.body;
+
+//     if (!couponName || !expireOn || !offerPrice || !minimumPrice) {
+//       return res.status(400).json({ success: false, error: "All fields required" });
+//     }
+
+//     const exists = await Coupon.findOne({ couponName });
+//     if (exists) {
+//       return res.status(409).json({ success: false, error: "Coupon code already exists" });
+//     }
+
+//     await Coupon.create({
+//       couponName,
+//       expireOn,
+//       offerPrice,
+//       minimumPrice
+//     });
+
+//     res.status(201).json({ success: true });
+
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ success: false, error: "Server error" });
+//   }
+// };
+
 export const createCoupon = async (req, res) => {
   try {
-    const { couponName, expireOn, offerPrice, minimumPrice } = req.body;
+const { couponName, expireOn, offerPrice, minimumPrice, type, discountType } = req.body;
 
-    if (!couponName || !expireOn || !offerPrice || !minimumPrice) {
-      return res.status(400).json({ success: false, error: "All fields required" });
+    if (!couponName || !expireOn || !offerPrice || !minimumPrice || !type) {
+
+      return res.status(400).json({
+        success: false,
+        error: "All fields required"
+      });
     }
 
     const exists = await Coupon.findOne({ couponName });
     if (exists) {
-      return res.status(409).json({ success: false, error: "Coupon code already exists" });
+      return res.status(409).json({
+        success: false,
+        error: "Coupon code already exists"
+      });
     }
 
-    await Coupon.create({
-      couponName,
-      expireOn,
-      offerPrice,
-      minimumPrice
-    });
+await Coupon.create({
+  couponName,
+  expireOn: new Date(expireOn),
+  offerPrice: Number(offerPrice),
+  minimumPrice: Number(minimumPrice),
+  type,
+  discountType: discountType || "FLAT",
+  isActive: true,
+  isList: true
+});
 
     res.status(201).json({ success: true });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "Server error" });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Server error"
+    });
   }
 };
 
 // UPDATE COUPON
+// export const updateCoupon = async (req, res) => {
+//   try {
+//     let { couponName, expireOn, offerPrice, minimumPrice } = req.body;
+
+//     if (
+//       couponName === "" ||
+//       expireOn === "" ||
+//       offerPrice === "" ||
+//       minimumPrice === ""
+//     ) {
+//       return res.status(400).json({ success: false, error: "All fields required" });
+//     }
+
+//     const exists = await Coupon.findOne({
+//       couponName,
+//       _id: { $ne: req.params.id }
+//     });
+
+//     if (exists) {
+//       return res.status(409).json({ success: false, error: "Coupon code already exists" });
+//     }
+
+//     const updated = await Coupon.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         couponName,
+//         expireOn: new Date(expireOn),
+//         offerPrice: Number(offerPrice),
+//         minimumPrice: Number(minimumPrice)
+//       },
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!updated) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Update failed (validation error)"
+//       });
+//     }
+
+//     res.status(200).json({ success: true });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// };
 export const updateCoupon = async (req, res) => {
   try {
-    let { couponName, expireOn, offerPrice, minimumPrice } = req.body;
+    const { couponName, expireOn, offerPrice, minimumPrice, type } = req.body;
+   if (!couponName || !expireOn || !offerPrice || !minimumPrice || !type) {
 
-    if (
-      couponName === "" ||
-      expireOn === "" ||
-      offerPrice === "" ||
-      minimumPrice === ""
-    ) {
-      return res.status(400).json({ success: false, error: "All fields required" });
+      return res.status(400).json({
+        success: false,
+        error: "All fields required"
+      });
     }
 
     const exists = await Coupon.findOne({
@@ -77,16 +164,20 @@ export const updateCoupon = async (req, res) => {
     });
 
     if (exists) {
-      return res.status(409).json({ success: false, error: "Coupon code already exists" });
+      return res.status(409).json({
+        success: false,
+        error: "Coupon code already exists"
+      });
     }
 
     const updated = await Coupon.findByIdAndUpdate(
       req.params.id,
       {
-        couponName,
-        expireOn: new Date(expireOn),
-        offerPrice: Number(offerPrice),
-        minimumPrice: Number(minimumPrice)
+   couponName,
+    expireOn: new Date(expireOn), 
+    offerPrice: Number(offerPrice),
+    minimumPrice: Number(minimumPrice),
+    type
       },
       { new: true, runValidators: true }
     );
@@ -94,7 +185,7 @@ export const updateCoupon = async (req, res) => {
     if (!updated) {
       return res.status(400).json({
         success: false,
-        error: "Update failed (validation error)"
+        error: "Update failed"
       });
     }
 
@@ -102,7 +193,10 @@ export const updateCoupon = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 };
 

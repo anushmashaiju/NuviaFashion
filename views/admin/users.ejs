@@ -175,6 +175,96 @@ table {
   .page-btn:hover:not(:disabled) {
     background-color: #e96c8b;
   }
+  /* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 992px) {
+  .admin-main {
+    margin-left: 15px;
+    padding: 20px;
+  }
+
+  .search-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-section input {
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    font-size: 13px;
+    padding: 8px;
+  }
+
+  .pagination-wrap {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-main {
+    margin-left: 10px;
+    padding: 15px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  .search-section input {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+
+  .btn-primary,
+  .btn-outline-secondary {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  table th,
+  table td {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .avatar-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .badge-success,
+  .badge-danger {
+    font-size: 12px;
+    padding: 3px 7px;
+  }
+
+  .btn-sm {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .pagination-wrap {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .page-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
 </style>
 
 <div class="admin-layout">
@@ -266,7 +356,7 @@ table {
     if (start < 1) start = 1;
   %>
 
-  <!-- Previous Button -->
+
   <% 
     let prevParams = new URLSearchParams({
       page: currentPage > 1 ? currentPage - 1 : 1
@@ -282,7 +372,6 @@ table {
     <button class="page-btn" disabled>&laquo; Prev</button>
   <% } %>
 
-  <!-- Page Numbers -->
   <% for (let p = start; p <= end; p++) { 
       let pageParams = new URLSearchParams({ page: p });
       if (search) pageParams.set("search", search);
@@ -296,7 +385,6 @@ table {
 
   <% } %>
 
-  <!-- Next Button -->
   <% 
     let nextParams = new URLSearchParams({
       page: currentPage < totalPages ? currentPage + 1 : totalPages

@@ -160,6 +160,103 @@
   font-size: 1rem;
 }
 
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .page-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-top h3 {
+    font-size: 1.3rem;
+  }
+
+  .btn-add {
+    width: 100%;
+    text-align: center;
+  }
+
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-row input {
+    width: 100%;
+  }
+
+  .reset-btn {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table-custom th,
+  .table-custom td {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .action-icon {
+    font-size: 1.1rem;
+  }
+
+  .pagination-wrap {
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .page-btn {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .table-custom th,
+  .table-custom td {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .btn-add {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .search-row input,
+  .reset-btn {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .page-top h3 {
+    font-size: 1.1rem;
+  }
+
+  .avatar {
+    width: 35px;
+    height: 35px;
+  }
+}
 </style>
 
 <div class="admin-layout">

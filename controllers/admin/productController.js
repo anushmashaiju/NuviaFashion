@@ -6,117 +6,61 @@ import MESSAGES from "../../utils/messages.js";
 function calculateFinalPrice(product) {
   const now = new Date();
 
+  let productOfferActive = false;
+  let categoryOfferActive = false;
+
   const productOffer = product.productOffer;
   const categoryOffer = product.category?.categoryOffer;
 
-  let productActive = false;
-  let categoryActive = false;
-
-  if (
-    productOffer &&
-    productOffer.percentage > 0 &&
-    productOffer.startDate &&
-    productOffer.endDate
-  ) {
-    productActive =
+  if (productOffer && productOffer.percentage > 0 && productOffer.startDate && productOffer.endDate ) {
+    productOfferActive =
       now >= new Date(productOffer.startDate) &&
       now <= new Date(productOffer.endDate);
   }
-
-  if (
-    categoryOffer &&
-    categoryOffer.percentage > 0 &&
-    categoryOffer.isActive &&
-    categoryOffer.startDate &&
-    categoryOffer.endDate
-  ) {
-    categoryActive =
+  if (categoryOffer && categoryOffer.percentage > 0 && categoryOffer.isActive && categoryOffer.startDate && categoryOffer.endDate) {
+    categoryOfferActive =
       now >= new Date(categoryOffer.startDate) &&
       now <= new Date(categoryOffer.endDate);
   }
 
-  const applicableOffer = Math.max(
-    productActive ? productOffer.percentage : 0,
-    categoryActive ? categoryOffer.percentage : 0
-  );
+  let activeOffer = null;
 
-  const finalPrice =
-    applicableOffer > 0
-      ? product.price - (product.price * applicableOffer) / 100
-      : product.price;
+  if (productOfferActive || categoryOfferActive) {
+    if (productOfferActive &&
+      (!categoryOfferActive ||
+        productOffer.percentage >= categoryOffer.percentage)
+    ) {
+      activeOffer = {
+        type: "product",
+        percentage: productOffer.percentage,
+      };
+    } else {
+      activeOffer = {
+        type: "category",
+        percentage: categoryOffer.percentage,
+      };
+    }
+  }
+
+  const finalPrice = activeOffer
+    ? product.price - (product.price * activeOffer.percentage) / 100
+    : product.price;
 
   return {
     finalPrice: Number(finalPrice.toFixed(2)),
-    activeOffer: applicableOffer > 0
-      ? { percentage: applicableOffer }
-      : null
+    activeOffer,                
+    hasAnyOffer: !!activeOffer,  
   };
 }
 
-// OFFER HELPERS
-
+// OFFER 
 function isOfferActive(startDate, endDate) {
   if (!startDate || !endDate) return false;
   const now = new Date();
   return now >= new Date(startDate) && now <= new Date(endDate);
 }
 
-function getApplicableOffer(productOffer, productStart, productEnd, categoryOffer, categoryStart, categoryEnd) {
-  const productActive = isOfferActive(productStart, productEnd);
-  const categoryActive = isOfferActive(categoryStart, categoryEnd);
-
-  if (productActive && categoryActive) return Math.max(productOffer, categoryOffer);
-  if (productActive) return productOffer;
-  if (categoryActive) return categoryOffer;
-  return 0;
-}
-
-
-// SHOW ALL PRODUCTS
-
-// export const showAllProducts = async (req, res) => {
-//   try {
-//     const search = req.query.search || "";
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = 10;
-//     const skip = (page - 1) * limit;
-
-//     const query = {
-//       isDeleted: false,
-//       ...(search
-//         ? {
-//             $or: [
-//               { name: { $regex: search, $options: "i" } },
-//               { brand: { $regex: search, $options: "i" } },
-//             ],
-//           }
-//         : {}),
-//     };
-
-//     const totalProducts = await Product.countDocuments(query);
-//     const totalPages = Math.ceil(totalProducts / limit);
-
-//     const products = await Product.find(query)
-//       .populate("category", "categoryName categoryOffer")
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit);
-
-//     res.status(STATUS.SUCCESS).render("admin/products", {
-//       title: "All Products",
-//       products,
-//       admin: req.session.user,
-//       search,
-//       currentPage: page,
-//       totalPages,
-//       limit,
-//     });
-//   } catch (error) {
-//     console.error("Show All Products Error:", error);
-//     res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
-//   }
-// };
-
+//LIST PRODUCTS
 export const showAllProducts = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -144,8 +88,6 @@ export const showAllProducts = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-
-    // ✅ APPLY HELPER HERE
     const enrichedProducts = products.map((product) => {
       const offerData = calculateFinalPrice(product);
 
@@ -153,12 +95,13 @@ export const showAllProducts = async (req, res) => {
         ...product.toObject(),
         finalPrice: offerData.finalPrice,
         activeOffer: offerData.activeOffer,
+          hasAnyOffer: offerData.hasAnyOffer
       };
     });
 
     res.status(STATUS.SUCCESS).render("admin/products", {
       title: "All Products",
-      products: enrichedProducts, // ✅ send recalculated data
+      products: enrichedProducts, 
       admin: req.session.user,
       search,
       currentPage: page,

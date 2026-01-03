@@ -1,4 +1,4 @@
-<%- include("../partials/userHeader", { title: "Payment Failed", activePage: "paymentFailed" }) %>
+<%- include("../partials/userHeader", {title: "Payment Failed", activePage: "paymentFailed" }) %>
 
 <style>
   .failure-wrapper {
@@ -12,11 +12,6 @@
     font-family: "Poppins", sans-serif;
   }
 
-  .failure-wrapper img {
-    width: 180px;
-    margin-top: 20px;
-  }
-
   .failure-wrapper h2 {
     color: #ff4c4c;
     font-size: 28px;
@@ -26,6 +21,12 @@
     margin-top: 10px;
     font-size: 16px;
     color: #555;
+  }
+
+  .failure-wrapper .meta {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #777;
   }
 
   .failure-wrapper button,
@@ -38,57 +39,68 @@
     text-decoration: none;
     cursor: pointer;
     transition: 0.3s;
+    border: none;
   }
 
   .failure-wrapper button {
     background: #d14a78;
     color: #fff;
-    border: none;
-  }
-
-  .failure-wrapper button:hover,
-  .failure-wrapper a:hover {
-    background: #c0355f;
   }
 
   .failure-wrapper a {
     background: #f76f8f;
     color: #fff;
   }
+
+  .failure-wrapper button:hover,
+  .failure-wrapper a:hover {
+    background: #c0355f;
+  }
 </style>
 
 <div class="failure-wrapper">
-    <h2>❌ Payment Failed!</h2>
-    <p>Your payment could not be processed. Please try again or choose another payment method.</p>
+  <h2>❌ Payment Failed</h2>
 
-    <button id="retryPaymentBtn">Retry Payment</button>
-    <a id="goToOrderBtn">Go to Order</a>
+  <p>Your payment could not be processed.</p>
+
+  <% if (order) { %>
+    <div class="meta">
+      <p><strong>Order ID:</strong> <%= order.orderID %></p>
+      <p><strong>Status:</strong> <%= order.orderStatus %></p>
+    </div>
+  <% } %>
+
+  <button id="retryPaymentBtn">Retry Payment</button>
+  <a id="goToOrderBtn">Go to Order</a>
 </div>
 
 <%- include("../partials/userFooter") %>
 
 <script>
-  // Retry Payment Button
   document.getElementById("retryPaymentBtn").addEventListener("click", () => {
-      const buyNowProductId = localStorage.getItem("buyNowProductId");
-      const buyNowQty = localStorage.getItem("buyNowQty") || 1;
-      const selectedAddress = localStorage.getItem("selectedAddress");
+    const buyNowProductId = localStorage.getItem("buyNowProductId");
+    const buyNowQty = localStorage.getItem("buyNowQty") || 1;
+    const selectedAddress = localStorage.getItem("selectedAddress");
 
-      let url = "/payment-gateway?";
-      if (buyNowProductId) url += `buyNow=${buyNowProductId}&qty=${buyNowQty}&address=${selectedAddress}`;
-      else url += `address=${selectedAddress}`;
+    let url ="/payment-gateway";
 
-      window.location.href = url;
+    if (buyNowProductId) {
+      url += `?buyNow=${buyNowProductId}&qty=${buyNowQty}`;
+    }
+
+    if (selectedAddress) {
+      url += buyNowProductId ? `&address=${selectedAddress}` : `?address=${selectedAddress}`;
+    }
+
+    window.location.href = url;
   });
 
-  // Go to specific Order Detail
-const orderId = localStorage.getItem("lastOrderId");
-const goToOrderBtn = document.getElementById("goToOrderBtn");
+  const orderId = "<%= order?.orderID || '' %>";
+  const goToOrderBtn = document.getElementById("goToOrderBtn");
 
-if (orderId) {
-    goToOrderBtn.href = `/order/${orderId}`;
-} else {
-    goToOrderBtn.href = "/order/list"; // fallback
-}
-
+  if (orderId) {
+    goToOrderBtn.href = `/order/${orderId}`; 
+  } else {
+    goToOrderBtn.href = "/order/list";
+  }
 </script>

@@ -1,530 +1,536 @@
 <%- include("../partials/userHeader", { title: "Payment Gateway" }) %>
 
-    <style>
-        body {
-            background: #fafafa;
-            font-family: "Poppins", sans-serif;
-        }
+  <style>
+    body {
+      background: #fafafa;
+      font-family: "Poppins", sans-serif;
+    }
 
-        .payment-container {
-            max-width: 1250px;
-            margin: 120px auto 40px;
-            display: flex;
-            gap: 25px;
-            position: relative;
-        }
+    .payment-container {
+      max-width: 1250px;
+      margin: 120px auto 40px;
+      display: flex;
+      gap: 25px;
+      position: relative;
+    }
 
-        .left-section,
-        .right-section {
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    .left-section,
+    .right-section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 
-        .left-section {
-            width: 50%;
-            max-height: 80vh;
-            overflow-y: auto;
-            scrollbar-width: none;
-            margin-left: 30px;
-        }
+    .left-section {
+      width: 50%;
+      max-height: 80vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+      margin-left: 30px;
+    }
 
-        .left-section::-webkit-scrollbar {
-            display: none;
-        }
+    .left-section::-webkit-scrollbar {
+      display: none;
+    }
 
-        .right-section {
-            width: 50%;
-            position: sticky;
-            top: 100px;
-            height: fit-content;
-            margin-right: 30px;
-        }
+    .right-section {
+      width: 50%;
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+      margin-right: 30px;
+    }
 
-        .payment-option {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
+    .payment-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
 
-        .payment-option:hover {
-            border-color: #d14a78;
-            background: #fff0f6;
-        }
+    .payment-option:hover {
+      border-color: #d14a78;
+      background: #fff0f6;
+    }
 
-        .payment-option input {
-            margin-right: 12px;
-            cursor: pointer;
-        }
+    .payment-option input {
+      margin-right: 12px;
+      cursor: pointer;
+    }
 
-        .btn-main,
-        .payment-btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            color: #fff;
-            background: #d14a78;
-            margin-top: 20px;
-            font-size: 1rem;
-        }
+    .btn-main,
+    .payment-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      color: #fff;
+      background: #d14a78;
+      margin-top: 20px;
+      font-size: 1rem;
+    }
 
-        .coupon-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff3f7;
-            border-radius: 10px;
-        }
+    .coupon-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff3f7;
+      border-radius: 10px;
+    }
 
-        .coupon-box h4 {
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
+    .coupon-box h4 {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
 
-        .coupon-box input {
-            width: 70%;
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
+    .coupon-box input {
+      width: 70%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
 
-        .coupon-box button {
-            padding: 8px 15px;
-            border: none;
-            background: #d14a78;
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    .coupon-box button {
+      padding: 8px 15px;
+      border: none;
+      background: #d14a78;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
-        .bill-box {
-            background: #fff3f7;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    .bill-box {
+      background: #fff3f7;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 
-        .bill-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-        }
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
 
-        #toastContainer {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-        .toast {
-            background: #333;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            min-width: 200px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transform: translateY(50px);
-            animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
-        }
+    .toast {
+      background: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      min-width: 200px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(50px);
+      animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
+    }
 
-        .toast.success {
-            background: #4BB543;
-        }
+    .toast.success {
+      background: #4BB543;
+    }
 
-        .toast.error {
-            background: #FF4C4C;
-        }
+    .toast.error {
+      background: #FF4C4C;
+    }
 
-        @keyframes slideIn {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
+    @keyframes slideIn {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
 
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
 
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-        }
-    </style>
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+    }
 
+    @media (max-width: 992px) {
+      .payment-container {
+        flex-direction: column;
+        margin: 100px 15px 30px;
+        gap: 20px;
+      }
 
+      .left-section,
+      .right-section {
+        width: 100%;
+        margin: 0;
+      }
 
-    <div class="payment-container">
-        <input type="hidden" id="buyNowProduct">
-        <input type="hidden" id="buyNowQty" value="1">
-        <input type="hidden" id="selectedAddress">
+      .right-section {
+        position: static;
+      }
+    }
 
-        <!-- LEFT: Payment Options -->
-        <div class="left-section">
+    @media (max-width: 576px) {
 
-            <h3>Select Payment Method</h3>
+      .payment-container {
+        margin-top: 90px;
+        gap: 15px;
+      }
 
-            <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="COD"> Cash on Delivery (COD)
-            </label>
+      .left-section,
+      .right-section {
+        padding: 18px;
+      }
 
-            <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="ONLINE"> Online Payment (Razorpay)
-            </label>
+      h3 {
+        font-size: 1.1rem;
+      }
 
-            <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="WALLET"> Pay Using Wallet
-            </label>
+      .payment-option {
+        font-size: 0.95rem;
+        padding: 10px;
+      }
 
-            <div class="wallet-box" style="padding:15px; background:#fff7fb; border-radius:12px; margin:15px 0;">
+      .wallet-box {
+        padding: 12px;
+        font-size: 0.9rem;
+      }
 
-                <h4 style="margin-bottom:10px;">Wallet Balance: ₹<span id="walletBalance">Loading...</span>
-                </h4>
+      .btn-main,
+      .payment-btn {
+        font-size: 0.95rem;
+        padding: 12px;
+      }
 
-                <p id="walletAppliedInfo" style="margin-top:10px; font-weight:600;"></p>
+      .bill-box {
+        padding: 15px;
+      }
 
-            </div>
+      .bill-row {
+        font-size: 0.95rem;
+      }
 
-            <button id="placeOrderBtn" class="btn-main">Place Order</button>
+      .toast {
+        min-width: unset;
+        width: 90%;
+        text-align: center;
+      }
+    }
+  </style>
 
-        </div>
+  <div class="payment-container">
+    <input type="hidden" id="buyNowProduct">
+    <input type="hidden" id="buyNowQty" value="1">
+    <input type="hidden" id="selectedAddress">
+    <div class="left-section">
 
-        <div class="right-section">
-            <h3 style="text-align:center; margin-bottom:20px;">Bill Details</h3>
+      <h3>Select Payment Method</h3>
 
-            <div class="bill-box">
-                <div class="bill-row">
-                    <span>Items total</span>
-                    <strong>₹<%= summary.subtotal.toFixed(2) %></strong>
-                </div>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="COD"> Cash on Delivery (COD)
+      </label>
 
-                <div class="bill-row">
-                    <span>GST (18%)</span>
-                    <strong>₹<%= summary.tax.toFixed(2) %></strong>
-                </div>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="Razorpay" checked> Online Payment (Razorpay)
+      </label>
 
-                <div class="bill-row">
-                    <span>Delivery</span>
-                    <strong>₹<%= summary.deliveryCharge.toFixed(2) %></strong>
-                </div>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="WALLET"> Pay Using Wallet
+      </label>
 
-                <hr>
+      <div class="wallet-box" style="padding:15px; background:#fff7fb; border-radius:12px; margin:15px 0;">
 
-                <div class="bill-row">
-                    <strong>Grand Total</strong>
-                    <strong>₹<%= summary.finalAmount.toFixed(2) %></strong>
-                </div>
+        <h4 style="margin-bottom:10px;">Wallet Balance: ₹<span id="walletBalance">Loading...</span>
+        </h4>
 
+        <p id="walletAppliedInfo" style="margin-top:10px; font-weight:600;"></p>
 
-            </div>
-        </div>
+      </div>
+
+      <button id="placeOrderBtn" class="btn-main">Place Order</button>
+
     </div>
-    <div id="toastContainer"></div>
 
-    <%- include("../partials/userFooter") %>
+    <div class="right-section">
+      <h3 style="text-align:center; margin-bottom:20px;">Bill Details</h3>
 
-       <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      <div class="bill-box">
+        <div class="bill-row">
+          <span>Items total</span>
+          <strong>₹<%= summary.subtotal.toFixed(2) %></strong>
+        </div>
+
+        <div class="bill-row">
+          <span>GST (18%)</span>
+          <strong>₹<%= summary.tax.toFixed(2) %></strong>
+        </div>
+
+        <div class="bill-row">
+          <span>Delivery</span>
+          <strong id="deliveryChargeDisplay">
+            ₹<%= summary.deliveryCharge.toFixed(2) %>
+          </strong>
+          
+</div>
+<div id="codNote" style="display:none;color:#d14a78;font-size:0.9rem;">
+  COD charges ₹30 extra
+        </div>
+        <% if (summary.couponDiscount> 0) { %>
+          <div class="bill-row">
+            <span>Coupon Discount</span>
+            <strong style="color:green;">
+              -₹<%= summary.couponDiscount.toFixed(2) %>
+            </strong>
+          </div>
+          <% } %>
+            <hr>
+
+            <div class="bill-row">
+              <strong>Grand Total</strong>
+              <strong id="finalAmountPay">
+                ₹<%= summary.finalAmount.toFixed(2) %>
+              </strong>
+            </div>
+      </div>
+    </div>
+  </div>
+  <div id="toastContainer"></div>
+
+  <%- include("../partials/userFooter") %>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-  // ---------------------- TOAST ----------------------
-  function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
+function showToast(message, type = "success") {
+  const container = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
 
-  // ---------------------- UPDATE FINAL AMOUNT ----------------------
-  function updateBillDisplay(newTotal) {
-    const el = document.getElementById("finalAmountPay");
-    if (el) el.textContent = "₹" + newTotal.toFixed(2);
-  }
+function updateBillDisplay(amount) {
+  document.getElementById("finalAmountPay").textContent =
+    "₹" + amount.toFixed(2);
+}
 
-  // ---------------------- QUERY PARAM ----------------------
-  function getQueryParam(name) {
-    return new URLSearchParams(window.location.search).get(name);
-  }
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
 
-  // ---------------------- CLEAR OLD PAYMENT DATA ----------------------
-  function clearPaymentMemory() {
-    localStorage.removeItem("lastOrderId");
-    localStorage.removeItem("buyNowProductId");
-    localStorage.removeItem("buyNowQty");
-    sessionStorage.removeItem("buyNowSession");
-  }
-  clearPaymentMemory();
+function clearPaymentMemory() {
+  localStorage.removeItem("lastOrderId");
+  localStorage.removeItem("buyNowProductId");
+  localStorage.removeItem("buyNowQty");
+  sessionStorage.removeItem("buyNowSession");
+}
+clearPaymentMemory();
 
-  // ---------------------- INIT PAGE DATA ----------------------
-  (function initPageData() {
-    const queryAddress = getQueryParam("address");
-    const queryBuyNow = getQueryParam("buyNow");
+(function initPageData() {
+  const queryAddress = getQueryParam("address");
+  const queryBuyNow = getQueryParam("buyNow");
 
-    let savedAddress = queryAddress && queryAddress !== "undefined" && queryAddress !== ""
+  const savedAddress =
+    queryAddress && queryAddress !== "undefined"
       ? queryAddress
       : localStorage.getItem("selectedAddress");
 
-    if (savedAddress && savedAddress.trim() !== "") {
-      document.getElementById("selectedAddress").value = savedAddress;
-      localStorage.setItem("selectedAddress", savedAddress);
-    } else {
-      showToast("No delivery address found! Go back to checkout.", "error");
-    }
-
-    if (queryBuyNow) {
-      const qty = getQueryParam("qty") || "1";
-      document.getElementById("buyNowProduct").value = queryBuyNow;
-      document.getElementById("buyNowQty").value = qty;
-      localStorage.setItem("buyNowProductId", queryBuyNow);
-      localStorage.setItem("buyNowQty", qty);
-    }
-  })();
-
-  // ---------------------- GLOBAL VARIABLES ----------------------
-  let appliedDiscount = Number(localStorage.getItem("appliedDiscount")) || 0;
-  const subtotal = Number("<%= summary.subtotal %>");
-  const tax = Number("<%= summary.tax %>");
-
-  const addressChargeEl = document.getElementById("selectedAddressCharge");
-  const addressCharge = addressChargeEl ? Number(addressChargeEl.value) : 0;
-
-  const paymentRadios = document.querySelectorAll("input[name='paymentMethod']");
-  const productsDelivery = Array.from(document.querySelectorAll(".item-box"))
-    .map(box => Number(box.dataset.delivery || 0));
-
-  let walletBalance = 0; // ✅ FIXED (was missing)
-
-  // ---------------------- DELIVERY CHARGE CALCULATION ----------------------
-  function calculateDeliveryCharge(subtotal, productsDelivery, paymentMethod, addressCharge) {
-    let delivery = 0;
-
-    if (subtotal < 999) delivery = 50;
-
-    const maxProductCharge = Math.max(...productsDelivery, 0);
-    delivery = Math.max(delivery, maxProductCharge);
-
-    if (addressCharge) delivery += addressCharge;
-    if (paymentMethod === "COD") delivery += 50;
-
-    return delivery;
+  if (!savedAddress) {
+    showToast("No delivery address found!", "error");
+    return;
   }
 
-  let selectedPaymentMethod = "ONLINE";
-  let deliveryCharge = calculateDeliveryCharge(
-    subtotal,
-    productsDelivery,
-    selectedPaymentMethod,
-    addressCharge
-  );
+  document.getElementById("selectedAddress").value = savedAddress;
+  localStorage.setItem("selectedAddress", savedAddress);
 
-  // ---------------------- UPDATE BILL ----------------------
-  function updateBill() {
-    deliveryCharge = calculateDeliveryCharge(
-      subtotal,
-      productsDelivery,
-      selectedPaymentMethod,
-      addressCharge
-    );
-
-    const dcEl = document.getElementById("deliveryChargeDisplay");
-    if (dcEl) dcEl.innerText = "₹" + deliveryCharge.toFixed(2);
-
-    const faEl = document.getElementById("finalAmountPay");
-    if (faEl) {
-      const total = subtotal + tax - appliedDiscount + deliveryCharge;
-      faEl.innerText = "₹" + total.toFixed(2);
-    }
+  if (queryBuyNow) {
+    const qty = getQueryParam("qty") || "1";
+    document.getElementById("buyNowProduct").value = queryBuyNow;
+    document.getElementById("buyNowQty").value = qty;
+    localStorage.setItem("buyNowProductId", queryBuyNow);
+    localStorage.setItem("buyNowQty", qty);
   }
+})();
 
-  updateBill();
 
-  // ---------------------- WALLET TOGGLE ----------------------
-  function toggleWalletOption() {
-    const payableAmount = subtotal + tax - appliedDiscount + deliveryCharge;
-    const walletRadio = document.querySelector('input[value="WALLET"]');
-    const walletInfo = document.getElementById("walletAppliedInfo");
+const subtotal = Number("<%= summary.subtotal %>");
+const tax = Number("<%= summary.tax %>");
+const appliedDiscount = Number("<%= summary.couponDiscount || 0 %>");
+let deliveryCharge = Number("<%= summary.deliveryCharge %>");
 
-    if (!walletRadio) return;
+let walletBalance = 0;
 
-    if (walletBalance < payableAmount) {
-      walletRadio.disabled = true;
-      walletRadio.checked = false;
-      walletInfo.innerText = "Insufficient wallet balance";
-    } else {
-      walletRadio.disabled = false;
-      walletInfo.innerText = "";
-    }
+async function loadWalletBalance() {
+  try {
+    const res = await fetch("/wallet/balance");
+    const data = await res.json();
+    walletBalance = Number(data.balance || 0);
+    document.getElementById("walletBalance").textContent =
+      walletBalance.toFixed(2);
+    toggleWalletOption();
+  } catch {
+    document.getElementById("walletBalance").textContent = "0.00";
   }
+}
+loadWalletBalance();
 
-  // ---------------------- PAYMENT METHOD CHANGE ----------------------
-  paymentRadios.forEach(radio => {
-    radio.addEventListener("change", (e) => {
-      selectedPaymentMethod = e.target.value;
-      updateBill();
-      toggleWalletOption();
+function toggleWalletOption() {
+  const walletRadio = document.querySelector('input[value="WALLET"]');
+  const walletInfo = document.getElementById("walletAppliedInfo");
+
+  const payable =
+    subtotal + tax - appliedDiscount + deliveryCharge;
+
+  if (walletBalance < payable) {
+    walletRadio.disabled = true;
+    walletRadio.checked = false;
+    walletInfo.textContent = "Insufficient wallet balance";
+  } else {
+    walletRadio.disabled = false;
+    walletInfo.textContent = "";
+  }
+}
+
+let selectedPaymentMethod = "Razorpay";
+
+document.querySelectorAll("input[name='paymentMethod']").forEach(radio => {
+  radio.addEventListener("change", async e => {
+    const paymentMethod = e.target.value;
+
+    const res = await fetch("/checkout/recalculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        paymentMethod,
+        addressId: document.getElementById("selectedAddress").value
+      })
     });
+
+    const data = await res.json();
+    if (!data.success) return;
+
+    // 🔥 FIX: Update UI using backend values
+    document.getElementById("deliveryChargeDisplay").textContent =
+      "₹" + data.deliveryCharge.toFixed(2);
+
+    document.getElementById("finalAmountPay").textContent =
+      "₹" + data.finalAmount.toFixed(2);
+
+    // COD note
+    document.getElementById("codNote").style.display =
+      paymentMethod === "COD" ? "block" : "none";
   });
+});
 
-  // ---------------------- LOAD WALLET BALANCE ----------------------
-  async function loadWalletBalance() {
-    try {
-      const res = await fetch("/wallet/balance");
-      if (!res.ok) throw new Error("Wallet fetch failed");
+document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+  clearPaymentMemory();
 
-      const data = await res.json();
-      walletBalance = Number(data.balance || 0);
+  const addressId =
+    document.getElementById("selectedAddress").value ||
+    localStorage.getItem("selectedAddress");
 
-      document.getElementById("walletBalance").innerText =
-        walletBalance.toFixed(2);
+  if (!addressId)
+    return showToast("Select a delivery address!", "error");
 
-      toggleWalletOption();
+  const paymentMethod =
+    document.querySelector("input[name='paymentMethod']:checked")?.value;
 
-    } catch (err) {
-      console.error("Wallet fetch failed:", err);
-      document.getElementById("walletBalance").innerText = "0.00";
-    }
+  if (!paymentMethod)
+    return showToast("Select a payment method!", "error");
+
+  const body = {
+    selectedAddress: addressId,
+    paymentMethod,
+    useWallet: paymentMethod === "WALLET"
+  };
+
+  const buyNowProductId = document.getElementById("buyNowProduct").value;
+  if (buyNowProductId) {
+    body.buyNowProductId = buyNowProductId;
+    body.buyNowQty = Number(document.getElementById("buyNowQty").value || 1);
   }
 
-  loadWalletBalance();
+  try {
+    if (paymentMethod === "COD" || paymentMethod === "WALLET") {
+      const url =
+        paymentMethod === "COD" ? "/checkout/cod" : "/checkout/wallet";
 
-  // ---------------------- WALLET APPLY ----------------------
-  async function walletSelected() {
-    try {
-      const total = subtotal + tax - appliedDiscount + deliveryCharge;
-
-      const res = await fetch("/wallet/apply", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ totalAmount: total })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
-      if (!data.success) {
-        showToast(data.message, "error");
-        return;
-      }
+      if (data.success)
+        return (window.location.href = `/order-success/${data.orderId}`);
 
-      document.getElementById("walletAppliedInfo").innerText =
-        `Wallet Applied: ₹${data.usedAmount}`;
-
-      updateBillDisplay(data.newTotal);
-      showToast(`₹${data.usedAmount} will be used from wallet`, "success");
-
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to apply wallet", "error");
+      return showToast(data.message, "error");
     }
+
+    const res = await fetch("/checkout/razorpay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    if (!data.success) return showToast(data.message, "error");
+
+    localStorage.setItem("lastOrderId", data.order.id);
+
+    const rzp = new Razorpay({
+      key: data.key,
+      amount: data.order.amount,
+      currency: "INR",
+      order_id: data.order.id,
+      handler: async response => {
+        const verify = await fetch("/payment/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(response)
+        });
+
+        const result = await verify.json();
+        window.location.href = result.redirect;
+      }
+    });
+
+    rzp.on("payment.failed", () => {
+      window.location.href = `/payment/failed/${data.order.id}`;
+    });
+
+    rzp.open();
+  } catch (err) {
+    console.error(err);
+    showToast("Something went wrong!", "error");
   }
+});
 
-  // ---------------------- PLACE ORDER ----------------------
-  document.getElementById("placeOrderBtn").addEventListener("click", async () => {
-    clearPaymentMemory();
+window.addEventListener("load", () => {
+  const checkedPayment =
+    document.querySelector("input[name='paymentMethod']:checked");
 
-    const addressId =
-      document.getElementById("selectedAddress").value.trim() ||
-      localStorage.getItem("selectedAddress");
-
-    if (!addressId)
-      return showToast("Please select a delivery address!", "error");
-
-    const paymentMethod =
-      document.querySelector("input[name='paymentMethod']:checked")?.value;
-
-    if (!paymentMethod)
-      return showToast("Please select a payment method!", "error");
-
-    const buyNowProductId =
-      document.getElementById("buyNowProduct").value || null;
-
-    const buyNowQty = parseInt(
-      document.getElementById("buyNowQty").value || "1"
-    );
-
-    const body = {
-      selectedAddress: addressId,
-      paymentMethod,
-      useWallet: paymentMethod === "WALLET",
-      deliveryCharge
-    };
-
-    if (buyNowProductId) {
-      body.buyNowProductId = buyNowProductId;
-      body.buyNowQty = buyNowQty;
-    }
-
-    try {
-      if (paymentMethod === "COD" || paymentMethod === "WALLET") {
-        const url = paymentMethod === "COD" ? "/checkout/cod" : "/wallet-payment";
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        if (data.success)
-          return window.location.href = `/order-success/${data.orderId}`;
-
-        return showToast(data.message, "error");
-      }
-
-      if (paymentMethod === "ONLINE") {
-        const res = await fetch("/checkout/razorpay", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        if (!data.success)
-          return showToast(data.message, "error");
-
-        const options = {
-          key: data.key,
-          amount: data.order.amount,
-          currency: "INR",
-          order_id: data.order.id,
-          handler: async function (response) {
-            const verify = await fetch("/payment/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response)
-            });
-
-            const result = await verify.json();
-            if (result.success)
-              return window.location.href = result.redirect;
-
-            window.location.href = "/payment/failed";
-          }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.on("payment.failed", () => window.location.href = "/payment/failed");
-        rzp.open();
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Something went wrong!", "error");
-    }
-  });
+  if (checkedPayment) {
+    checkedPayment.dispatchEvent(new Event("change"));
+  }
+});
 </script>

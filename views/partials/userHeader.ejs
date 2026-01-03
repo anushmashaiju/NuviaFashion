@@ -22,60 +22,167 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 999;
+            background: #f3d8de;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header__logo {
+            padding: 10px 0;
+        }
+
+        .header__menu {
+            text-align: center;
+            padding: 26px 0 25px;
+        }
+
+        .header__menu ul li {
+            list-style: none;
+            display: inline-block;
+            margin-right: 45px;
+            position: relative;
+        }
+
+        .header__menu ul li a {
+            font-size: 18px;
+            color: #111;
+            font-weight: 600;
+            padding: 3px 0;
+            display: block;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .header__menu ul li a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background: #f76f8f;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .header__menu ul li:hover a::after,
+        .header__menu ul li.active a::after {
+            transform: scaleX(1);
+        }
+
+        .header__menu li .dropdown {
+            position: absolute;
+            top: 120%;
+            left: 0;
+            min-width: 180px;
+            background: #f76f8f;
+            border-radius: 6px;
+            padding: 8px 0;
+            display: none;
+            z-index: 9999;
+        }
+
+        .header__menu li:hover .dropdown {
+            display: block;
+        }
+
+        .header__menu li .dropdown li {
+            display: block;
+        }
+
+        .header__menu li .dropdown li a {
+            padding: 10px 18px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .header__menu li .dropdown li a:hover {
+            background: #ffadc5;
+        }
+
+        .header__nav__option {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 50px;
+            padding: 26px 0 25px;
+        }
+
+
+        .header__nav__option a {
+            font-size: 18px;
+            color: #000;
+            transition: color 0.3s;
+        }
+
+        .header__nav__option a:hover {
+            color: #f76f8f;
+        }
+
+       
+        .icon-with-badge {
+            position: relative;
+        }
+
+        .icon-with-badge .badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #f76f8f;
+            color: #fff;
+            font-size: 10px;
+            padding: 4px 6px;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
         .profile-section {
             display: flex;
             align-items: center;
             gap: 8px;
-            position: relative;
         }
 
         .profile-dropdown {
             position: relative;
-            display: inline-block;
         }
 
         .profile-dropdown .dropdown {
             position: absolute;
-            top: 100%;
+            top: 120%;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #f76f8f;
-            border-radius: 6px;
-            list-style: none;
-            padding: 8px 0;
             min-width: 180px;
+            background: #f76f8f;
+            border-radius: 6px;
+            padding: 8px 0;
             display: none;
             z-index: 9999;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+               list-style: none; 
         }
 
-        .profile-dropdown:hover .dropdown,
-        .profile-dropdown .dropdown:hover {
-            display: block;
-        }
-
-        .profile-dropdown .dropdown li {
-            width: 100%;
-        }
+     
+.profile-dropdown .dropdown.show {
+    display: block;
+}
 
         .profile-dropdown .dropdown li a {
             display: block;
-            width: 100%;
-            color: #fff;
-            text-decoration: none;
             padding: 10px 18px;
+            color: #fff;
             font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
         }
 
         .profile-dropdown .dropdown li a:hover {
-            background-color: #ffadc5;
+            background: #ffadc5;
         }
 
         .profile-icon {
             font-size: 18px;
-            color: #111;
             cursor: pointer;
         }
 
@@ -85,111 +192,82 @@
             color: #f76f8f;
         }
 
-        .header__nav__option {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 25px;
-        }
-
-        .header__menu li {
-            position: relative;
-        }
-
-
-        .header__menu li .dropdown {
+        .hamburger {
             display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: #f76f8f;
-            border-radius: 6px;
-            list-style: none;
-            padding: 8px 0;
-            min-width: 180px;
-            z-index: 9999;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            margin-top: 2px;
-        }
-
-        .header__menu li:hover .dropdown {
-            display: block;
-        }
-
-        .header__menu li .dropdown li {
-            width: 100%;
-        }
-
-        .header__menu li .dropdown li a {
-            display: block;
-            width: 100%;
-            color: #fff;
-            text-decoration: none;
-            padding: 10px 18px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .header__menu li .dropdown li a:hover {
-            background-color: #ffadc5;
-        }
-
-        .search-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-right: 10px;
-        }
-
-        #searchInput {
-            padding: 6px 30px 6px 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-
-        #searchBtn,
-        #clearBtn {
-            background: none;
-            border: none;
-            position: absolute;
+            font-size: 22px;
             cursor: pointer;
         }
 
-        #clearBtn {
-            right: 30px;
-            font-size: 12px;
-            color: #999;
+        
+        .mobile-logo {
+            display: none;
         }
 
-        #searchBtn {
-            right: 5px;
-            font-size: 14px;
-            color: #333;
-        }
+       
+        @media (max-width: 991px) {
 
-        #searchBtn:hover,
-        #clearBtn:hover {
-            color: #5a2a00;
-        }
+            .hamburger {
+                display: block;
+            }
 
-        .icon-with-badge {
-            position: relative;
-            display: inline-block;
-        }
+            .mobile-logo {
+                display: block;
+            }
 
-        .icon-with-badge .badge {
-            position: absolute;
-            top: -12px;
-            right: -10px;
-            background: #f76f8f;
-            color: white;
-            font-size: 10px;
-            padding: 5px 5px;
-            border-radius: 50%;
-            font-weight: bold;
-        }
+            .header__logo {
+                display: none;
+            }
+
+            .mobile-header {
+                justify-content: space-between;
+            }
+
+.header__menu {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background: #f3d8de;
+        display: none;
+        padding: 20px 0;
+        border-radius: 0 0 12px 12px;
+        z-index: 998;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .header__menu.show {
+        display: block;
+    }
+
+    .header__menu ul {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        text-align: center;
+    }
+
+    .header__menu li {
+        display: block;
+        margin: 0;
+    }
+
+    .header__menu li:hover .dropdown {
+        display: none;
+    }
+
+    .header__menu .dropdown {
+        position: static;
+        display: none;
+        background: #f76f8f;
+        margin-top: 6px;
+        border-radius: 6px;
+    }
+
+    .header__menu .dropdown.show {
+        display: block;
+    }
+
+}
     </style>
 </head>
 
@@ -198,27 +276,27 @@
         <div class="container">
             <div class="row align-items-center">
 
-                <div class="col-lg-1 col-md-1">
+                <div class="col-lg-2 d-none d-lg-block">
                     <div class="header__logo">
-                        <a href="/"><img src="/img/Nuvia.png" height="50" alt="Nuvia Logo"></a>
+                        <a href="/">
+                            <img src="/img/Nuvia.png" height="50" alt="Nuvia Logo">
+                        </a>
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-4">
-                    <nav class="header__menu mobile-menu">
+                <div class="col-lg-4 col-md-6">
+                    <nav class="header__menu">
                         <ul>
                             <li class="<%= activePage === 'home' ? 'active' : '' %>">
                                 <a href="/home">Home</a>
                             </li>
-
                             <li class="<%= activePage === 'shop' ? 'active' : '' %>">
                                 <a href="/products">Shop</a>
                             </li>
-
                             <li class="<%= activePage === 'categories' ? 'active' : '' %>">
                                 <a href="#">Categories</a>
                                 <ul class="dropdown">
-                                    <% if (headerCategories && headerCategories.length> 0) { %>
+                                    <% if (headerCategories?.length) { %>
                                         <% headerCategories.forEach(category=> { %>
                                             <li>
                                                 <a href="/products?category=<%= category.categoryName %>">
@@ -231,15 +309,17 @@
                                                     <% } %>
                                 </ul>
                             </li>
-                            </li>
                         </ul>
-
                     </nav>
                 </div>
 
-                <div class="col-lg-7 col-md-7">
-                    <div class="header__nav__option">
+    
+                <div class="col-lg-6 col-md-6">
+                    <div class="header__nav__option mobile-header">
 
+                        <a href="/" class="mobile-logo">
+                            <img src="/img/Nuvia.png" height="38">
+                        </a>
 
                         <a href="/wishlist" class="icon-with-badge">
                             <i class="fas fa-heart"></i>
@@ -248,18 +328,15 @@
                             </span>
                         </a>
 
-
                         <a href="/cart" class="icon-with-badge">
                             <i class="fas fa-shopping-cart"></i>
                             <span id="cart-count" class="badge">
                                 <%= cartCount %>
                             </span>
                         </a>
-
-
                         <div class="profile-section">
                             <div class="profile-dropdown">
-                                <a href="#" id="profileIcon" class="profile-icon" title="Profile">
+                                <a href="#" class="profile-icon">
                                     <i class="fa fa-user"></i>
                                 </a>
                                 <ul class="dropdown">
@@ -268,11 +345,8 @@
                                     <li><a href="/order/list">Orders</a></li>
                                     <li><a href="/coupons">Coupon</a></li>
                                     <li><a href="/wallet">Wallet</a></li>
-                                    <li><a href="/support">Support</a></li>
                                     <li class="<%= activePage === 'referral' ? 'active' : '' %>">
-                                        <a href="/refer">Refer & Earn</a>
-                                    </li>
-
+                                        <a href="/refer">Refer & Earn</a></li>                                 
                                     <li><a href="/logout">Logout</a></li>
                                 </ul>
                             </div>
@@ -283,6 +357,10 @@
                                 </span>
                                 <% } %>
                         </div>
+
+                        <div class="hamburger" id="hamburger">
+                            <i class="fa fa-bars"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -291,3 +369,43 @@
 </body>
 
 </html>
+<script>
+    function updateHeaderCounts({ cartCount, wishlistCount }) {
+        if (cartCount !== undefined) {
+            const cartEl = document.getElementById("cart-count");
+            if (cartEl) cartEl.innerText = cartCount;
+        }
+
+        if (wishlistCount !== undefined) {
+            const wishEl = document.getElementById("wishlist-count");
+            if (wishEl) wishEl.innerText = wishlistCount;
+        }
+    }
+    const hamburger = document.getElementById("hamburger");
+    const menu = document.querySelector(".header__menu");
+
+    hamburger.addEventListener("click", () => {
+        menu.classList.toggle("show");
+    });
+
+    document.querySelectorAll(".header__menu > ul > li > a").forEach(link => {
+        link.addEventListener("click", e => {
+            if (window.innerWidth <= 991 && link.nextElementSibling?.classList.contains("dropdown")) {
+                e.preventDefault();
+                link.nextElementSibling.classList.toggle("show");
+            }
+        });
+    });
+    const profileIcon = document.querySelector(".profile-icon");
+    const profileDropdown = document.querySelector(".profile-dropdown .dropdown");
+
+    profileIcon.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        profileDropdown.classList.toggle("show");
+    });
+
+    document.addEventListener("click", () => {
+        profileDropdown.classList.remove("show");
+    });
+</script>

@@ -1,5 +1,4 @@
 import User from "../../models/userModel.js";
-import Order from "../../models/orderModel.js";
 import bcrypt from "bcrypt";
 import STATUS from "../../utils/statusCodes.js";
 
@@ -83,125 +82,6 @@ export const adminLogin = async (req, res) => {
     });
   }
 };
-
-// Get admin dashboard
-export const getAdminDashboard = async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments({ role: "user", isDeleted: false });
-    const totalOrders = await Order.countDocuments({});
-    const paidOrders = await Order.find({
-      $or: [
-        { paymentStatus: "Paid" },
-        { paymentMethod: "COD", orderStatus: "Delivered" }
-      ]
-    });
-
-    const totalRevenue = paidOrders.reduce((acc, order) => acc + order.totalPrice, 0);
-
-    const monthlyRevenue = Array(12).fill(0);
-    paidOrders.forEach(order => {
-      const month = order.createdAt.getMonth(); 
-      monthlyRevenue[month] += order.totalPrice;
-    });
-
-    const statusCounts = { Delivered: 0, Pending: 0, Cancelled: 0 };
-    const allOrders = await Order.find({});
-    allOrders.forEach(order => {
-      if (order.orderStatus === "Delivered") statusCounts.Delivered++;
-      else if (order.orderStatus === "Pending") statusCounts.Pending++;
-      else if (order.orderStatus === "Cancelled") statusCounts.Cancelled++;
-    });
-
-    res.status(STATUS.SUCCESS).render("admin/dashboard", {
-      title: "Admin Dashboard",
-      admin: req.session.user,
-      totalUsers,
-      totalOrders,
-      totalRevenue,
-      monthlyRevenue,
-      statusCounts
-    });
-
-  } catch (error) {
-    console.error("Dashboard Error:", error);
-    res.status(STATUS.SERVER_ERROR).redirect("/error");
-  }
-};
-
-// Logout
-export const adminLogout = (req, res) => {
-  req.session.admin = null; 
-  res.status(STATUS.SUCCESS).redirect("/admin/login");
-};
-
-// Get All Users 
-export const getAllUsers = async (req, res) => {
-  try {
-    const search = req.query.search?.trim() || "";
-    const page = parseInt(req.query.page) || 1;
-    const limit = 5;
-
-    const query = {
-      role: "user",
-      isDeleted: false,
-      ...(search && {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      }),
-    };
-
-    const totalUsers = await User.countDocuments(query);
-    const totalPages = Math.ceil(totalUsers / limit);
-
-    const users = await User.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    res.status(STATUS.SUCCESS).render("admin/users", {
-      title: "Manage Users",
-      cData: users,
-      currentPage: page,
-      totalPages,
-      search,
-      totalUsers,
-      admin: req.session.user,
-    });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(STATUS.SERVER_ERROR).redirect("/error");
-  }
-};
-
-// Block / Unblock User
-export const toggleUserStatus = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user || user.isDeleted) 
-      return res.status(STATUS.NOT_FOUND).redirect("/admin/users");
-
-    user.isActive = !user.isActive;
-    await user.save();
-    res.status(STATUS.SUCCESS).redirect("/admin/users");
-
-  } catch (error) {
-    console.error("Toggle User Status Error:", error);
-    res.status(STATUS.SERVER_ERROR).redirect("/error");
-  }
-};
-
-// Forgot Password 
-export const getAdminForgotPassword = (req, res) => {
-  res.status(STATUS.SUCCESS).render("admin/adminForgotPassword", { 
-    email: "",
-    errorField: null,
-    errorMessage: null,
-    message: null
-  });
-};
-
 // postAdminForgotPassword
 export const postAdminForgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -376,3 +256,79 @@ export const resetAdminPassword = async (req, res) => {
     });
   }
 };
+
+// Logout
+export const adminLogout = (req, res) => {
+  req.session.admin = null; 
+  res.status(STATUS.SUCCESS).redirect("/admin/login");
+};
+
+// Get All Users 
+export const getAllUsers = async (req, res) => {
+  try {
+    const search = req.query.search?.trim() || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+
+    const query = {
+      role: "user",
+      isDeleted: false,
+      ...(search && {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      }),
+    };
+
+    const totalUsers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(STATUS.SUCCESS).render("admin/users", {
+      title: "Manage Users",
+      cData: users,
+      currentPage: page,
+      totalPages,
+      search,
+      totalUsers,
+      admin: req.session.user,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(STATUS.SERVER_ERROR).redirect("/error");
+  }
+};
+
+// Block / Unblock User
+export const toggleUserStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.isDeleted) 
+      return res.status(STATUS.NOT_FOUND).redirect("/admin/users");
+
+    user.isActive = !user.isActive;
+    await user.save();
+    res.status(STATUS.SUCCESS).redirect("/admin/users");
+
+  } catch (error) {
+    console.error("Toggle User Status Error:", error);
+    res.status(STATUS.SERVER_ERROR).redirect("/error");
+  }
+};
+
+// Forgot Password 
+export const getAdminForgotPassword = (req, res) => {
+  res.status(STATUS.SUCCESS).render("admin/adminForgotPassword", { 
+    email: "",
+    errorField: null,
+    errorMessage: null,
+    message: null
+  });
+};
+
+

@@ -135,12 +135,33 @@
     <% } %>
   </div>
 
-  <div>
-    <input type="text" name="state" placeholder="State" value="<%= state %>">
-    <% if (stateError) { %>
-      <div class="error-text" style="color:red; font-size:13px;"><%= stateError %></div>
-    <% } %>
-  </div>
+<div>
+  <select name="state" required>
+    <option value="">Select State</option>
+
+   <% const states = [
+      "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
+      "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand",
+      "Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur",
+      "Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan",
+      "Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh",
+      "Uttarakhand","West Bengal",
+     "Chandigarh",
+      "Delhi",
+    ]; %>
+
+    <% states.forEach(s => { %>
+      <option value="<%= s %>" <%= state === s ? "selected" : "" %>>
+        <%= s %>
+      </option>
+    <% }) %>
+  </select>
+
+  <% if (stateError) { %>
+    <div class="error-text" style="color:red; font-size:13px;"><%= stateError %></div>
+  <% } %>
+</div>
+
 
   <div>
     <input type="number" name="pincode" placeholder="Pincode" value="<%= pincode %>">

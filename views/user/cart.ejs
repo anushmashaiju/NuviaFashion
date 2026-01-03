@@ -5,43 +5,42 @@ body {
   font-family: "Poppins", sans-serif;
   background-color: #fafafa;
 }
-.cart-container { max-width: 1100px; margin: 120px auto 50px auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.cart-container h2 { margin-bottom: 20px; color: #030303; font-weight: 600; }
+
+.cart-container { max-width: 1100px; margin: 120px auto 50px; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.cart-container h2 { margin-bottom: 25px; color: #030303; font-weight: 600;text-align: center; }
 .cart-item { display: grid; grid-template-columns: 120px 1fr 150px; gap: 20px; padding: 20px 0; border-bottom: 1px solid #eee; align-items: center; }
 .cart-item img { width: 120px; height: 120px; object-fit: contain; background: #f8f8f8; border-radius: 10px; padding: 5px; }
-.cart-item h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #333; }
+.cart-item h3 { margin: 0 0 10px; font-size: 1.1rem; color: #333; }
 .cart-item p { margin: 4px 0; font-size: 0.95rem; }
 .qty-box { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.qty-box button { width: 32px; height: 32px; border: none; background: #f76f8f; color: white; border-radius: 5px; font-size: 18px; cursor: pointer; transition: background 0.3s; }
-.qty-box button:hover { background: #e2577a; }
-.qty-box input { width: 35px; text-align: center; border: 1px solid #ddd; border-radius: 5px; padding: 4px; font-size: 0.95rem; pointer-events: none; }
-.cart-item h4 { font-size: 1rem; color: #333; font-weight: 600; text-align: right; }
+.qty-box button { width: 32px; height: 32px; border: none; background: #f76f8f; color: white; border-radius: 5px; font-size: 18px; cursor: pointer; }
+.qty-box input { width: 35px; text-align: center; border: 1px solid #ddd; border-radius: 5px; padding: 4px; pointer-events: none; }
+.cart-item h4 { font-size: 1rem; font-weight: 600; text-align: right; }
 .summary-box { margin-top: 30px; padding: 20px; background: #fff0f4; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
-.summary-box h3 { margin: 0; font-size: 1.2rem; font-weight: 600; color: #a04c74; }
-.checkout-btn { background: #f76f8f; color: white; padding: 12px 25px; border-radius: 10px; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; text-decoration: none; }
-.checkout-btn:hover { background: #e2577a; transform: scale(1.03); }
-.empty-cart { text-align: center; padding: 60px 20px; }
-.empty-cart h3 { font-weight: 600; margin-bottom: 15px; color: #333; }
-.empty-cart a { text-decoration: none; background: #f76f8f; padding: 10px 25px; border-radius: 10px; color: white; font-weight: 500; transition: background 0.3s; }
-.empty-cart a:hover { background: #e2577a; }
-.remove-btn { background: #fff; border: 2px solid #f76f8f; color: #f76f8f; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-top: 10px; font-weight: 500; transition: 0.3s; }
-.remove-btn:hover { background: #f76f8f; color: white; }
-
-/* Toast */
-.toast-message {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  padding: 12px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  color: #fff;
-  opacity: 0;
-  transition: 0.4s;
-  z-index: 9999;
-}
+.checkout-btn { background: #f76f8f; color: #fff; padding: 12px 25px; border-radius: 10px; font-weight: 600; text-decoration: none; }
+.remove-btn { background: #fff; border: 2px solid #f76f8f; color: #f76f8f; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+.toast-message { position: fixed; bottom: 30px; right: 30px; padding: 12px 20px; border-radius: 6px; color: #fff; opacity: 0; transition: .4s; z-index: 9999; }
 .toast-success { background: #4caf50; }
 .toast-error { background: #f44336; }
+ .empty-cart {
+      text-align: center;
+      padding: 50px 0;
+    } 
+.empty-cart a {
+      background: #f76f8f;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 20px;
+      display: inline-block;
+    }
+
+    .empty-cart a:hover {
+      background-color: #e2577a;
+    }
+
 </style>
 
 <div class="cart-container">
@@ -51,141 +50,175 @@ body {
   <% if (!cart || cart.items.length === 0) { %>
     <div class="empty-cart">
       <h3>Your cart is empty</h3>
-      <a href="/products">Shop Now</a>
+       <a href="/products">Continue Shopping</a>
     </div>
   <% } else { %>
-    <% cart.items.forEach(item => { %>
-      <div class="cart-item" id="cart-<%= item.productId._id %>">
-        <a href="/product/<%= item.productId._id %>">
-          <img src="<%= item.productId.images[0] %>" />
-        </a>
 
-        <div>
-          <h3>
-            <a href="/product/<%= item.productId._id %>" style="text-decoration:none; color:#333;">
-              <%= item.productId.name %>
-            </a>
-          </h3>
-          <p>₹<%= item.productId.finalPrice || item.productId.price %></p>
-          <p style="color: <%= item.productId.stock>0?'green':'red' %>;">
-            <%= item.productId.stock>0?'In Stock':'Out of Stock' %>
-          </p>
+    <% cart.items.forEach(item => { 
+      const variant = item.variantId
+        ? item.productId.variants.find(v => v._id.toString() === item.variantId.toString())
+        : null;
 
-          <div class="qty-box">
-            <button onclick="updateQty('<%= item.productId._id %>', 'dec')">−</button>
-            <input id="qty-<%= item.productId._id %>" type="text" value="<%= item.quantity %>" readonly />
-            <button onclick="updateQty('<%= item.productId._id %>', 'inc')">+</button>
-          </div>
+      const itemKey = item.productId._id + (item.variantId ? "-" + item.variantId : "");
+    %>
 
-          <button class="remove-btn" onclick="removeItem('<%= item.productId._id %>')">Remove</button>
+    <div class="cart-item" id="cart-<%= itemKey %>">
+
+      <a href="/product/<%= item.productId._id %>">
+        <img 
+          src="<%= variant && variant.image ? variant.image : item.productId.images[0] %>" 
+          alt="<%= item.productId.name %>"
+        />
+      </a>
+
+      <div>
+        <h3>
+          <%= item.productId.name %>
+          <% if (variant) { %> <%= variant.name %><% } %>
+        </h3>
+        <p>
+  ₹<%= item.price.toFixed(2) %>
+
+  <% if (item.offerPercent > 0) { %>
+    <span style="text-decoration: line-through; color:#888; margin-left:6px;">
+      ₹<%= item.originalPrice.toFixed(2) %>
+    </span>
+    <span style="color:#f76f8f; font-weight:600; margin-left:6px;">
+      (<%= item.offerPercent %>% OFF)
+    </span>
+  <% } %>
+</p>
+
+
+        <div class="qty-box">
+          <button onclick="updateQty('<%= item.productId._id %>','<%= item.variantId || '' %>','dec')">−</button>
+          <input id="qty-<%= itemKey %>" value="<%= item.quantity %>" readonly>
+          <button onclick="updateQty('<%= item.productId._id %>','<%= item.variantId || '' %>','inc')">+</button>
         </div>
 
-        <h4>₹ 
-          <span id="item-total-<%= item.productId._id %>" data-price="<%= item.productId.finalPrice || item.productId.price %>">
-            <%= (item.productId.finalPrice || item.productId.price) * item.quantity %>
-          </span>
-        </h4>
-
+        <button class="remove-btn"
+          onclick="removeItem('<%= item.productId._id %>','<%= item.variantId || '' %>')">
+          Remove
+        </button>
       </div>
+
+      <h4>₹
+        <span id="item-total-<%= itemKey %>" data-price="<%= item.price %>">
+          <%= (item.price * item.quantity).toFixed(2) %>
+        </span>
+      </h4>
+
+    </div>
+
     <% }) %>
 
     <div class="summary-box">
-      <h3>Total Amount: ₹ <span id="cart-total"><%= total %></span></h3>
+      <h3>Total Amount: ₹ <span id="cart-total"><%= total.toFixed(2) %></span></h3>
       <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
     </div>
+
   <% } %>
 </div>
 
+<%- include("../partials/userFooter") %>
+
 <script>
-// Toast notification
-function showToast(message, type = 'error') {
-  const toast = document.createElement("div");
-  toast.className = `toast-message toast-${type}`;
-  toast.innerText = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.style.opacity = 1, 50);
-  setTimeout(() => { 
-    toast.style.opacity = 0; 
-    setTimeout(() => toast.remove(), 400); 
-  }, 2000);
+function showToast(msg, type='error') {
+  const t = document.createElement("div");
+  t.className = `toast-message toast-${type}`;
+  t.innerText = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.style.opacity = 1, 50);
+  setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 400); }, 2000);
 }
 
-// Update Quantity AJAX
-async function updateQty(productId, action) {
+async function updateQty(productId, variantId, action) {
   try {
     const res = await fetch("/cart/update-quantity", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, action })
+      body: JSON.stringify({ productId, variantId, action })
     });
 
     const data = await res.json();
+    if (!data.success) return showToast(data.message);
 
-    if (!data.success) {
-      showToast(data.message, 'error');
+    const key = productId + (variantId ? "-" + variantId : "");
+    const qtyEl = document.getElementById(`qty-${key}`);
+    const totalEl = document.getElementById(`item-total-${key}`);
+
+    let qty = parseInt(qtyEl.value);
+    qty = action === "inc" ? qty + 1 : qty - 1;
+
+    if (qty <= 0) {
+      document.getElementById(`cart-${key}`)?.remove();
+      updateHeaderCounts({ cartCount: data.cartCount });
+
+      if (data.total === 0) location.reload();
       return;
     }
 
-    const qtyInput = document.getElementById(`qty-${productId}`);
-    const itemTotal = document.getElementById(`item-total-${productId}`);
-    const unitPrice = parseFloat(itemTotal.dataset.price) || 0;
-// use parseFloat for decimals
+    qtyEl.value = qty;
+    totalEl.innerText = (qty * parseFloat(totalEl.dataset.price)).toFixed(2);
 
-    // Update quantity input
-    if (action === "inc") qtyInput.value = parseInt(qtyInput.value) + 1;
-    else if (action === "dec") qtyInput.value = parseInt(qtyInput.value) - 1;
-
-    // Remove item if quantity is 0
-    if (parseInt(qtyInput.value) <= 0) {
-      document.getElementById("cart-" + productId)?.remove();
-      if (data.total === 0) location.reload(); // reload if cart is empty
-      return;
+    if (data.total !== undefined) {
+      document.getElementById("cart-total").innerText = data.total.toFixed(2);
     }
 
-    // Update item total
-    itemTotal.innerText = (unitPrice * parseInt(qtyInput.value)).toFixed(2);
-
-    // Update total cart amount
-  const cartTotal = document.getElementById("cart-total");
-cartTotal.innerText = parseFloat(data.total || 0).toFixed(2);
-
+    updateHeaderCounts({ cartCount: data.cartCount });
 
   } catch (err) {
+    showToast("Something went wrong!");
     console.error(err);
-    showToast("Something went wrong", 'error');
   }
 }
-
-// Remove Item AJAX
-async function removeItem(productId) {
+async function removeItem(productId, variantId) {
   try {
     const res = await fetch("/cart/remove", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId })
+      body: JSON.stringify({ productId, variantId })
     });
 
     const data = await res.json();
+    if (!data.success) return showToast(data.message);
 
-    if (data.success) {
-      // Remove item from DOM
-      document.getElementById("cart-" + productId)?.remove();
+    const key = productId + (variantId ? "-" + variantId : "");
+    document.getElementById(`cart-${key}`)?.remove();
 
-      // Update total
-      const cartTotal = document.getElementById("cart-total");
-      cartTotal.innerText = parseFloat(data.total).toFixed(2);
-
-      showToast("Item removed", "success");
-
-      // Reload if cart is empty
-      if (data.total === 0) location.reload();
-    } else {
-      showToast(data.message, 'error');
+    if (data.total !== undefined) {
+      document.getElementById("cart-total").innerText = data.total.toFixed(2);
     }
 
+    updateHeaderCounts({ cartCount: data.cartCount });
+
+    if (data.total === 0) location.reload();
+
   } catch (err) {
+    showToast("Something went wrong!");
     console.error(err);
-    showToast("Something went wrong", 'error');
   }
 }
+
+// async function removeItem(productId, variantId) {
+//   try {
+//     const res = await fetch("/cart/remove", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ productId, variantId })
+//     });
+
+//     const data = await res.json();
+//     if (!data.success) return showToast(data.message);
+
+//     const key = productId + (variantId ? "-" + variantId : "");
+//     document.getElementById(`cart-${key}`)?.remove();
+//     if (data.total !== undefined) document.getElementById("cart-total").innerText = data.total.toFixed(2);
+
+//     if (data.total && data.total === 0) location.reload();
+//   } catch (err) {
+//     showToast("Something went wrong!");
+//     console.error(err);
+//   }
+// }
 </script>

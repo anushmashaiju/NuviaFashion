@@ -112,6 +112,56 @@
   .btn-cancel:hover {
     background-color: #ffb6c8;
   }
+@media (max-width: 992px) {
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+  }
+
+  .card {
+    margin: 20px auto;
+    padding: 20px;
+    width: 100%;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-buttons a,
+  .form-buttons button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .image-preview img,
+  #newThumbnailPreview img {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-group input,
+  .form-group textarea,
+  .form-group label {
+    font-size: 14px;
+  }
+
+  .btn-update,
+  .btn-cancel {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .image-preview img,
+  #newThumbnailPreview img {
+    width: 100px;
+    height: 100px;
+  }
+}
+
 </style>
 
 <div class="admin-layout">
@@ -162,11 +212,9 @@
     value="<%= category.categoryOffer?.endDate ? category.categoryOffer.endDate.toISOString().split('T')[0] : '' %>"
   >
 </div>
-
-
         <div class="form-group">
           <label for="thumbnail">Thumbnail Image</label>
-          <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+          <input type="file" id="thumbnail" name="thumbnail" class="image-input" accept="image/*">
 
           <% if (category.thumbnail) { %>
             <div class="image-preview">
@@ -199,9 +247,27 @@
 <% } %>
 
 <script>
-  // Check if URL has ?success=true
-  const params = new URLSearchParams(window.location.search);
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+  document.querySelectorAll(".image-input").forEach(input => {
+    input.addEventListener("change", function () {
+      const file = this.files[0];
+
+      if (!file) return;
+
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: "error",
+          title: "Invalid File",
+          text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+          confirmButtonColor: "#e63946",
+        });
+
+        this.value = "";
+      }
+    });
+  });
+  const params = new URLSearchParams(window.location.search);
   if (params.get("success") === "true") {
     Swal.fire({
       icon: "success",
@@ -212,7 +278,7 @@
       window.location.href = "/admin/categories";
     });
   }
-  // Thumbnail preview logic (keep this)
+
   const thumbnailInput = document.getElementById("thumbnail");
   const previewBox = document.getElementById("newThumbnailPreview");
 

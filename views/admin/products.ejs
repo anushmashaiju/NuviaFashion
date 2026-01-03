@@ -76,7 +76,6 @@
       padding: 8px 10px;
       cursor: pointer;
     }
-  
 
     .table-custom {
       width: 100%;
@@ -89,7 +88,7 @@
 
     .table-custom th,
     .table-custom td {
-      padding: 9px;
+      padding: 8px;
       text-align: center;
       border-bottom: 1px solid #ffd4dd;
     }
@@ -179,6 +178,62 @@
       border-radius: 5px;
       font-size: 0.8rem;
     }
+  
+@media (max-width: 991px) {
+  .admin-main {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .admin-layout {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .page-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-row input {
+    width: 100%;
+  }
+
+  .reset-btn {
+    width: 100%;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table-custom {
+    min-width: 1100px;
+  }
+  .pagination-wrap {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .page-top h3 {
+    font-size: 1.1rem;
+  }
+
+  .btn-add {
+    width: 100%;
+    text-align: center;
+  }
+}
+
   </style>
 
   <div class="admin-layout">
@@ -210,9 +265,9 @@
                       <th>Name</th>
                       <th>Category</th>
                       <th>Brand</th>
-                      <th>Category Offer (%)</th>
+                      <th>Category Offer(%)</th>
 
-                      <th>Offer (%)</th>
+                      <th>Product Offer(%)</th>
 
                       <th>Offer Status</th>
 
@@ -257,29 +312,28 @@
                           <%= product.brand || "-" %>
                         </td>
                        <td>
-  <% if (product.category) { %>
-  
-    <% if (product.category.categoryOffer && product.category.categoryOffer.percentage > 0) { %>
-      <%= product.category.categoryOffer.percentage %>%
+  <% 
+    const catOffer = product.category?.categoryOffer;
+    const now = new Date();
+    const catActive =
+      catOffer &&
+      catOffer.isActive &&
+      catOffer.startDate &&
+      catOffer.endDate &&
+      now >= new Date(catOffer.startDate) &&
+      now <= new Date(catOffer.endDate);
+  %>
 
-      <% if (product.category.categoryOffer.isActive) { %>
-        <span class="badge bg-success">
-          <i class="bi bi-check-circle-fill"></i> 
-        </span>
-      <% } else { %>
-        <span class="badge bg-danger">
-          <i class="bi bi-x-circle-fill"></i>
-        </span>
-      <% } %>
-
-    <% } else { %>
-      <span class="badge bg-secondary">No Offer</span>
-    <% } %>
-
+  <% if (catOffer?.percentage > 0) { %>
+    <%= catOffer.percentage %>%
+    <span class="badge <%= catActive ? 'bg-success' : 'bg-danger' %>">
+      <i class="bi <%= catActive ? 'bi-check-circle-fill' : 'bi-x-circle-fill' %>"></i>
+    </span>
   <% } else { %>
-    —
+    <span class="badge bg-secondary">No Offer</span>
   <% } %>
 </td>
+
 <td>
   <% 
     // Extract product offer safely

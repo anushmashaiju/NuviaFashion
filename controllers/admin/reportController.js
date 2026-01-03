@@ -5,16 +5,19 @@ import ejs from "ejs";
 import path from "path";
 import STATUS from "../../utils/statusCodes.js";
 
-//  GET SALES REPORT PAGE
+
 // GET SALES REPORT PAGE
 export const getSalesReport = async (req, res) => {
   try {
     const { filter, fromDate, toDate, page = 1 } = req.query;
     const limit = 10;
 
-    let query = {};
+   let query = {
+  paymentStatus: "success",
+  orderStatus: { $ne: "Cancelled" }
+};
 
-    // Filters
+
     if (filter === "daily") {
       query.createdAt = {
         $gte: new Date(new Date().setHours(0, 0, 0)),
@@ -39,51 +42,70 @@ export const getSalesReport = async (req, res) => {
       };
     }
 
-    // Fetch current page orders
     const orders = await Order.find(query)
       .populate("user_id", "name")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    const totalOrders = await Order.countDocuments(query);
+ const totalOrders = await Order.countDocuments(query);
 
-    // Page Totals (current page)
+
 const summary = {
   totalOrderCount: totalOrders,
-  totalAmount: orders.reduce((a, o) => a + o.totalPrice, 0),
+
+  totalAmount: orders.reduce((a, o) => a + o.subtotal, 0),
+
   totalDiscount: orders.reduce(
-    (a, o) => a + ((o.discount || 0) + (o.couponDiscount || 0)),
+    (a, o) => a + (o.couponDiscount || 0),
     0
   ),
-  deliveryCharge: orders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
+
+  totalTax: orders.reduce(
+    (a, o) => a + (o.tax || 0),
+    0
+  ),
+
+  deliveryCharge: orders.reduce(
+    (a, o) => a + (o.deliveryCharge || 0),
+    0
+  ),
+
   finalAmount: orders.reduce(
-    (a, o) =>
-      a + (o.totalPrice - ((o.discount || 0) + (o.couponDiscount || 0)) + (o.deliveryCharge || 0)),
+    (a, o) => a + o.totalPrice,
     0
-  ),
+  )
 };
 
-// Grand Totals (all matching orders)
 const allOrders = await Order.find(query);
 const grandTotal = {
-  totalAmount: allOrders.reduce((a, o) => a + o.totalPrice, 0),
+  totalAmount: allOrders.reduce((a, o) => a + o.subtotal, 0),
+
   totalDiscount: allOrders.reduce(
-    (a, o) => a + ((o.discount || 0) + (o.couponDiscount || 0)),
+    (a, o) => a + (o.couponDiscount || 0),
     0
   ),
-  deliveryCharge: allOrders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
+
+  totalTax: allOrders.reduce(
+    (a, o) => a + (o.tax || 0),
+    0
+  ),
+
+  deliveryCharge: allOrders.reduce(
+    (a, o) => a + (o.deliveryCharge || 0),
+    0
+  ),
+
   finalAmount: allOrders.reduce(
-    (a, o) =>
-      a + (o.totalPrice - ((o.discount || 0) + (o.couponDiscount || 0)) + (o.deliveryCharge || 0)),
+    (a, o) => a + o.totalPrice,
     0
   ),
 };
 
     return res.status(STATUS.SUCCESS).render("admin/salesReport", {
       orders,
-      summary,      // page totals
-      grandTotal,   // full totals
+      summary,      
+      grandTotal,   
       filters: req.query,
       pagination: {
         currentPage: Number(page),
@@ -100,8 +122,11 @@ const grandTotal = {
 export const downloadSalesReportPDF = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-
-    const query = {};
+   let query = {
+  paymentStatus: "success",
+  orderStatus: { $ne: "Cancelled" }
+};
+    
     if (fromDate && toDate) {
       const start = new Date(fromDate);
       const end = new Date(toDate);
@@ -111,18 +136,31 @@ export const downloadSalesReportPDF = async (req, res) => {
 
     const orders = await Order.find(query).populate("user_id", "name");
 
-    // Grand Totals
-    const grandTotal = {
-      totalOrders: orders.length, // total order count
-      totalAmount: orders.reduce((a, o) => a + o.totalPrice, 0),
-      totalDiscount: orders.reduce((a, o) => a + ((o.discount || 0) + (o.couponDiscount || 0)), 0),
-      deliveryCharge: orders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
-      finalAmount: orders.reduce(
-        (a, o) =>
-          a + (o.totalPrice - ((o.discount || 0) + (o.couponDiscount || 0)) + (o.deliveryCharge || 0)),
-        0
-      ),
-    };
+   const grandTotal = {
+  totalOrders: orders.length,
+
+  totalAmount: orders.reduce((a, o) => a + o.subtotal, 0),
+
+  totalDiscount: orders.reduce(
+    (a, o) => a + (o.couponDiscount || 0),
+    0
+  ),
+
+  totalTax: orders.reduce(
+    (a, o) => a + (o.tax || 0),
+    0
+  ),
+
+  deliveryCharge: orders.reduce(
+    (a, o) => a + (o.deliveryCharge || 0),
+    0
+  ),
+
+  finalAmount: orders.reduce(
+    (a, o) => a + o.totalPrice,
+    0
+  )
+};
 
     const filePath = path.join(
       process.cwd(),
@@ -172,30 +210,28 @@ export const downloadSalesReportExcel = async (req, res) => {
     const sheet = workbook.addWorksheet("Sales Report");
 
     sheet.columns = [
-      { header: "Date", key: "date", width: 15 },
-      { header: "Order ID", key: "orderId", width: 20 },
-      { header: "Customer", key: "customer", width: 25 },
-      { header: "Total", key: "total", width: 15 },
-      { header: "Discount", key: "discount", width: 15 },
-      { header: "Delivery Charge", key: "deliveryCharge", width: 18 },
-      { header: "Final Amount", key: "final", width: 18 },
-    ];
+  { header: "Date", key: "date", width: 15 },
+  { header: "Order ID", key: "orderId", width: 20 },
+  { header: "Customer", key: "customer", width: 25 },
+  { header: "Subtotal", key: "subtotal", width: 15 },
+  { header: "Discount", key: "discount", width: 15 },
+  { header: "Tax", key: "tax", width: 15 },
+  { header: "Delivery Charge", key: "deliveryCharge", width: 18 },
+  { header: "Final Amount", key: "final", width: 18 },
+];
 
     orders.forEach((order) => {
-      const discount = (order.discount || 0) + (order.couponDiscount || 0);
-      const deliveryCharge = order.deliveryCharge || 0;
-      const finalAmount = order.totalPrice - discount + deliveryCharge;
-
-      sheet.addRow({
-        date: order.createdAt.toLocaleDateString(),
-        orderId: order.orderID,
-        customer: order.user_id?.name || "N/A",
-        total: order.totalPrice.toFixed(2),
-        discount: discount.toFixed(2),
-        deliveryCharge: deliveryCharge.toFixed(2),
-        final: finalAmount.toFixed(2),
-      });
-    });
+  sheet.addRow({
+    date: order.createdAt.toLocaleDateString(),
+    orderId: order.orderID,
+    customer: order.user_id?.name || "N/A",
+    subtotal: order.subtotal.toFixed(2),
+    discount: (order.couponDiscount || 0).toFixed(2),
+    tax: (order.tax || 0).toFixed(2),
+    deliveryCharge: (order.deliveryCharge || 0).toFixed(2),
+    final: order.totalPrice.toFixed(2),
+  });
+});
 
     res.setHeader(
       "Content-Type",

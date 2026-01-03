@@ -55,7 +55,7 @@ export const getOrdersPage = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    res.status(200).render("admin/orders", {
+    res.status(STATUS.SUCCESS).render("admin/orders", {
       orders,
       currentPage: page,
       totalPages: Math.ceil(totalOrders / limit),
@@ -71,7 +71,7 @@ export const getOrdersPage = async (req, res) => {
   }
 };
 
-// UPDATE ORDER STATUS + TIMELINE SAVE
+// UPDATE ORDER STATUS 
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -130,7 +130,7 @@ export const updateOrderStatus = async (req, res) => {
     order.orderStatus = status;
     await order.save();
 
-    res.status(200).redirect(`/admin/orders/${order._id}`);
+    res.status(STATUS.SUCCESS).redirect(`/admin/orders/${order._id}`);
   } catch (err) {
     console.error("Update Order Status Error:", err);
     res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
@@ -154,7 +154,7 @@ export const viewSingleOrder = async (req, res) => {
     approxStart.setDate(approxStart.getDate() + 3);
     approxEnd.setDate(approxEnd.getDate() + 7);
 
-    res.status(200).render("admin/orderDetailAdmin", {
+    res.status(STATUS.SUCCESS).render("admin/orderDetailAdmin", {
       order,
       purchasedDate,
       approxStart,
@@ -174,10 +174,10 @@ export const approveReturn = async (req, res) => {
     const { orderID } = req.params;
 
     const order = await Order.findOne({ orderID });
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (!order) return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
 
     if (order.orderStatus !== "Return Requested")
-      return res.status(400).json({ success: false, message: "No return request for this order" });
+      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "No return request for this order" });
 
     order.orderStatus = "Returned";
     order.returnApprovedAt = new Date();
@@ -187,10 +187,10 @@ export const approveReturn = async (req, res) => {
       await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
     }
 
-    res.status(200).json({ success: true, message: "Return approved" });
+    res.status(STATUS.SUCCESS).json({ success: true, message: "Return approved" });
   } catch (err) {
     console.error("Approve Return Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
   }
 };
 
@@ -202,7 +202,7 @@ export const getReturnRequests = async (req, res) => {
       .populate("items.productId")
       .populate("shippingAddressId");
 
-    res.status(200).render("admin/returnRequests", { orders });
+    res.status(STATUS.SUCCESS).render("admin/returnRequests", { orders });
   } catch (err) {
     console.error(err);
     res.status(STATUS.SERVER_ERROR).send("Server Error");
@@ -219,56 +219,67 @@ export const getSingleReturnRequest = async (req, res) => {
       .populate("items.productId")
       .populate("shippingAddressId");
 
-    if (!order) return res.status(404).send("Order not found");
+    if (!order) return res.status(STATUS.NOT_FOUND).send("Order not found");
 
-    res.status(200).render("admin/returnRequestDetail", { order });
+    res.status(STATUS.SUCCESS).render("admin/returnRequestDetail", { order });
   } catch (err) {
     console.error("Get Single Return Request Error:", err);
-    res.status(500).send("Server Error");
+    res.status(STATUS.SERVER_ERROR).send("Server Error");
   }
 };
 
+//APPROVE RETURN
 export const approveReturnRequest = async (req, res) => {
   try {
     const { orderID } = req.params;
+    const { restock } = req.body; // true / false
+
     const order = await Order.findOne({ orderID });
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (!order)
+      return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
 
-    if (!order.deliveredAt) return res.status(400).json({ success: false, message: "Order not delivered yet" });
+    if (order.orderStatus !== "Return Requested")
+      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "Invalid return request" });
 
-    const diffDays = Math.ceil((Date.now() - new Date(order.deliveredAt)) / (1000 * 60 * 60 * 24));
-    if (diffDays > 7) return res.status(400).json({ success: false, message: "Return period expired" });
-
-    // Approve return
-    order.orderStatus = "Returned"; // matches frontend checks
+    order.orderStatus = "Returned";
     order.returnApprovedAt = new Date();
+    order.restocked = restock; // optional (audit)
 
-    // Process refund if applicable
-   if (order.returnType === "REFUND" && !order.refundProcessed && ["COD", "Razorpay", "Wallet"].includes(order.paymentMethod)) {
-  await processWalletRefund({ order }); 
-  // processWalletRefund now adds back coupon discount automatically
-}
+    // ✅ RESTOCK ONLY IF ADMIN ALLOWED
+    if (restock === true) {
+      await Promise.all(
+        order.items.map(item =>
+          Product.findByIdAndUpdate(item.productId, {
+            $inc: { stock: item.quantity }
+          })
+        )
+      );
+    }
 
-
-    // Restock products
-    await Promise.all(order.items.map(item =>
-      Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
-    ));
+    // 💰 REFUND (unchanged)
+    if (
+      order.returnType === "REFUND" &&
+      !order.refundProcessed &&
+      ["COD", "Razorpay", "Wallet"].includes(order.paymentMethod)
+    ) {
+      await processWalletRefund({ order });
+    }
 
     await order.save();
 
     return res.json({
       success: true,
-      message: order.returnType === "REFUND"
-        ? "Return approved and refund credited to wallet"
-        : "Return approved. Replacement initiated"
+      message: restock
+        ? "Return approved and product restocked"
+        : "Return approved without restocking (damaged item)"
     });
 
   } catch (err) {
     console.error("Approve Return Error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
   }
 };
+
 
 // REJECT RETURN
 export const rejectReturnRequest = async (req, res) => {
@@ -280,7 +291,7 @@ export const rejectReturnRequest = async (req, res) => {
     const order = await Order.findOne({ orderID });
     if (!order) {
       console.log("Order not found");
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
     }
 
     order.orderStatus = "Return Rejected";
@@ -288,10 +299,10 @@ export const rejectReturnRequest = async (req, res) => {
     order.returnReason = reason || "No reason provided";
     await order.save();
 
-    res.status(200).json({ success: true, message: "Return rejected" });
+    res.status(STATUS.SUCCESS).json({ success: true, message: "Return rejected" });
   } catch (err) {
     console.error("Reject Return Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
   }
 };
 
@@ -299,13 +310,12 @@ export const rejectReturnRequest = async (req, res) => {
 export const adminCancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).send(MESSAGES.ORDER_NOT_FOUND);
+    if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
     if (!order.refundProcessed) {
       await processWalletRefund(order, "Refund for cancelled order");
     }
 
-    // Restock
     for (let item of order.items) {
       await Product.findByIdAndUpdate(item.productId, {
         $inc: { stock: item.quantity }
@@ -318,6 +328,6 @@ export const adminCancelOrder = async (req, res) => {
     res.redirect("/admin/orders");
   } catch (err) {
     console.error(err);
-    res.status(500).send(MESSAGES.SERVER_ERROR);
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };

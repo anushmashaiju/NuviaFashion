@@ -10,11 +10,10 @@ export const getWishlist = async (req, res) => {
     if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
     let wishlist = await Wishlist.findOne({ userId })
-      .populate("products.productId");
-
+  .populate("products.productId")
+  
     const cart = await Cart.findOne({ userId });
 
-    // Remove broken entries
     if (wishlist) {
       wishlist.products = wishlist.products.filter(
         item => item.productId !== null
@@ -42,38 +41,69 @@ export const toggleWishlist = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     const productId = req.params.id;
+const variantId = req.body?.variantId
+  ? new mongoose.Types.ObjectId(req.body.variantId)
+  : null;
+
 
     if (!userId) {
-      return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.USER_NOT_LOGGED_IN });
+      return res.status(STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.USER_NOT_LOGGED_IN
+      });
     }
 
     let wishlist = await Wishlist.findOne({ userId });
 
     if (!wishlist) {
-      wishlist = await Wishlist.create({ userId, products: [{ productId }] });
-      return res.status(STATUS.CREATED).json({ success: true, inWishlist: true, count: 1 });
+      wishlist = await Wishlist.create({
+        userId,
+        products: [{ productId, variantId }]
+      });
+
+      return res.status(STATUS.CREATED).json({
+        success: true,
+        inWishlist: true,
+        count: 1
+      });
     }
 
-    const exists = wishlist.products.some(p => p.productId.toString() === productId);
+    const index = wishlist.products.findIndex(p =>
+      p.productId.toString() === productId &&
+     String(p.variantId) === String(variantId)
 
-    if (exists) {
-      wishlist.products = wishlist.products.filter(p => p.productId.toString() !== productId);
+    );
+
+    if (index !== -1) {
+      wishlist.products.splice(index, 1);
       await wishlist.save();
-      const count = wishlist.products.length;
-      return res.status(STATUS.SUCCESS).json({ success: true, inWishlist: false, count });
-    } else {
-      wishlist.products.push({ productId });
-      await wishlist.save();
-      const count = wishlist.products.length;
-      return res.status(STATUS.SUCCESS).json({ success: true, inWishlist: true, count });
+
+      return res.status(STATUS.SUCCESS).json({
+        success: true,
+        inWishlist: false,
+        count: wishlist.products.length
+      });
     }
+
+    wishlist.products.push({ productId, variantId });
+    await wishlist.save();
+
+    return res.status(STATUS.SUCCESS).json({
+      success: true,
+      inWishlist: true,
+      count: wishlist.products.length
+    });
+
   } catch (err) {
     console.error("toggleWishlist Error:", err);
-    return res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+    return res.status(STATUS.SERVER_ERROR).json({
+      success: false,
+      message: MESSAGES.SERVER_ERROR
+    });
   }
 };
 
-// REMOVE FROM WISHLIST (non-AJAX)
+// REMOVE FROM WISHLIST
 export const removeFromWishlist = async (req, res) => {
   try {
     const userId = req.session.user?.id;

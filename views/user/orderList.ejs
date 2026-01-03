@@ -6,6 +6,11 @@
       margin: 120px auto 40px;
       font-family: "Poppins", sans-serif;
     }
+.orders-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
 
     .order-card {
       background: #fff;
@@ -98,7 +103,6 @@
   color: #999;
   cursor: not-allowed;
 }
-
   </style>
 
   <div class="orders-container">
@@ -129,28 +133,17 @@
     <%= order.orderStatus %>
   </span>
 </p>
-<% if(order.orderStatus === "Failed") { %>
-  <p style="color:red; font-size:0.85rem;">
-    Payment failed. This order will be removed automatically after 48 hours.
-  </p>
-<% } %>
-
-                <!-- <p><strong>Total:</strong> Rs.<%= order.totalPrice.toFixed(2) %></p> -->
-                <!-- <p><strong>Price:</strong> Rs.<%= order.subtotal.toFixed(2) %></p>
-<p><strong>GST:</strong> Rs.<%= order.tax.toFixed(2) %></p>
-<% if(order.couponDiscount > 0) { %>
-  <p><strong>Coupon Discount:</strong> Rs.<%= order.couponDiscount.toFixed(2) %></p>
-<% } %>
-<% if(order.walletUsed > 0) { %>
-  <p><strong>Wallet Used:</strong>  Rs.<%= order.walletUsed.toFixed(2) %></p>
-<% } %> -->
-                <p><strong>Total Paid:</strong> Rs.<%= order.totalPrice.toFixed(2) %>
+         <p><strong>Amount:</strong> Rs.<%= order.totalPrice.toFixed(2) %>
                 </p>
                 <p>Paid by: <strong>
                     <%= order.paymentMethod %>
                   </strong>
                 </p>
-
+<% if(order.orderStatus === "Failed") { %>
+  <p style="color:red; font-size:0.85rem;">
+    This order will be removed automatically after 48 hours.
+  </p>
+<% } %>
                 <div class="ordered-items" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
                   <% order.items.forEach(item=> { %>
                     <div style="text-align:center;" data-productid="<%= item.productId %>">
@@ -160,35 +153,38 @@
                         style="font-size:0.8rem; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         <%= item.productName %>
                       </p>
-                      <% if(item.isCancelled) { %>
-                        <span style="color:red; font-weight:600;">Cancelled</span>
-                       <% } else if(
+               <% if (item.isCancelled) { %>
+  <span style="color:red; font-weight:600;">Cancelled</span>
+<% } else if (
   !["Cancelled","Returned","Delivered","Return Approved","Return Requested","Failed"]
   .includes(order.orderStatus)
 ) { %>
-
-                          <button class="cancel-btn"
-                            onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">
-                            Cancel Item
-                          </button>
-                          <% } %>
+  <button class="cancel-btn"
+    onclick="cancelProduct('<%= order.orderID %>','<%= item.productId %>')">
+    Cancel Item
+  </button>
+<% } %>
                     </div>
                     <% }) %>
                 </div>
               </div>
 
-              <div class="order-actions">
-                <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
+             <div class="order-actions">
 
-                <% if(
-  !["Cancelled","Returned","Delivered","Return Approved","Return Requested","Failed"]
-  .includes(order.orderStatus)
-) { %>
+  <% if (order.orderStatus !== "Failed") { %>
+    <a href="/order/<%= order.orderID %>" class="view-btn">View</a>
+  <% } %>
 
-                  <button class="cancel-btn" onclick="cancelOrder('<%= order.orderID %>')">Cancel Order</button>
-                  <% } %>
-              </div>
-
+  <% if (
+    !["Cancelled","Returned","Delivered","Return Approved","Return Requested","Failed"]
+    .includes(order.orderStatus)
+  ) { %>
+    <button class="cancel-btn"
+      onclick="cancelOrder('<%= order.orderID %>')">
+      Cancel Order
+    </button>
+  <% } %>
+</div>
             </div>
             <% }) %>
 <% if (totalPages > 1) { %>
@@ -212,8 +208,6 @@
     </button>
   </div>
 <% } %>
-
-
                   <% } %>
     </div>
   </div>
@@ -249,9 +243,9 @@
 
                   const card = document.querySelector(`[data-orderid="${orderID}"]`);
                   if (card) {
-                    // Update status
+                 
                     card.querySelector(".order-status").textContent = "Cancelled";
-                    // Remove cancel buttons
+              
                     card.querySelectorAll(".cancel-btn, .return-btn").forEach(b => b.remove());
                   }
                 } else {
@@ -292,11 +286,9 @@
                   const itemDiv = card.querySelector(`[data-productid="${productID}"]`);
 
                   if (itemDiv) {
-                    // Remove cancel button only
+
                     const cancelBtn = itemDiv.querySelector(".cancel-btn");
                     if (cancelBtn) cancelBtn.remove();
-
-                    // Add cancelled text below image
                     const statusSpan = document.createElement("span");
                     statusSpan.style.color = "red";
                     statusSpan.style.fontWeight = "600";
@@ -305,7 +297,7 @@
                     itemDiv.appendChild(statusSpan);
                   }
 
-                  // If no items left, mark order cancelled
+    
                   if (data.order.orderStatus === "Cancelled") {
                     card.querySelector(".order-status").textContent = "Cancelled";
                     card.querySelectorAll(".cancel-btn").forEach(b => b.remove());
@@ -371,5 +363,15 @@
       function changePage(page) {
   window.location.href = `/order/list?page=${page}`;
 }
-
+function retryPayment(orderId) {
+  fetch(`/order/retry/${orderId}`, { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = data.redirect;
+      } else {
+        Swal.fire("Error", data.message, "error");
+      }
+    });
+}
     </script>

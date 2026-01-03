@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ledger</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: #fafafa;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background: #f7c4d4;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Sales Ledger</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Order ID</th>
+      <th>Credit (₹)</th>
+      <th>Debit (₹)</th>
+      <th>Net (₹)</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% ledger.forEach(row => { %>
+      <tr>
+        <td><%= row.date.toLocaleDateString() %></td>
+        <td><%= row.orderID %></td>
+        <td>₹ <%= row.credit.toFixed(2) %></td>
+        <td>₹ <%= row.debit.toFixed(2) %></td>
+        <td>₹ <%= row.net.toFixed(2) %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+</body>
+</html>

@@ -130,6 +130,70 @@
       font-size: 13px;
       margin-top: 4px;
     }
+    
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .card {
+    margin: 15px 10px;
+    padding: 20px;
+  }
+
+  .row.g-3 {
+    flex-direction: column;
+  }
+
+  .col-md-2,
+  .col-md-3,
+  .col-md-4,
+  .col-md-5,
+  .col-md-6 {
+    width: 100% !important;
+  }
+
+  .variant-table,
+  .variant-table th,
+  .variant-table td {
+    font-size: 13px;
+  }
+
+  .preview-thumb {
+    width: 80px;
+    height: 80px;
+  }
+
+  .add-variant-btn {
+    font-size: 16px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-control,
+  .form-select,
+  textarea {
+    font-size: 14px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .variant-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
   </style>
 
   <div class="admin-layout">
@@ -191,8 +255,6 @@
 
                   </div>
 
-
-                  <!-- BRAND -->
                   <div class="col-md-6">
                     <label>Brand</label>
                     <input type="text" name="brand" class="form-control" value="<%= _formData?.brand || '' %>">
@@ -244,10 +306,7 @@
                         </p>
                         <% } %>
                     </div>
-                  </div>
-
-                  
-
+                  </div>            
 
                   <div class="col-md-4">
                     <label>Final Price</label>
@@ -345,8 +404,7 @@
 
                   <div class="col-12">
                     <label>Product Images (Minimum 3)</label>
-                    <input type="file" id="imageInput" name="images" multiple accept="image/*"
-                      class="form-control mt-1">
+                    <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control image-input mt-1">
                     <div id="preview" class="d-flex flex-wrap mt-2"></div>
                     <div class="field-error" data-field="images">
                       <% if (_errors && _errors.images) { %>
@@ -385,7 +443,7 @@
         <td><input type="number" class="form-control variant-price" name="variantPrice[]" value="<%= v.price %>" step="0.01"></td>
         <td><input type="number" class="form-control variantFinalPrice" name="variantFinalPrice[]" readonly value="<%= v.finalPrice %>"></td>
         <td><input type="number" class="form-control" name="variantStock[]" value="<%= v.stock %>"></td>
-        <td><input type="file" class="form-control variant-input"></td>
+        <td><input type="file" class="form-control image-input variant-input" accept="image/*"></td>
         <td class="variant-preview">
           <% if (v.image) { %>
             <img src="<%= v.image %>" style="width:70px;height:70px;border-radius:6px;">
@@ -413,6 +471,36 @@
   <%- include("../partials/adminFooter") %>
 
    <script>
+     const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg"
+  ];
+
+  document.addEventListener("change", function (e) {
+    const input = e.target;
+
+    if (!input.classList.contains("image-input")) return;
+
+    const files = Array.from(input.files);
+    if (!files.length) return;
+
+    const invalidFile = files.find(
+      file => !allowedTypes.includes(file.type)
+    );
+
+    if (invalidFile) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File",
+        text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+        confirmButtonColor: "#e63946",
+      });
+
+      input.value = "";
+    }
+  });
 document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("productForm");
@@ -427,7 +515,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let uploadedFiles = [];
 
-  /* ---------------- FIELD ERROR HANDLING ---------------- */
   function clearFieldErrors() {
     document.querySelectorAll(".field-error").forEach(el => el.innerHTML = '');
   }
@@ -436,7 +523,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (container) container.innerHTML = `<p class="error-text">${msg}</p>`;
   }
 
-  /* ---------------- CATEGORY OFFER AUTO FILL ---------------- */
   function updateCategoryOffer() {
     const selected = categorySelect.selectedOptions[0];
     const offer = selected.dataset.offer || 0;
@@ -446,7 +532,6 @@ document.addEventListener("DOMContentLoaded", () => {
   categorySelect.addEventListener("change", updateCategoryOffer);
   if (categorySelect.selectedOptions[0]) updateCategoryOffer();
 
-  /* ---------------- FINAL PRICE CALCULATION ---------------- */
 function updateFinalPrice() {
   const price = parseFloat(priceInput.value || 0);
   const productOffer = parseFloat(document.getElementById("offerPercentage").value || 0);
@@ -473,7 +558,6 @@ function updateFinalPrice() {
     finalPriceInput.value = "";
   }
 
-  // update all variant final prices
   document.querySelectorAll(".variant-price").forEach((vp, i) => {
     const vf = document.querySelectorAll(".variantFinalPrice")[i];
     const vPrice = parseFloat(vp.value || 0);
@@ -485,7 +569,6 @@ function updateFinalPrice() {
   document.getElementById("offerPercentage").addEventListener("input", updateFinalPrice);
   priceInput.addEventListener("input", updateFinalPrice);
 
-  /* ---------------- MULTIPLE IMAGE PREVIEW ---------------- */
   imageInput.addEventListener("change", function () {
     uploadedFiles.push(...Array.from(this.files));
     updateInputFiles();
@@ -522,7 +605,6 @@ function updateFinalPrice() {
     });
   }
 
-  /* ---------------- TOTAL STOCK CALCULATION ---------------- */
   function updateTotalStock() {
     let total = parseInt(mainStockInput.value || 0);
 
@@ -539,7 +621,6 @@ function updateFinalPrice() {
     if (input) input.addEventListener("input", updateTotalStock);
   }
 
-  /* ---------------- ADD VARIANT ROW ---------------- */
   window.addVariant = function () {
     const tbody = document.getElementById("variantBody");
     const row = document.createElement("tr");
@@ -555,7 +636,7 @@ function updateFinalPrice() {
       <td><input type="number" class="form-control" name="variantStock[]" placeholder="Stock"></td>
       
       <td>
-  <input type="file" class="form-control variant-input" name="variantImages" accept="image/*">
+  <input type="file" class="form-control image-input variant-input" name="variantImages" accept="image/*">
  <input type="hidden" name="variantExistingImage[]" value="">
 
 </td>
@@ -567,7 +648,6 @@ function updateFinalPrice() {
 
     tbody.appendChild(row);
 
-    /* VARIANT PRICE CALCULATION */
   const variantPriceInput = row.querySelector(".variant-price");
 const variantFinalInput = row.querySelector(".variantFinalPrice");
 
@@ -599,18 +679,12 @@ function calculateVariantFinal() {
   variantFinalInput.value = price > 0 ? (price - (price * applicableOffer / 100)).toFixed(2) : '';
 }
 
-// Attach event listeners
 variantPriceInput.addEventListener("input", calculateVariantFinal);
 document.getElementById("offerPercentage").addEventListener("input", calculateVariantFinal);
 document.getElementById("offerStartDate").addEventListener("input", calculateVariantFinal);
 document.getElementById("offerEndDate").addEventListener("input", calculateVariantFinal);
 categorySelect.addEventListener("change", calculateVariantFinal);
-
-
-    /* VARIANT STOCK CALC */
     attachVariantStockListener(row.querySelector('input[name="variantStock[]"]'));
-
-    /* VARIANT IMAGE PREVIEW */
     const fileInput = row.querySelector(".variant-input");
     const previewCell = row.querySelector(".variant-preview");
 
@@ -628,7 +702,6 @@ categorySelect.addEventListener("change", calculateVariantFinal);
       previewCell.appendChild(img);
     });
 
-    /* REMOVE VARIANT */
     row.querySelector("i.bi-trash").addEventListener("click", () => {
       row.remove();
       updateTotalStock();
@@ -638,8 +711,6 @@ categorySelect.addEventListener("change", calculateVariantFinal);
   };
 
   updateFinalPrice();
-
-  /* ---------------- FORM SUBMIT ---------------- */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearFieldErrors();
@@ -659,7 +730,6 @@ form.addEventListener("submit", async (e) => {
   const description = form.description.value.trim();
   const images = imageInput.files;
 
-  /* VALIDATION */
   if (!name) { showFieldError("name", "Product name is required."); hasError = true; }
   if (!category) { showFieldError("category", "Please select a category."); hasError = true; }
   if (!brand) { showFieldError("brand", "Brand is required."); hasError = true; }
@@ -675,7 +745,6 @@ form.addEventListener("submit", async (e) => {
 
   if (hasError) return;
 
-  /* CONFIRMATION POPUP */
   const confirmResult = await Swal.fire({
     title: "Confirm Add Product",
     text: "Are you sure you want to add this product?",
@@ -688,7 +757,6 @@ form.addEventListener("submit", async (e) => {
 
   if (!confirmResult.isConfirmed) return;
 
-  /* -------- FINAL SUBMISSION ---------- */
   const formData = new FormData(form);
 
   try {

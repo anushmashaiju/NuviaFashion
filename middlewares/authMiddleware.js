@@ -1,13 +1,10 @@
 import User from "../models/userModel.js"; 
 
-
 export const isUserAuthenticated = async (req, res, next) => {
   try {
     if (!req.session?.user) {
       return res.redirect("/login");
     }
-
-    // ✅ Normalize ID
     const userId = req.session.user._id || req.session.user.id;
     if (!userId) return res.redirect("/login");
 
@@ -20,7 +17,6 @@ export const isUserAuthenticated = async (req, res, next) => {
       return;
     }
 
-    // ✅ Always store both
     req.session.user = {
       _id: user._id,
       id: user._id,
@@ -36,8 +32,7 @@ export const isUserAuthenticated = async (req, res, next) => {
   }
 };
 
-
-
+//for Guest
 export const isGuest = (req, res, next) => {
   if (req.session.user) {
     return res.redirect("/home");

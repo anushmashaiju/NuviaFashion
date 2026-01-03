@@ -5,6 +5,120 @@
   border-radius: 5px;
 }
 
+.sidebar {
+  width: 220px;
+  height: calc(100vh - 60px);
+  position: fixed;
+  top: 60px;
+  left: 0;
+  background: #fff;
+  border-right: 1px solid #eee;
+  padding: 15px;
+  transition: transform 0.3s ease-in-out;
+  z-index: 1001;
+}
+
+@media (max-width: 991px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.show {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px);
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: none;
+}
+
+.sidebar-overlay.show {
+  display: block;
+}
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 70px;
+  left: 15px;
+  background: #f76f8f;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  z-index: 1100;
+}
+
+@media (max-width: 991px) {
+  .sidebar-toggle {
+    display: block;
+  }
+}
+
+.nav-link.active {
+  background-color: #f76f8f;
+  color: #fff;
+  border-radius: 5px;
+}
+
+.sidebar {
+  width: 230px;
+  background: #fff;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  height: calc(100vh - 60px);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+
+.admin-main {
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .admin-main {
+    margin-left: 0 !important;
+    padding: 20px;
+  }
+
+  .card {
+    margin: 10px;
+    padding: 20px;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+
+  .btn-update,
+  .btn-cancel {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-main {
+    margin-left: 0;
+  }
+}
+
 </style>
 <div class="sidebar">
   <p class="fw-bold text-center">Anushma(Admin)</p>

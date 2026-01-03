@@ -1,130 +1,10 @@
 import Wallet from "../../models/walletModel.js";
 import Cart from "../../models/cartModel.js";
-import Order from "../../models/orderModel.js";
 import Address from "../../models/addressModel.js";
 import STATUS from "../../utils/statusCodes.js";
 import MESSAGES from "../../utils/messages.js";
-import Coupon from "../../models/couponModel.js";
 
 const round2 = (value) => Number((value || 0).toFixed(2));
-
-// WALLET PAYMENT
-export const walletPayment = async (req, res) => {
-  try {
-    const userId = req.session.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Login required" });
-    }
-
-    const { selectedAddress, deliveryCharge } = req.body;
-    const summary = req.session.orderSummary;
-    if (!summary) {
-      return res.status(400).json({ success: false, message: "Invalid order" });
-    }
-
-    // ✅ FORCE DELIVERY CHARGE INTO SUMMARY
-    summary.deliveryCharge = round2(Number(deliveryCharge) || 0);
-
-    // ✅ REBUILD FINAL AMOUNT (JUST LIKE RAZORPAY)
-    let finalAmount =
-      round2(summary.subtotal) +
-      round2(summary.tax) +
-      summary.deliveryCharge -
-      round2(summary.couponDiscount || 0);
-
-    if (finalAmount <= 0) finalAmount = 1;
-
-    summary.finalAmount = finalAmount;
-    req.session.orderSummary = summary;
-    await req.session.save();
-
-    const wallet = await Wallet.findOne({ userId });
-    if (!wallet || wallet.balance < finalAmount) {
-      return res.status(400).json({
-        success: false,
-        message: "Insufficient wallet balance"
-      });
-    }
-
-    /* ---------------- WALLET DEDUCTION ---------------- */
-    wallet.balance = round2(wallet.balance - finalAmount);
-    wallet.transactions.push({
-      type: "DEBIT",
-      amount: round2(finalAmount),
-      description: "Order payment via Wallet"
-    });
-    await wallet.save();
-
-
-    const sessionItems = req.session.orderItems;
-    if (!sessionItems || sessionItems.length === 0) {
-      return res.status(400).json({ success: false, message: "Order items missing" });
-    }
-
-    const orderItems = sessionItems.map(item => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      basePrice: round2(item.basePrice),
-      discount: round2(item.discount || 0),
-      finalPrice: round2(item.finalPrice),
-      subtotal: round2(item.subtotal),
-      sku: item.sku,
-      productName: item.productName,
-      color: item.color || null,
-      size: item.size || null,
-      image: item.image || "",
-      deliveryCharge: round2(item.deliveryCharge || 0)
-    }));
-
-
-    /* ---------------- CREATE ORDER ---------------- */
-    const order = await Order.create({
-      orderID: "ORD" + Date.now(),
-      user_id: userId, // ✅ important
-      shippingAddressId: selectedAddress,
-      items: orderItems,
-      subtotal: round2(summary.subtotal),
-      tax: round2(summary.tax),
-      deliveryCharge: round2(summary.deliveryCharge || 0),
-      couponDiscount: round2(summary.couponDiscount || 0),
-      couponApplied: summary.appliedCouponId,
-      walletUsed: round2(summary.finalAmount),
-      totalPrice: round2(summary.finalAmount),
-      paymentMethod: "Wallet",
-      paymentStatus: "success",
-      orderStatus: "Order Placed",
-      statusTimeline: {
-        orderPlaced: new Date()
-      }
-    });
-if (summary.appliedCouponId) {
-  await Coupon.findByIdAndUpdate(summary.appliedCouponId, {
-    $addToSet: { usedBy: userId }
-  });
-}
-
-    /* ---------------- CLEAR CART ---------------- */
-    if (!req.session.buyNow) {
-      await Cart.updateOne({ userId }, { $set: { items: [] } });
-    }
-
-
-    // ✅ CLEAN SESSION
-    delete req.session.orderItems;
-    delete req.session.orderSummary;
-    delete req.session.buyNow;
-
-    await req.session.save();
-
-    res.json({ success: true, orderId: order.orderID });
-
-  } catch (err) {
-    console.error("Wallet Payment Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
- 
-};
 
 // GET USER WALLET PAGE
 export const getWalletPage = async (req, res) => {
@@ -148,7 +28,7 @@ export const getWalletPage = async (req, res) => {
       });
     }
 
-    const tax = round2(subtotal * 0.18); // GST 18%
+    const tax = round2(subtotal * 0.18);
     const finalAmount = round2(subtotal + tax);
 
     const summary = { subtotal: round2(subtotal), tax, finalAmount };

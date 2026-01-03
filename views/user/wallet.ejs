@@ -162,11 +162,8 @@
         showPopup("Amount Added!");
         Swal.fire("Success", data.message, "success");
 
-        // ✅ Update balance
         document.getElementById("wallet-balance").innerText =
           "₹ " + data.balance;
-
-        // ✅ Update history
         const historyElem = document.getElementById("wallet-history");
         const noHistory = document.getElementById("no-history");
         if (noHistory) noHistory.remove();
@@ -186,8 +183,6 @@
     }
   });
 }
-
-  
 </script>
 
 <%- include("../partials/userFooter") %>

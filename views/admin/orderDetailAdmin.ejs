@@ -106,6 +106,96 @@
       font-size: 22px;
       color: #ff3b85;
     }
+  
+@media (max-width: 992px) {
+  .container {
+    margin: 100px 15px 40px 15px;
+    width: auto;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .price-box {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .box {
+    width: 100%;
+  }
+
+  .items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .item {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .item img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .return-images img {
+    width: 80px;
+    height: 80px;
+    margin: 4px;
+  }
+}
+
+@media (max-width: 576px) {
+  .order-id {
+    font-size: 18px;
+  }
+
+  .order-status {
+    font-size: 18px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  .box h4 {
+    font-size: 16px;
+  }
+
+  .date-box {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .item img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .return-images img {
+    width: 60px;
+    height: 60px;
+  }
+
+  select {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  #approveReturnBtn {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+    margin-top: 15px;
+  }
+}
+
   </style>
 
 
@@ -119,7 +209,6 @@
           <%= order.orderStatus %>
         </span>
 
-  
       </div>
 
       <p><strong>User:</strong>
@@ -231,15 +320,7 @@
     <p><strong>Cancelled:</strong> <%= order.statusTimeline.cancelled.toDateString() %></p>
   <% } %>
 </div>
-
     </div>
-    <% if(order.orderStatus === 'Return Requested'){ %>
-  <button id="approveReturnBtn" class="btn btn-primary" 
-          onclick="approveReturn('<%= order.orderID %>')">
-      Approve Return
-  </button>
-<% } %>
-
   </div>
 
   <script>

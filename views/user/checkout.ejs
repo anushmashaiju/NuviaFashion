@@ -227,11 +227,98 @@
         transform: translateY(50px);
       }
     }
+ 
+@media (max-width: 992px) {
+  .checkout-container {
+    flex-direction: column;
+    margin: 100px 15px 30px;
+  }
+
+  .left-section,
+  .right-section {
+    width: 100%;
+  }
+
+  .right-section {
+    position: static;
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+
+  .checkout-container {
+    margin-top: 90px;
+    gap: 15px;
+  }
+
+  .step-box {
+    padding: 15px;
+  }
+
+  .step-title {
+    font-size: 1rem;
+  }
+
+  .address-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .deliver-btn {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .edit-address-icon {
+    top: 8px;
+    right: 8px;
+  }
+
+  .item-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-box img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .item-total {
+    align-self: flex-end;
+    margin-top: 8px;
+  }
+
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .payment-btn,
+  .add-address-btn {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  #couponModal > div {
+    width: 90%;
+  }
+
+  .bill-row {
+    font-size: 0.95rem;
+  }
+}
+
   </style>
 <div id="toastContainer"></div>
 
 <div class="checkout-container">
-  <div class="left-section">
+<div class="left-section">
+
+  
 
     <% if (isBuyNow) { %>
       <input type="hidden" id="buyNowProduct" value="<%= cart.items[0].productId._id %>">
@@ -251,7 +338,6 @@
         <% addresses.forEach(addr=> { %>
           <label class="address-card <%= addr.isDefault ? 'selected' : '' %>">
             <input type="radio" name="address" value="<%= addr._id %>" <%= addr.isDefault ? "checked" : "" %> />
-<!-- Hidden input for extra delivery charge -->
    
             <a href="/user/addresses/edit/<%= addr._id %>?redirect=checkout" class="edit-address-icon">
               <i class="fas fa-edit"></i>
@@ -278,23 +364,42 @@
 
     <div class="step-box" id="orderSummarySection">
       <h3 class="step-title">3 &nbsp; ORDER SUMMARY</h3>
+      <% if (stockAdjusted) { %>
+    <div class="alert alert-warning" style="
+      background:#fff3cd;
+      color:#856404;
+      padding:12px 16px;
+      border-radius:8px;
+      margin-bottom:20px;
+      font-weight:500;
+      border:1px solid #ffeeba;
+    ">
+      ⚠ Some items in your cart were updated due to recent stock changes.
+    </div>
+  <% } %>
+
       <% cart.items.forEach(item=> { %>
-        <!-- <div class="item-box" data-id="<%= item.productId._id %>"> -->
-          <div class="item-box"
+    
+        <div class="item-box"
      data-id="<%= item.productId._id %>"
+     data-variant="<%= item.variantId || '' %>"
+     data-price="<%= item.finalPrice %>"
      data-delivery="<%= item.deliveryCharge || 0 %>">
 
-          <img src="<%= item.productId.images?.[0] %>" />
+       <img src="<%= item.image %>" />
+
           <div style="flex:1;">
             <h4><%= item.productId.name %></h4>
-            <p>Price: ₹<%= item.productId.finalPrice || item.productId.price %></p>
+            <p>₹<%= item.finalPrice.toFixed(2) %></p>
             <div style="display:flex; align-items:center; gap:10px;">
-              <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>', 'dec')">−</button>
+              <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>',
+  '<%= item.variantId || '' %>', 'dec')">−</button>
               <span class="item-quantity"><%= item.quantity %></span>
-              <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>', 'inc')">+</button>
+              <button class="qty-btn" onclick="updateQty('<%= item.productId._id %>',
+  '<%= item.variantId || '' %>', 'inc')">+</button>
             </div>
           </div>
-          <strong class="item-total">₹<%= (item.productId.finalPrice || item.productId.price) * item.quantity %></strong>
+          <strong class="item-total">₹<%= (item.finalPrice * item.quantity).toFixed(2) %></strong>
         </div>
       <% }) %>
     </div>
@@ -307,20 +412,23 @@
       <div class="bill-row"><span>GST (18%)</span><strong id="tax">Rs.<%= summary.tax %></strong></div>
      <div class="bill-row">
   <span>Delivery</span>
-  <strong id="deliveryChargeDisplay">₹0</strong>
+  <strong id="deliveryChargeDisplay">
+  ₹<%= summary.deliveryCharge.toFixed(2) %>
+</strong>
+</div>
+<div class="bill-row" id="couponRow" style="display:none;">
+  <span>Coupon Discount</span>
+  <strong id="couponDiscount">-₹0.00</strong>
 </div>
 
-          <div class="coupon-box">
+<div class="coupon-box" style="margin-top:10px;">
   <strong>Apply Coupon</strong>
   <button class="payment-btn" style="background:#f76f8f;" onclick="openCouponModal()">Select Coupon</button>
-
-  <p id="couponMsg" style="margin-top:10px; font-weight:600;"></p>
 </div>
+
       <hr>
       <div class="bill-row"><strong>Grand Total</strong><strong id="finalAmount">Rs.<%= summary.finalAmount %></strong></div>
 
-
-<!-- COUPON POPUP MODAL -->
 <div id="couponModal"
   style="
     display:none;
@@ -359,16 +467,21 @@
   </div>
 </div>
 
+<%- include("../partials/userFooter") %>
+
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<% if (stockAdjusted) { %>
 <script>
-let appliedDiscount = 0; // global variable for discount
+  window.addEventListener("load", () => {
+    document.getElementById("orderSummarySection")
+      ?.scrollIntoView({ behavior: "smooth" });
+  });
+</script>
+<% } %>
 
+<script>
+let appliedDiscount = 0; 
 
-    updateTotals(); // update totals after setting appliedDiscount
-
-
-
-// TOAST
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -378,18 +491,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// DELIVERY CALCULATION
-function calculateDeliveryCharge(payableAmount, productsDelivery, paymentMethod, addressCharge) {
-    let delivery = 0;
-    if (payableAmount < 999) delivery = 50;
-    delivery = Math.max(delivery, Math.max(...productsDelivery, 0));
-    if (addressCharge) delivery += addressCharge;
-    if (paymentMethod === "COD") delivery += 50;
-    return delivery;
-}
-
-// UPDATE TOTALS
-function updateTotals(paymentMethod = "ONLINE") {
+function updateTotals(paymentMethod = "Razorpay") {
     let subtotal = 0;
     let productsDelivery = [];
 
@@ -397,50 +499,72 @@ function updateTotals(paymentMethod = "ONLINE") {
         const price = parseFloat(itemBox.querySelector("p").textContent.replace(/[^\d.]/g, ""));
         const qty = parseInt(itemBox.querySelector(".item-quantity").textContent);
         subtotal += price * qty;
-        productsDelivery.push(parseFloat(itemBox.dataset.delivery || 0));
     });
 
     const tax = +(subtotal * 0.18).toFixed(2);
     let payableAmount = subtotal + tax;
 
-    // Apply discount only if > 0
     if (appliedDiscount && appliedDiscount > 0) {
         payableAmount -= appliedDiscount;
     }
 
-    const addressCharge = Number(document.getElementById("selectedAddressCharge")?.value || 0);
-    const deliveryCharge = calculateDeliveryCharge(payableAmount, productsDelivery, paymentMethod, addressCharge);
-
-    const finalAmount = +(payableAmount + deliveryCharge).toFixed(2);
+const deliveryCharge = Number("<%= summary.deliveryCharge %>");
+const finalAmount = payableAmount + deliveryCharge;
 
     document.getElementById("subtotal").textContent = "Rs." + subtotal.toFixed(2);
     document.getElementById("tax").textContent = "Rs." + tax.toFixed(2);
     document.getElementById("deliveryChargeDisplay").textContent = "₹" + deliveryCharge.toFixed(2);
     document.getElementById("finalAmount").textContent = "Rs." + finalAmount.toFixed(2);
 
-    // Update coupon message
-    document.getElementById("couponMsg").textContent = appliedDiscount > 0 
-        ? `Coupon Applied: -₹${appliedDiscount}` 
-        : "";
+   const couponRow = document.getElementById("couponRow");
+const couponDiscountEl = document.getElementById("couponDiscount");
+
+if (appliedDiscount && appliedDiscount > 0) {
+    couponRow.style.display = "flex"; // show the row
+    couponDiscountEl.textContent = "-₹" + appliedDiscount.toFixed(2);
+} else {
+    couponRow.style.display = "none"; // hide if no coupon
 }
 
-// ADDRESS SELECTION
+}
+
 document.querySelectorAll("input[name='address']").forEach(radio => {
-    radio.addEventListener("change", () => {
-        document.querySelectorAll(".address-card").forEach(card => {
-            card.classList.remove("selected");
-            card.querySelector(".deliver-btn").style.display = "none";
-        });
-
-        const card = radio.closest(".address-card");
-        card.classList.add("selected");
-        card.querySelector(".deliver-btn").style.display = "block";
-
-        const extraCharge = card.querySelector('input[type="hidden"]').value;
-        document.getElementById("selectedAddressCharge").value = extraCharge;
-
-        updateTotals();
+  radio.addEventListener("change", async () => {
+    document.querySelectorAll(".address-card").forEach(card => {
+      card.classList.remove("selected");
+      card.querySelector(".deliver-btn").style.display = "none";
     });
+
+    const card = radio.closest(".address-card");
+    card.classList.add("selected");
+    card.querySelector(".deliver-btn").style.display = "block";
+
+    const addressId = radio.value;
+
+    try {
+      const res = await fetch("/checkout/recalculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addressId })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        showToast(data.message || "Failed to recalculate delivery", "error");
+        return;
+      }
+
+      document.getElementById("deliveryChargeDisplay").textContent =
+        "₹" + data.deliveryCharge.toFixed(2);
+
+      document.getElementById("finalAmount").textContent =
+        "Rs." + data.finalAmount.toFixed(2);
+
+    } catch (err) {
+      console.error(err);
+      showToast("Error updating delivery charge", "error");
+    }
+  });
 });
 
 function deliverHere(addressId) {
@@ -458,7 +582,6 @@ function proceedToPayment() {
     window.location.href = `/payment-gateway?address=${selectedAddress}`;
 }
 
-// COUPON MODAL
 function openCouponModal() {
     fetch("/coupon/available")
         .then(res => res.json())
@@ -488,7 +611,6 @@ function openCouponModal() {
 
 function closeCouponModal() { document.getElementById("couponModal").style.display = "none"; }
 
-// APPLY COUPON
 function applyCoupon(couponId) {
     fetch("/coupon/apply", {
         method: "POST",
@@ -506,40 +628,56 @@ function applyCoupon(couponId) {
         localStorage.setItem("appliedDiscount", appliedDiscount);
         updateTotals();
 
-        document.getElementById("couponMsg").textContent = `Coupon Applied: -₹${appliedDiscount}`;
         closeCouponModal();
         showToast("Coupon applied successfully!", "success");
     });
 }
 
-// UPDATE QUANTITY
-async function updateQty(productId, action) {
-    try {
-        const res = await fetch("/cart/update-quantity", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId, action })
-        });
-        const data = await res.json();
-        if (!data.success) return showToast(data.message, "error");
 
-        const item = document.querySelector(`.item-box[data-id="${productId}"]`);
-        const qtySpan = item.querySelector(".item-quantity");
+async function updateQty(productId, variantId, action) {
+    const isBuyNow = document.getElementById("buyNowProduct")?.value === productId;
 
-        if (action === "inc") qtySpan.textContent = +qtySpan.textContent + 1;
-        else if (action === "dec") {
-            if (+qtySpan.textContent > 1) qtySpan.textContent = +qtySpan.textContent - 1;
-            else item.remove();
-        }
+    const url = isBuyNow ? "/buy-now/update-quantity" : "/cart/update-quantity";
 
-        const price = parseFloat(item.querySelector("p").textContent.replace(/[^\d.]/g, ""));
-        item.querySelector(".item-total").textContent = "₹" + (price * qtySpan.textContent);
+    const payload = { action };
+    if (!isBuyNow) payload.productId = productId;
+    if (!isBuyNow && variantId) payload.variantId = variantId;
 
-        updateTotals();
-    } catch (err) { console.error(err); showToast("Something went wrong", "error"); }
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+        showToast(data.message || "Failed to update quantity", "error");
+        return;
+    }
+
+    const item = document.querySelector(`.item-box[data-id="${productId}"][data-variant="${variantId || ''}"]`);
+    if (!item) return;
+
+      const qtySpan = item.querySelector(".item-quantity");
+  qtySpan.textContent = data.quantity;
+  
+    let qty = isBuyNow ? data.quantity : parseInt(item.querySelector(".item-quantity").textContent);
+    if (!isBuyNow) {
+        if (action === "inc") qty++;
+        if (action === "dec" && qty > 1) qty--;
+    }
+
+    if (!isBuyNow) {
+        item.querySelector(".item-quantity").textContent = qty;
+    }
+
+    const price = parseFloat(item.dataset.price);
+    item.querySelector(".item-total").textContent = "₹" + (price * qty).toFixed(2);
+
+    appliedDiscount = data.summary.couponDiscount || 0;
+    updateTotals();
 }
 
-// REMOVE ITEM
 async function removeItem(productId) {
     try {
         const res = await fetch("/cart/remove", {
@@ -556,8 +694,6 @@ async function removeItem(productId) {
         showToast(data.message, "success");
     } catch (err) { console.error(err); showToast("Something went wrong", "error"); }
 }
-
-
 </script>
 
 

@@ -6,6 +6,7 @@ const variantSchema = new mongoose.Schema({
   sku: { type: String, trim: true },
   price: { type: Number, required: true },
   stock: { type: Number, default: 0 },
+    finalPrice: { type: Number }, 
   image: { type: String, trim: true },
 });
 
@@ -15,11 +16,6 @@ const productOfferSchema = new mongoose.Schema({
   endDate: { type: Date },
   isActive: { type: Boolean, default: false },
 });
-
-// const categoryOfferSchema = new mongoose.Schema({
-//   percentage: { type: Number, default: 0 },
-//   isActive: { type: Boolean, default: false },
-// });
 
 const activeOfferSchema = new mongoose.Schema({
   type: { type: String, enum: ["product", "category", null], default: null },
@@ -49,15 +45,6 @@ const productSchema = new mongoose.Schema(
     productOffer: productOfferSchema,
     activeOffer: activeOfferSchema,
     coupons: [{ type: mongoose.Schema.Types.ObjectId, ref: "Coupon" }],
-    reviews: [
-      {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        userName: String,
-        rating: Number,
-        comment: String,
-        date: { type: Date, default: Date.now },
-      },
-    ],
 
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },

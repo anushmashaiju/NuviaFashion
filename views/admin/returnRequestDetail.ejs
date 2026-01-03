@@ -14,6 +14,25 @@
   .box h4 { margin-bottom: 12px; color: #ff1476; font-size: 18px; }
   .return-images img { width: 120px; margin: 5px; border-radius: 8px; }
   .btn-action { margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px; }
+  @media (max-width: 992px) {
+    .container { margin: 80px 15px 20px 15px; width: auto; }
+    .order-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .items { flex-direction: column; }
+    .item { flex-direction: column; align-items: flex-start; }
+    .box { width: 100%; }
+    .btn-action { flex-direction: column; align-items: stretch; }
+    .btn-action button { width: 100%; }
+  }
+
+  @media (max-width: 576px) {
+    .order-id { font-size: 18px; }
+    .order-status { font-size: 16px; }
+    .section-title { font-size: 16px; }
+    .item img { width: 70px; height: 70px; }
+    .return-images img { width: 90px; }
+    .box h4 { font-size: 16px; }
+    .btn-action button { font-size: 14px; padding: 10px; }
+  }
 </style>
 
 <div class="container">
@@ -78,24 +97,50 @@
              </ul> 
             </div>
     <div class="btn-action">
-      <button onclick="approveReturn('<%= order.orderID %>')" class="btn btn-success btn-lg">Approve</button>
+     <button onclick="approveReturn('<%= order.orderID %>', '<%= order.returnReason %>')" class="btn btn-success btn-lg">
+  Approve
+</button>
+
       <button onclick="rejectReturn('<%= order.orderID %>')" class="btn btn-danger btn-lg">Reject</button>
     </div>
   </div>
 </div>
 
 <script>
-function approveReturn(orderID) {
- fetch(`/admin/return-requests/approve/${orderID}`, {
-  method: "POST",
-  credentials: "same-origin"
-})
-
+function approveReturn(orderID, reason) {
+  Swal.fire({
+    title: "Approve Return",
+    html: `
+      <p><strong>Customer Reason:</strong></p>
+      <p>${reason || "No reason provided"}</p>
+      <hr>
+      <p>Should this item be restocked?</p>
+    `,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Restock",
+    cancelButtonText: "Do NOT Restock",
+    reverseButtons: true
+  }).then(result => {
+    fetch(`/admin/return-requests/approve/${orderID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restock: result.isConfirmed
+      }),
+      credentials: "same-origin"
+    })
     .then(r => r.json())
     .then(data => {
-      Swal.fire(data.success ? "Success" : "Error", data.message, data.success ? "success" : "error")
-        .then(() => location.reload());
+      Swal.fire(
+        data.success ? "Success" : "Error",
+        data.message,
+        data.success ? "success" : "error"
+      ).then(() => {
+        if (data.success) window.location.href = "/admin/orders";
+      });
     });
+  });
 }
 
 function rejectReturn(orderID) {
@@ -107,24 +152,24 @@ function rejectReturn(orderID) {
     inputValidator: v => !v && "Reason is required"
   }).then(result => {
     if(result.isConfirmed){
-    fetch(`/admin/return-requests/reject/${orderID}`, {
-  method: "POST",
-  headers: {"Content-Type":"application/json"},
-  body: JSON.stringify({ reason: result.value }),
-  credentials: "same-origin"
-})
-
-      .then(r=>r.json())
-      .then(data=>{
-        Swal.fire(data.success ? "Rejected" : "Error", data.message, data.success ? "success":"error")
-          .then(()=> location.reload());
+      fetch(`/admin/return-requests/reject/${orderID}`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ reason: result.value }),
+        credentials: "same-origin"
+      })
+      .then(r => r.json())
+      .then(data => {
+        Swal.fire(
+          data.success ? "Rejected" : "Error",
+          data.message,
+          data.success ? "success" : "error"
+        ).then(() => {
+          // Redirect to Orders page after rejection
+          if(data.success) window.location.href = '/admin/orders';
+        });
       });
     }
   });
 }
 </script>
-
-<%- include("../partials/adminFooter") %>
-
-
-
