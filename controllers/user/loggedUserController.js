@@ -3,9 +3,10 @@ import bcrypt from "bcrypt";
 import { generateOtp, sendVerificationEmail } from "../../utils/otpHelper.js";
 import Address from "../../models/addressModel.js";
 import STATUS from "../../utils/statusCodes.js";
+import MESSAGES from "../../utils/messages.js";
 
 // Render User Profile Page by logged user
-export const getUserProfile = async (req, res) => {
+const getUserProfile = async (req, res) => {
   try {
     if (!req.session.user || !req.session.user.id) {
       return res.status(STATUS.UNAUTHORIZED).redirect("/login");
@@ -28,7 +29,7 @@ export const getUserProfile = async (req, res) => {
 };
 
 // Render user edit profile page by logged user
-export const getEditUserProfile = async (req, res) => {
+const getEditUserProfile = async (req, res) => {
   try {
     if (!req.session.user || !req.session.user.id) {
       return res.status(STATUS.UNAUTHORIZED).redirect("/login");
@@ -52,7 +53,7 @@ export const getEditUserProfile = async (req, res) => {
 };
 
 // EDIT USER PROFILE by logged user
-export const editUserProfile = async (req, res) => {
+const editUserProfile = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
@@ -83,7 +84,7 @@ export const editUserProfile = async (req, res) => {
       return res.status(STATUS.CONFLICT).render("user/editProfile", {
         title: "Edit Profile",
         user: { ...user.toObject(), name, email, mobile },
-        errorMessage: "Email already in use",
+        errorMessage: MESSAGES.EMAIL_ALREADY_IN_USE,
         errorField: "email",
         successMessage: null
       });
@@ -124,7 +125,7 @@ export const editUserProfile = async (req, res) => {
 };
 
 // VERIFY EMAIL OTP DURING EDIT PROFILE by logged user
-export const verifyEditProfileOtp = async (req, res) => {
+const verifyEditProfileOtp = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
@@ -140,7 +141,7 @@ export const verifyEditProfileOtp = async (req, res) => {
     if (enteredOtp !== savedOtp) {
       return res.status(STATUS.BAD_REQUEST).render("user/verifyEmailEdit", {
         email: data.email,
-        errorMessage: "Invalid OTP"
+        errorMessage: MESSAGES.OTP_INVALID
       });
     }
 
@@ -164,7 +165,7 @@ export const verifyEditProfileOtp = async (req, res) => {
 };
 
 // Resend Edit Email OTP by logged user
-export const resendEditEmailOtp = async (req, res) => {
+const resendEditEmailOtp = async (req, res) => {
   try {
     const data = req.session.tempEditData;
     if (!data) return res.status(STATUS.BAD_REQUEST).redirect("/user/edit-profile");
@@ -177,7 +178,7 @@ export const resendEditEmailOtp = async (req, res) => {
 
     return res.status(STATUS.SUCCESS).render("user/verifyEmailEdit", {
       email: data.email,
-      errorMessage: "A new OTP has been sent"
+      errorMessage: MESSAGES.OTP_SEND
     });
   } catch (error) {
     console.error("Resend Edit OTP Error:", error);
@@ -186,7 +187,7 @@ export const resendEditEmailOtp = async (req, res) => {
 };
 
 // Render change password page by logged user
-export const getChangePasswordPage = (req, res) => {
+const getChangePasswordPage = (req, res) => {
   const successMessage = req.session.passwordSuccess || null;
   delete req.session.passwordSuccess;
 
@@ -199,7 +200,7 @@ export const getChangePasswordPage = (req, res) => {
 };
 
 // Change password page by logged user
-export const changePasswordLogged = async (req, res) => {
+const changePasswordLogged = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const userId = req.session.user?.id;
@@ -211,9 +212,13 @@ export const changePasswordLogged = async (req, res) => {
       confirmPassword: ""
     };
 
-    if (!currentPassword) errors.currentPassword = "Current password is required.";
-    if (!newPassword) errors.newPassword = "New password is required.";
-    if (!confirmPassword) errors.confirmPassword = "Please confirm the password.";
+
+    if (!currentPassword)
+      errors.currentPassword = MESSAGES.CURRENT_PASSWORD_REQUIRED;
+    if (!newPassword)
+      errors.newPassword = MESSAGES.NEW_PASSWORD_REQUIRED;
+    if (!confirmPassword)
+      errors.confirmPassword = MESSAGES.CONFIRM_PASSWORD_REQUIRED;
 
     if (errors.currentPassword || errors.newPassword || errors.confirmPassword) {
       return res.status(STATUS.BAD_REQUEST).render("user/profileChangePassword", {
@@ -226,7 +231,8 @@ export const changePasswordLogged = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user.password) {
-      errors.currentPassword = "You cannot change password for Google login accounts.";
+      errors.currentPassword = MESSAGES.GOOGLE_ACCOUNT_PASSWORD_CHANGE_NOT_ALLOWED;
+
       return res.status(STATUS.FORBIDDEN).render("user/profileChangePassword", {
         errors,
         passwordSuccess: null,
@@ -236,7 +242,8 @@ export const changePasswordLogged = async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      errors.currentPassword = "Current password is incorrect.";
+      errors.currentPassword = MESSAGES.CURRENT_PASSWORD_INCORRECT;
+
       return res.status(STATUS.BAD_REQUEST).render("user/profileChangePassword", {
         errors,
         passwordSuccess: null,
@@ -245,7 +252,8 @@ export const changePasswordLogged = async (req, res) => {
     }
 
     if (newPassword !== confirmPassword) {
-      errors.confirmPassword = "Passwords do not match.";
+      errors.confirmPassword = MESSAGES.PASSWORD_MISMATCH;
+
       return res.status(STATUS.BAD_REQUEST).render("user/profileChangePassword", {
         errors,
         passwordSuccess: null,
@@ -256,11 +264,22 @@ export const changePasswordLogged = async (req, res) => {
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    req.session.passwordSuccess = "Password changed successfully!";
+    req.session.passwordSuccess = MESSAGES.PASSWORD_CHANGED_SUCCESS;
+
     return res.status(STATUS.SUCCESS).redirect("/user/change-password");
 
   } catch (error) {
     console.error("Change Password Error:", error);
     return res.status(STATUS.SERVER_ERROR).redirect("/error");
   }
+};
+
+export {
+  getUserProfile,
+  getEditUserProfile,
+  editUserProfile,
+  verifyEditProfileOtp,
+  resendEditEmailOtp,
+  getChangePasswordPage,
+  changePasswordLogged
 };

@@ -3,7 +3,7 @@ import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
 
 // Render All Categories 
-export const getCategories = async (req, res) => {
+const getCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
@@ -22,7 +22,7 @@ export const getCategories = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean(); // ✅ IMPORTANT
+      .lean();
 
     const now = new Date();
 
@@ -41,7 +41,7 @@ export const getCategories = async (req, res) => {
 
       return {
         ...cat,
-        offerActive   // ✅ dynamic field
+        offerActive
       };
     });
 
@@ -55,15 +55,15 @@ export const getCategories = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Server Error");
+    res.status(STATUS.SERVER_ERROR).send("Server Error");
   }
 };
 
 
 // Render Add Category Page
-export const getAddCategoryPage = (req, res) => {
+const getAddCategoryPage = (req, res) => {
   try {
-    res.status(STATUS.SUCCESS).render("admin/addCategory", { 
+    res.status(STATUS.SUCCESS).render("admin/addCategory", {
       title: "Add Category",
       admin: req.session.user,
       formData: {
@@ -81,7 +81,7 @@ export const getAddCategoryPage = (req, res) => {
 };
 
 // Add New Category
-export const addCategory = async (req, res) => {
+const addCategory = async (req, res) => {
   try {
     const { categoryName, description, categoryOffer, categoryOfferStart, categoryOfferEnd } = req.body;
     const thumbnail = req.thumbnailUrl;
@@ -150,7 +150,7 @@ export const addCategory = async (req, res) => {
 };
 
 // Render Edit Category Page
-export const getEditCategoryPage = async (req, res) => {
+const getEditCategoryPage = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -180,7 +180,7 @@ export const getEditCategoryPage = async (req, res) => {
 };
 
 // Update Category 
-export const editCategory = async (req, res) => {
+const editCategory = async (req, res) => {
   try {
     const { categoryName, description, categoryOffer, categoryOfferStart, categoryOfferEnd } = req.body;
     const categoryId = req.params.id;
@@ -252,7 +252,7 @@ export const editCategory = async (req, res) => {
 };
 
 // Soft Delete Category 
-export const deleteCategory = async (req, res) => {
+const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const category = await Category.findByIdAndUpdate(id, { isActive: false });
@@ -267,7 +267,7 @@ export const deleteCategory = async (req, res) => {
 };
 
 // Toggle Listed/Unlisted 
-export const toggleCategory = async (req, res) => {
+const toggleCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const category = await Category.findById(id);
@@ -283,4 +283,17 @@ export const toggleCategory = async (req, res) => {
     console.error("Error toggling category:", error);
     res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
+};
+
+export {
+  getCategories,
+
+  getAddCategoryPage,
+  addCategory,
+
+  getEditCategoryPage,
+  editCategory,
+
+  deleteCategory,
+  toggleCategory
 };

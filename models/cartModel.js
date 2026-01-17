@@ -20,7 +20,7 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-    isBuyNow: {
+  isBuyNow: {
     type: Boolean,
     default: false
   }

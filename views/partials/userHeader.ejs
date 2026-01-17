@@ -203,7 +203,21 @@
             display: none;
         }
 
-       
+       .profile-section .btn {
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: #f76f8f;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.profile-section .btn:hover {
+    background: #ffadc5;
+}
+
         @media (max-width: 991px) {
 
             .hamburger {
@@ -335,28 +349,29 @@
                             </span>
                         </a>
                         <div class="profile-section">
-                            <div class="profile-dropdown">
-                                <a href="#" class="profile-icon">
-                                    <i class="fa fa-user"></i>
-                                </a>
-                                <ul class="dropdown">
-                                    <li><a href="/userProfile">User Info</a></li>
-                                    <li><a href="/user/addresses">Address</a></li>
-                                    <li><a href="/order/list">Orders</a></li>
-                                    <li><a href="/coupons">Coupon</a></li>
-                                    <li><a href="/wallet">Wallet</a></li>
-                                    <li class="<%= activePage === 'referral' ? 'active' : '' %>">
-                                        <a href="/refer">Refer & Earn</a></li>                                 
-                                    <li><a href="/logout">Logout</a></li>
-                                </ul>
-                            </div>
+    <% if (user) { %>
+        <div class="profile-dropdown">
+            <a href="#" class="profile-icon">
+                <i class="fa fa-user"></i>
+            </a>
+            <ul class="dropdown">
+                <li><a href="/userProfile">User Info</a></li>
+                <li><a href="/user/addresses">Address</a></li>
+                <li><a href="/order/list">Orders</a></li>
+                <li><a href="/coupons">Coupon</a></li>
+                <li><a href="/wallet">Wallet</a></li>
+                <li class="<%= activePage === 'referral' ? 'active' : '' %>">
+                    <a href="/refer">Refer & Earn</a>
+                </li>                                 
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+        <span class="user-name"><%= user.name %></span>
+    <% } else { %>
+        <a href="/login" class="btn btn-sm ">Login</a>
+    <% } %>
+</div>
 
-                            <% if (user) { %>
-                                <span class="user-name">
-                                    <%= user.name %>
-                                </span>
-                                <% } %>
-                        </div>
 
                         <div class="hamburger" id="hamburger">
                             <i class="fa fa-bars"></i>

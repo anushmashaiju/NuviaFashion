@@ -1,13 +1,13 @@
-import Category from "../models/categoryModel.js"; 
+import Category from "../models/categoryModel.js";
 import Cart from "../models/cartModel.js";
 import Wishlist from "../models/wishlistModel.js";
 
 // Middleware to fetch categories for header
-export const fetchActiveCategories = async (req, res, next) => {
+const fetchActiveCategories = async (req, res, next) => {
   try {
     const categories = await Category.find({ isListed: true, isActive: true })
-      .sort({ categoryName: 1 }); 
-    res.locals.headerCategories = categories; 
+      .sort({ categoryName: 1 });
+    res.locals.headerCategories = categories;
     next();
   } catch (error) {
     console.error(" Error fetching categories for header:", error);
@@ -17,9 +17,9 @@ export const fetchActiveCategories = async (req, res, next) => {
 };
 
 // Product validation middleware
-export const validateProduct = async (req, res, next) => {
+const validateProduct = async (req, res, next) => {
   const { name, description, brand, category, price, stock } = req.body;
-  const thumbnail = req.thumbnailUrl; 
+  const thumbnail = req.thumbnailUrl;
   const errors = [];
 
   if (!name || name.trim().length < 3) errors.push("Name must be at least 3 characters");
@@ -34,10 +34,10 @@ export const validateProduct = async (req, res, next) => {
   if (errors.length > 0) {
     const categories = await Category.find({ isListed: true, isActive: true }).sort({ categoryName: 1 });
 
-    return res.status(400).render("admin/addProduct", {
+    return res.status(STATUS.BAD_REQUEST).render("admin/addProduct", {
       title: "Add Product",
       admin: req.session.user,
-      categories,         
+      categories,
       errorMessage: errors.join(", "),
       inputData: req.body,
     });
@@ -47,7 +47,7 @@ export const validateProduct = async (req, res, next) => {
 };
 
 //user counts
-export const addUserCounts = async (req, res, next) => {
+const addUserCounts = async (req, res, next) => {
   try {
     if (!req.session.user) {
       res.locals.cartCount = 0;
@@ -69,3 +69,5 @@ export const addUserCounts = async (req, res, next) => {
     next();
   }
 };
+
+export { fetchActiveCategories, validateProduct, addUserCounts };

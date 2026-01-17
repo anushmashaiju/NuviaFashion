@@ -93,7 +93,7 @@
           <th>Name</th>
           <th>Qty</th>
           <th>Price</th>
-          <th>Subtotal</th>
+          <th>Final Price</th>
         </tr>
       </thead>
       <tbody>
@@ -101,7 +101,7 @@
           <tr>
             <td><%= item.productName %></td>
             <td><%= item.quantity %></td>
-            <td>Rs.<%= item.finalPrice %></td>
+            <td>Rs.<%= item.basePrice %></td>
             <td>Rs.<%= item.subtotal %></td>
           </tr>
         <% }) %>

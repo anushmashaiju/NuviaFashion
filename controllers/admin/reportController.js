@@ -4,234 +4,220 @@ import excelJS from "exceljs";
 import ejs from "ejs";
 import path from "path";
 import STATUS from "../../utils/statusCodes.js";
+import MESSAGES from "../../utils/messages.js";
 
+const normalizeOrder = (order) => {
+  let debit = 0;
+  let credit = 0;
 
-// GET SALES REPORT PAGE
-export const getSalesReport = async (req, res) => {
-  try {
-    const { filter, fromDate, toDate, page = 1 } = req.query;
-    const limit = 10;
+  if (order.paymentStatus === "success") {
+    debit = order.totalPrice || 0;
+  }
 
-   let query = {
-  paymentStatus: "success",
-  orderStatus: { $ne: "Cancelled" }
+  const itemRefundTotal = (order.items || []).reduce(
+    (sum, item) => sum + (item.refundAmount || 0),
+    0
+  );
+
+  const orderRefund = order.refundAmount || 0;
+
+  credit = Number(Math.max(itemRefundTotal, orderRefund).toFixed(2));
+
+  return {
+    ...order.toObject(),
+    debit: Number(debit.toFixed(2)),
+    credit,
+    net: Number((debit - credit).toFixed(2))
+  };
 };
 
+// GET SALES REPORT PAGE
+const getSalesReport = async (req, res) => {
+  try {
+    const { filter, fromDate, toDate, page = 1 } = req.query;
+    const limit = 50;
+
+    const query = {
+      paymentStatus: { $in: ["success", "failed"] }
+    };
 
     if (filter === "daily") {
       query.createdAt = {
-        $gte: new Date(new Date().setHours(0, 0, 0)),
-        $lte: new Date(new Date().setHours(23, 59, 59)),
+        $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date().setHours(23, 59, 59, 999)),
       };
-    } else if (filter === "weekly") {
+    }
+
+    if (filter === "weekly") {
       const now = new Date();
       const firstDay = new Date(now.setDate(now.getDate() - now.getDay()));
-      const lastDay = new Date(now.setDate(firstDay.getDate() + 6));
+      const lastDay = new Date(firstDay);
+      lastDay.setDate(firstDay.getDate() + 6);
       query.createdAt = { $gte: firstDay, $lte: lastDay };
-    } else if (filter === "monthly") {
+    }
+
+    if (filter === "monthly") {
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
       query.createdAt = { $gte: firstDay, $lte: lastDay };
     }
 
     if (fromDate && toDate) {
       query.createdAt = {
         $gte: new Date(fromDate),
-        $lte: new Date(new Date(toDate).setHours(23, 59, 59)),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)),
       };
     }
 
-    const orders = await Order.find(query)
+    const rawOrders = await Order.find(query)
       .populate("user_id", "name")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
- const totalOrders = await Order.countDocuments(query);
+    const orders = rawOrders.map(normalizeOrder);
 
+    const totalOrders = await Order.countDocuments(query);
 
-const summary = {
-  totalOrderCount: totalOrders,
+    const summary = {
+      totalOrderCount: totalOrders,
 
-  totalAmount: orders.reduce((a, o) => a + o.subtotal, 0),
+      subtotal: orders.reduce((a, o) => a + (o.subtotal || 0), 0),
+      totalDiscount: orders.reduce((a, o) => a + (o.couponDiscount || 0), 0),
+      totalTax: orders.reduce((a, o) => a + (o.tax || 0), 0),
+      deliveryCharge: orders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
 
-  totalDiscount: orders.reduce(
-    (a, o) => a + (o.couponDiscount || 0),
-    0
-  ),
+      totalDebit: orders.reduce((a, o) => a + o.debit, 0),
+      totalCredit: orders.reduce((a, o) => a + o.credit, 0),
 
-  totalTax: orders.reduce(
-    (a, o) => a + (o.tax || 0),
-    0
-  ),
+      netRevenue: orders.reduce((a, o) => a + o.net, 0),
+      totalRefundedToWallet: orders.reduce((a, o) => a + (o.refundAmount || 0), 0)
+    };
 
-  deliveryCharge: orders.reduce(
-    (a, o) => a + (o.deliveryCharge || 0),
-    0
-  ),
+    const allRawOrders = await Order.find(query);
+    const allOrders = allRawOrders.map(normalizeOrder);
 
-  finalAmount: orders.reduce(
-    (a, o) => a + o.totalPrice,
-    0
-  )
-};
+    const grandTotal = {
+      subtotal: allOrders.reduce((a, o) => a + (o.subtotal || 0), 0),
+      totalDiscount: allOrders.reduce((a, o) => a + (o.couponDiscount || 0), 0),
+      totalTax: allOrders.reduce((a, o) => a + (o.tax || 0), 0),
+      deliveryCharge: allOrders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
 
-const allOrders = await Order.find(query);
-const grandTotal = {
-  totalAmount: allOrders.reduce((a, o) => a + o.subtotal, 0),
+      totalDebit: allOrders.reduce((a, o) => a + o.debit, 0),
+      totalCredit: allOrders.reduce((a, o) => a + o.credit, 0),
 
-  totalDiscount: allOrders.reduce(
-    (a, o) => a + (o.couponDiscount || 0),
-    0
-  ),
-
-  totalTax: allOrders.reduce(
-    (a, o) => a + (o.tax || 0),
-    0
-  ),
-
-  deliveryCharge: allOrders.reduce(
-    (a, o) => a + (o.deliveryCharge || 0),
-    0
-  ),
-
-  finalAmount: allOrders.reduce(
-    (a, o) => a + o.totalPrice,
-    0
-  ),
-};
+      netRevenue: allOrders.reduce((a, o) => a + o.net, 0),
+      totalRefundedToWallet: allOrders.reduce(
+        (a, o) => a + (o.refundAmount || 0),
+        0
+      )
+    };
 
     return res.status(STATUS.SUCCESS).render("admin/salesReport", {
       orders,
-      summary,      
-      grandTotal,   
+      summary,
+      grandTotal,
       filters: req.query,
       pagination: {
         currentPage: Number(page),
         totalPages: Math.ceil(totalOrders / limit),
       },
     });
+
   } catch (error) {
     console.error("Sales Report Error:", error);
-    return res.status(STATUS.SERVER_ERROR).send("Internal Server Error");
+    return res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
-//  DOWNLOAD PDF 
-export const downloadSalesReportPDF = async (req, res) => {
+const downloadSalesReportPDF = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-   let query = {
-  paymentStatus: "success",
-  orderStatus: { $ne: "Cancelled" }
-};
-    
+
+    const query = { paymentStatus: { $in: ["success", "failed"] } };
     if (fromDate && toDate) {
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-      end.setHours(23, 59, 59);
-      query.createdAt = { $gte: start, $lte: end };
+      query.createdAt = {
+        $gte: new Date(fromDate),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59, 999))
+      };
     }
 
-    const orders = await Order.find(query).populate("user_id", "name");
+    const allRawOrders = await Order.find(query).populate("user_id", "name");
+    const allOrders = allRawOrders.map(normalizeOrder);
 
-   const grandTotal = {
-  totalOrders: orders.length,
+    const grandTotal = {
+      totalOrders: allOrders.length,
+      subtotal: allOrders.reduce((a, o) => a + (o.subtotal || 0), 0),
+      totalDiscount: allOrders.reduce((a, o) => a + (o.couponDiscount || 0), 0),
+      totalTax: allOrders.reduce((a, o) => a + (o.tax || 0), 0),
+      deliveryCharge: allOrders.reduce((a, o) => a + (o.deliveryCharge || 0), 0),
+      totalDebit: allOrders.reduce((a, o) => a + o.debit, 0),
+      totalCredit: allOrders.reduce((a, o) => a + o.credit, 0),
+      netRevenue: allOrders.reduce((a, o) => a + o.net, 0),
+      totalRefundedToWallet: allOrders.reduce((a, o) => a + (o.refundAmount || 0), 0)
+    };
 
-  totalAmount: orders.reduce((a, o) => a + o.subtotal, 0),
+    const filePath = path.join(process.cwd(), "views", "admin", "pdfSalesReport.ejs");
+    const html = await ejs.renderFile(filePath, { orders: allOrders, grandTotal });
 
-  totalDiscount: orders.reduce(
-    (a, o) => a + (o.couponDiscount || 0),
-    0
-  ),
-
-  totalTax: orders.reduce(
-    (a, o) => a + (o.tax || 0),
-    0
-  ),
-
-  deliveryCharge: orders.reduce(
-    (a, o) => a + (o.deliveryCharge || 0),
-    0
-  ),
-
-  finalAmount: orders.reduce(
-    (a, o) => a + o.totalPrice,
-    0
-  )
-};
-
-    const filePath = path.join(
-      process.cwd(),
-      "views",
-      "admin",
-      "pdfSalesReport.ejs"
-    );
-
-    const html = await ejs.renderFile(filePath, { orders, grandTotal });
-
-    const options = { format: "A4" };
-    pdf.create(html, options).toStream((err, stream) => {
-      if (err)
-        return res
-          .status(STATUS.SERVER_ERROR)
-          .send("PDF Generation Error");
+    pdf.create(html, { format: "A4" }).toStream((err, stream) => {
+      if (err) return res.status(STATUS.SERVER_ERROR).send(MESSAGES.PDF_GENERATION_ERROR);
 
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=sales-report.pdf"
-      );
+      res.setHeader("Content-Disposition", "attachment; filename=sales-report.pdf");
       stream.pipe(res);
     });
+
   } catch (error) {
     console.error(error);
-    return res.status(STATUS.SERVER_ERROR).send("PDF Download Failed");
+    return res.status(STATUS.SERVER_ERROR).send(MESSAGES.PDF_DOWNLOAD_FAILED);
   }
 };
 
-//  DOWNLOAD EXCEL
-export const downloadSalesReportExcel = async (req, res) => {
+// DOWNLOAD EXCEL
+const downloadSalesReportExcel = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
 
-    const query = {};
+    const query = {
+      paymentStatus: { $in: ["success", "failed"] }
+    };
+
     if (fromDate && toDate) {
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-      end.setHours(23, 59, 59);
-      query.createdAt = { $gte: start, $lte: end };
+      query.createdAt = {
+        $gte: new Date(fromDate),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59, 999))
+      };
     }
 
-    const orders = await Order.find(query).populate("user_id", "name");
+    const rawOrders = await Order.find(query).populate("user_id", "name");
+    const orders = rawOrders.map(normalizeOrder);
 
     const workbook = new excelJS.Workbook();
     const sheet = workbook.addWorksheet("Sales Report");
 
     sheet.columns = [
-  { header: "Date", key: "date", width: 15 },
-  { header: "Order ID", key: "orderId", width: 20 },
-  { header: "Customer", key: "customer", width: 25 },
-  { header: "Subtotal", key: "subtotal", width: 15 },
-  { header: "Discount", key: "discount", width: 15 },
-  { header: "Tax", key: "tax", width: 15 },
-  { header: "Delivery Charge", key: "deliveryCharge", width: 18 },
-  { header: "Final Amount", key: "final", width: 18 },
-];
+      { header: "Date", key: "date", width: 15 },
+      { header: "Order ID", key: "orderId", width: 20 },
+      { header: "Customer", key: "customer", width: 25 },
+      { header: "Debit", key: "debit", width: 15 },
+      { header: "Credit", key: "credit", width: 15 },
+      { header: "Net Revenue", key: "net", width: 18 },
+      { header: "Status", key: "status", width: 18 }
+    ];
 
-    orders.forEach((order) => {
-  sheet.addRow({
-    date: order.createdAt.toLocaleDateString(),
-    orderId: order.orderID,
-    customer: order.user_id?.name || "N/A",
-    subtotal: order.subtotal.toFixed(2),
-    discount: (order.couponDiscount || 0).toFixed(2),
-    tax: (order.tax || 0).toFixed(2),
-    deliveryCharge: (order.deliveryCharge || 0).toFixed(2),
-    final: order.totalPrice.toFixed(2),
-  });
-});
+    orders.forEach(order => {
+      sheet.addRow({
+        date: new Date(order.createdAt).toLocaleDateString(),
+        orderId: order.orderID,
+        customer: order.user_id?.name || "N/A",
+        debit: Number(order.debit || 0).toFixed(2),
+        credit: Number(order.credit || 0).toFixed(2),
+        net: order.net.toFixed(2),
+        status: order.orderStatus
+      });
+    });
 
     res.setHeader(
       "Content-Type",
@@ -243,9 +229,16 @@ export const downloadSalesReportExcel = async (req, res) => {
     );
 
     await workbook.xlsx.write(res);
-    return res.status(STATUS.SUCCESS).end();
+    res.end();
+
   } catch (error) {
     console.error(error);
-    return res.status(STATUS.SERVER_ERROR).send("Excel Download Failed");
+    return res.status(STATUS.SERVER_ERROR).send(MESSAGES.EXCEL_DOWNLOAD_FAILED);
   }
+};
+
+export {
+  getSalesReport,
+  downloadSalesReportPDF,
+  downloadSalesReportExcel
 };

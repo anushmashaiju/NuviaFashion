@@ -2,9 +2,34 @@ import User from "../../models/userModel.js";
 import Order from "../../models/orderModel.js";
 import STATUS from "../../utils/statusCodes.js";
 
+const normalizeOrder = (order) => {
+  let debit = 0;
+  let credit = 0;
+
+  const refundedStatuses = [
+    "Cancelled",
+    "Returned",
+    "Return Approved"
+  ];
+
+  const isRefunded = refundedStatuses.includes(order.orderStatus);
+
+  if (isRefunded) {
+    credit = order.refundAmount || order.totalPrice || 0;
+  } else if (order.paymentStatus === "success") {
+    debit = order.totalPrice || 0;
+  }
+
+  return {
+    ...order.toObject(),
+    debit,
+    credit,
+    net: debit - credit
+  };
+};
 
 // Get admin dashboard
-export const getAdminDashboard = async (req, res) => {
+const getAdminDashboard = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({
       role: "user",
@@ -12,10 +37,8 @@ export const getAdminDashboard = async (req, res) => {
     });
 
     const orderQuery = {
-      paymentStatus: "success",
-      orderStatus: { $ne: "Cancelled" }
+      paymentStatus: { $in: ["success", "failed"] }
     };
-
     const totalOrders = await Order.countDocuments(orderQuery);
     const successfulOrders = await Order.find(orderQuery);
 
@@ -46,13 +69,27 @@ export const getAdminDashboard = async (req, res) => {
       )
     };
 
-    const totalRevenue = grandTotal.finalAmount;
+    const allOrders = await Order.find({
+      paymentStatus: { $in: ["success", "failed"] }
+    });
 
+    const normalizedOrders = allOrders.map(normalizeOrder);
+
+    const totalRevenue = normalizedOrders.reduce(
+      (sum, o) => sum + o.net,
+      0
+    );
     const monthlyRevenue = Array(12).fill(0);
 
     successfulOrders.forEach(order => {
       const month = new Date(order.createdAt).getMonth();
-      monthlyRevenue[month] += order.totalPrice;
+      const monthlyRevenue = Array(12).fill(0);
+
+      normalizedOrders.forEach(order => {
+        const month = new Date(order.createdAt).getMonth();
+        monthlyRevenue[month] += order.net;
+      });
+
     });
 
     const statusCounts = {
@@ -61,7 +98,6 @@ export const getAdminDashboard = async (req, res) => {
       Cancelled: 0
     };
 
-    const allOrders = await Order.find({});
 
     allOrders.forEach(order => {
       if (order.orderStatus === "Delivered") {
@@ -92,7 +128,7 @@ export const getAdminDashboard = async (req, res) => {
 
 
 //revenue status
-export const getRevenueStats = async (req, res) => {
+const getRevenueStats = async (req, res) => {
   try {
     const { filter } = req.query;
 
@@ -102,7 +138,7 @@ export const getRevenueStats = async (req, res) => {
     if (filter === "yearly") {
       groupStage = {
         _id: { year: { $year: "$createdAt" } },
-        revenue: { $sum: "$netRevenue" }
+        revenue: { $sum: "$net" }
       };
       sortStage = { "_id.year": 1 };
     }
@@ -113,7 +149,7 @@ export const getRevenueStats = async (req, res) => {
           year: { $year: "$createdAt" },
           month: { $month: "$createdAt" }
         },
-        revenue: { $sum: "$netRevenue" }
+        revenue: { $sum: "$net" }
       };
       sortStage = { "_id.year": 1, "_id.month": 1 };
     }
@@ -121,39 +157,65 @@ export const getRevenueStats = async (req, res) => {
     if (filter === "weekly") {
       groupStage = {
         _id: { week: { $isoWeek: "$createdAt" } },
-
-        revenue: { $sum: "$netRevenue" }
+        revenue: { $sum: "$net" }
       };
       sortStage = { "_id.week": 1 };
     }
 
     const data = await Order.aggregate([
-     { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
+      {
+        $match: {
+          paymentStatus: { $in: ["success", "failed"] }
+        }
+      },
 
       {
         $addFields: {
-          netRevenue: {
-            $subtract: [
+          debit: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$paymentStatus", "success"] },
+                  { $not: [{ $in: ["$orderStatus", ["Cancelled", "Returned", "Return Approved"]] }] }
+                ]
+              },
               "$totalPrice",
-              { $add: ["$couponDiscount", "$walletUsed"] }
+              0
+            ]
+          },
+
+          credit: {
+            $cond: [
+              { $in: ["$orderStatus", ["Cancelled", "Returned", "Return Approved"]] },
+              { $ifNull: ["$refundAmount", "$totalPrice"] },
+              0
             ]
           }
         }
       },
+
+      {
+        $addFields: {
+          net: { $subtract: ["$debit", "$credit"] }
+        }
+      },
+
       { $group: groupStage },
       { $sort: sortStage }
     ]);
 
     res.json({ success: true, data });
+
   } catch (err) {
     res.status(STATUS.SERVER_ERROR).json({ success: false });
   }
 };
 
-export const getBestSellingCategories = async (req, res) => {
+
+const getBestSellingCategories = async (req, res) => {
   try {
     const data = await Order.aggregate([
-   { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
+      { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
 
       { $unwind: "$items" },
 
@@ -196,10 +258,10 @@ export const getBestSellingCategories = async (req, res) => {
 };
 
 
-export const getBestSellingBrands = async (req, res) => {
+const getBestSellingBrands = async (req, res) => {
   try {
     const data = await Order.aggregate([
-    { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
+      { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
 
       { $unwind: "$items" },
 
@@ -230,10 +292,10 @@ export const getBestSellingBrands = async (req, res) => {
   }
 };
 
-export const getBestSellingProducts = async (req, res) => {
+const getBestSellingProducts = async (req, res) => {
   try {
     const data = await Order.aggregate([
-{ $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
+      { $match: { paymentStatus: "success", orderStatus: { $ne: "Cancelled" } } },
 
       { $unwind: "$items" },
 
@@ -256,24 +318,33 @@ export const getBestSellingProducts = async (req, res) => {
   }
 };
 
-export const getLedger = async (req, res) => {
-  const orders = await Order.find({ paymentStatus: "success" })
-    .sort({ createdAt: 1 });
+const getLedger = async (req, res) => {
+  const orders = await Order.find({
+    paymentStatus: { $in: ["success", "failed"] }
+  }).sort({ createdAt: 1 });
 
   const ledger = orders.map(o => {
-    const itemDiscount = o.items.reduce(
-      (sum, i) => sum + (i.discount || 0),
-      0
-    );
+    const normalized = normalizeOrder(o);
 
     return {
       date: o.createdAt,
       orderID: o.orderID,
-      credit: o.totalPrice,
-      debit: itemDiscount + (o.couponDiscount || 0),
-      net: o.totalPrice
+      debit: normalized.debit,
+      credit: normalized.credit,
+      net: normalized.net
     };
   });
 
   res.render("admin/ledger", { ledger });
+};
+
+export {
+  getAdminDashboard,
+  getRevenueStats,
+
+  getBestSellingCategories,
+  getBestSellingBrands,
+  getBestSellingProducts,
+
+  getLedger
 };

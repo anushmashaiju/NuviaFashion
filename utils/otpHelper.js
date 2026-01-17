@@ -3,12 +3,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Generate OTP (4 digits)
-export function generateOtp() {
+function generateOtp() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
 // Send OTP via Email
-export async function sendVerificationEmail(email, otp) {
+async function sendVerificationEmail(email, otp) {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -33,3 +33,5 @@ export async function sendVerificationEmail(email, otp) {
     return false;
   }
 }
+
+export { generateOtp, sendVerificationEmail };

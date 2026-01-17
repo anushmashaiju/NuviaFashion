@@ -7,12 +7,11 @@ import MESSAGES from "../../utils/messages.js";
 const round2 = (value) => Number((value || 0).toFixed(2));
 
 // GET USER WALLET PAGE
-export const getWalletPage = async (req, res) => {
+const getWalletPage = async (req, res) => {
   try {
     if (!req.session.user) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
- const userId = req.session.user?._id;
-
+    const userId = req.session.user?._id;
 
     let wallet = await Wallet.findOne({ userId });
     if (!wallet) wallet = await Wallet.create({ userId, balance: 0, transactions: [] });
@@ -50,7 +49,7 @@ export const getWalletPage = async (req, res) => {
 };
 
 // ADD MONEY TO WALLET
-export const addMoneyToWallet = async (req, res) => {
+const addMoneyToWallet = async (req, res) => {
   try {
     const amount = round2(Number(req.body.amount));
     const userId = req.session.user.id;
@@ -69,23 +68,23 @@ export const addMoneyToWallet = async (req, res) => {
     }
     await wallet.save();
 
-    res.json({ message: "Wallet balance updated successfully", balance: wallet.balance });
+    res.json({ message: MESSAGES.WALLET_UPDATED_SUCCESS, balance: wallet.balance });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(STATUS.SERVER_ERROR).json({ message: MESSAGES.SERVER_ERROR });
   }
 };
 
 // APPLY WALLET
-export const applyWallet = async (req, res) => {
+const applyWallet = async (req, res) => {
   try {
     const userId = req.session.user?._id;
 
-    if (!userId) return res.status(401).json({ success: false, message: "Login required" });
+    if (!userId) return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.LOGIN_REQUIRED });
 
     const { totalAmount } = req.body;
     const wallet = await Wallet.findOne({ userId });
-    if (!wallet || wallet.balance <= 0) return res.json({ success: false, message: "No wallet balance" });
+    if (!wallet || wallet.balance <= 0) return res.json({ success: false, message: MESSAGES.NO_WALLET_BALANCE });
 
     const usedAmount = Math.min(wallet.balance, totalAmount);
     const newTotal = round2(totalAmount - usedAmount);
@@ -98,21 +97,28 @@ export const applyWallet = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
 };
 
 // GET WALLET BALANCE
-export const getWalletBalance = async (req, res) => {
+const getWalletBalance = async (req, res) => {
   try {
     const userId = req.session.user?._id;
-    if (!userId) return res.status(401).json({ balance: 0 });
+    if (!userId) return res.status(STATUS.UNAUTHORIZED).json({ balance: 0 });
 
     const wallet = await Wallet.findOne({ userId });
     res.json({ balance: Number(wallet?.balance || 0).toFixed(2) });
 
   } catch (err) {
     console.error("Wallet Balance Error:", err);
-    res.status(500).json({ balance: 0 });
+    res.status(STATUS.SERVER_ERROR).json({ balance: 0 });
   }
+};
+
+export {
+  getWalletPage,
+  addMoneyToWallet,
+  applyWallet,
+  getWalletBalance
 };

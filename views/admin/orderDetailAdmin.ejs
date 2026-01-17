@@ -106,96 +106,95 @@
       font-size: 22px;
       color: #ff3b85;
     }
-  
-@media (max-width: 992px) {
-  .container {
-    margin: 100px 15px 40px 15px;
-    width: auto;
-  }
 
-  .order-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
+    @media (max-width: 992px) {
+      .container {
+        margin: 100px 15px 40px 15px;
+        width: auto;
+      }
 
-  .price-box {
-    flex-direction: column;
-    gap: 15px;
-  }
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
 
-  .box {
-    width: 100%;
-  }
+      .price-box {
+        flex-direction: column;
+        gap: 15px;
+      }
 
-  .items {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+      .box {
+        width: 100%;
+      }
 
-  .item {
-    flex-direction: row;
-    align-items: center;
-  }
+      .items {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-  .item img {
-    width: 70px;
-    height: 70px;
-  }
+      .item {
+        flex-direction: row;
+        align-items: center;
+      }
 
-  .return-images img {
-    width: 80px;
-    height: 80px;
-    margin: 4px;
-  }
-}
+      .item img {
+        width: 70px;
+        height: 70px;
+      }
 
-@media (max-width: 576px) {
-  .order-id {
-    font-size: 18px;
-  }
+      .return-images img {
+        width: 80px;
+        height: 80px;
+        margin: 4px;
+      }
+    }
 
-  .order-status {
-    font-size: 18px;
-  }
+    @media (max-width: 576px) {
+      .order-id {
+        font-size: 18px;
+      }
 
-  .section-title {
-    font-size: 18px;
-  }
+      .order-status {
+        font-size: 18px;
+      }
 
-  .box h4 {
-    font-size: 16px;
-  }
+      .section-title {
+        font-size: 18px;
+      }
 
-  .date-box {
-    font-size: 14px;
-    padding: 12px;
-  }
+      .box h4 {
+        font-size: 16px;
+      }
 
-  .item img {
-    width: 60px;
-    height: 60px;
-  }
+      .date-box {
+        font-size: 14px;
+        padding: 12px;
+      }
 
-  .return-images img {
-    width: 60px;
-    height: 60px;
-  }
+      .item img {
+        width: 60px;
+        height: 60px;
+      }
 
-  select {
-    font-size: 13px;
-    padding: 6px 10px;
-  }
+      .return-images img {
+        width: 60px;
+        height: 60px;
+      }
 
-  #approveReturnBtn {
-    width: 100%;
-    font-size: 14px;
-    padding: 10px;
-    margin-top: 15px;
-  }
-}
+      select {
+        font-size: 13px;
+        padding: 6px 10px;
+      }
 
+      #approveReturnBtn {
+        width: 100%;
+        font-size: 14px;
+        padding: 10px;
+        margin-top: 15px;
+      }
+    }
   </style>
 
 
@@ -215,118 +214,202 @@
         <%= order.user_id?.name || "Unknown User" %> (<%= order.user_id?.email || "" %>)
       </p>
 
-      <h4 class="section-title">Items</h4>
-      <div class="items">
-        <% order.items.forEach(item=> { %>
-          <div class="item">
-            <img src="<%= item.productId?.images?.[0] %>" />
-            <div>
-              <p><strong>
-                  <%= item.productName %>
-                </strong></p>
-              <p>Qty: <%= item.quantity %>
+      <% if (order.orderStatus==="Returned" ) { %>
+
+      <% if (order.orderStatus === "Returned" || order.orderStatus === "Return Requested") { %>
+  <h4 class="section-title">Returned Items</h4>
+  <div class="items">
+    <% order.items.filter(i => !i.returnRequested).forEach(item => { %>
+
+         // Calculate refund amount
+         const itemSubtotal = item.finalPrice * item.quantity;
+         const itemTax = Number((itemSubtotal * 0.18).toFixed(2)); // assuming 18% GST
+         const refundAmount = itemSubtotal + itemTax;
+    %>
+      <div class="item">
+        <img src="<%= item.productId?.images?.[0] %>" />
+        <div>
+          <p><strong><%= item.productName %></strong></p>
+          <p>Qty: <%= item.quantity %></p>
+          <p>Price: Rs.<%= item.finalPrice %></p>
+
+          <div class="return-info">
+            <p><strong>Return Reason:</strong> <%= item.returnReason || "Not specified" %></p>
+            <% if(item.returnedAt || order.returnRequestedAt){ %>
+              <p><strong>Returned On:</strong> <%= (item.returnedAt || order.returnRequestedAt).toDateString() %></p>
+            <% } %>
+            <p><strong>Refund Amount:</strong> Rs.<%= refundAmount.toFixed(2) %></p>
+            <% if(order.returnImages && order.returnImages.length > 0){ %>
+              <div class="return-images">
+                <% order.returnImages.forEach(img => { %>
+                  <img src="/uploads/returns/<%= img %>" alt="Return Image" />
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+
+        <h4 class="section-title">Other Items (Not Returned)</h4>
+<div class="items">
+  <% 
+    let balanceSubtotal = 0;
+    let balanceTax = 0;
+    order.items.filter(i => !i.isReturned && !i.isCancelled).forEach(item => {
+      balanceSubtotal += item.finalPrice * item.quantity;
+      balanceTax += Number((item.finalPrice * item.quantity * 0.18).toFixed(2));
+  %>
+    <div class="item not-returned">
+      <img src="<%= item.productId?.images?.[0] %>" />
+      <div>
+        <p><strong><%= item.productName %></strong></p>
+        <p>Qty: <%= item.quantity %></p>
+        <p>Price: Rs.<%= item.finalPrice %></p>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<%
+  const remainingItems = order.items.filter(i => !i.isReturned && !i.isCancelled);
+  let remainingSubtotal = remainingItems.reduce((sum, i) => sum + i.finalPrice * i.quantity, 0);
+  let remainingTax = Number((remainingSubtotal * 0.18).toFixed(2));
+  
+  let totalOriginalSubtotal = order.items.filter(i => !i.isCancelled).reduce((sum, i) => sum + i.finalPrice * i.quantity, 0);
+  
+
+  let remainingBalance = remainingSubtotal + remainingTax - order.couponDiscount+order.deliveryCharge;
+%>
+
+<p><strong>Remaining Balance (Not Returned Items):</strong> Rs.<%= remainingBalance.toFixed(2) %></p>
+
+        <% } else { %>
+
+          <!-- 🟢 NORMAL VIEW FOR NON-RETURNED ORDERS -->
+          <h4 class="section-title">Items</h4>
+          <div class="items">
+            <% order.items.forEach(item=> { %>
+              <div class="item">
+                <img src="<%= item.productId?.images?.[0] %>" />
+                <div>
+                  <p><strong>
+                      <%= item.productName %>
+                    </strong></p>
+                  <p>Qty: <%= item.quantity %>
+                  </p>
+                  <p>Price: Rs.<%= item.finalPrice %>
+                  </p>
+                </div>
+              </div>
+              <% }) %>
+          </div>
+
+          <% } %>
+
+
+            <div class="date-box">
+              <p><strong>Purchased On:</strong>
+                <%= purchasedDate.toDateString() %>
               </p>
-              <p>Price: Rs.<%= item.finalPrice %>
+              <p><strong>Estimated Delivery:</strong>
+                <%= approxStart.toDateString() %> - <%= approxEnd.toDateString() %>
               </p>
             </div>
-          </div>
-          <% }) %>
-      </div>
 
-      <div class="date-box">
-        <p><strong>Purchased On:</strong>
-          <%= purchasedDate.toDateString() %>
-        </p>
-        <p><strong>Estimated Delivery:</strong>
-          <%= approxStart.toDateString() %> - <%= approxEnd.toDateString() %>
-        </p>
-      </div>
-
-      <h4 class="section-title">Order Summary</h4>
-      <div class="price-box">
-        <div class="box">
-          <h4>Shipping Details</h4>
-          <% if(order.shippingAddressId){ %>
-            <p><strong>
-                <%= order.shippingAddressId.name %>
-              </strong></p>
-            <p>
-              <%= order.shippingAddressId.addressLine %>
-            </p>
-            <p>
-              <%= order.shippingAddressId.city %>
-                <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %>
-            </p>
-            <p>Phone: <%= order.shippingAddressId.phone %>
-            </p>
-            <% } else { %>
-              <p>No Address Found</p>
-              <% } %>
-        </div>
-
-        <div class="box">
-          <h4>Price Details</h4>
-          <p>Items Total: Rs.<%= order.subtotal.toFixed(2) %>
-          </p>
-          <p>Delivery Charge: Rs.<%= order.deliveryCharge || 0 %>
-          </p>
-          <p>Tax: Rs.<%= order.tax.toFixed(2) %>
-          </p>
-          <p>Coupon Discount:- Rs.<%= order.couponDiscount.toFixed(2) %> </p>
-          <p>Grand Total: Rs.<%= order.totalPrice.toFixed(2) %>
-          </p>
-        </div>
-      </div>
-
-      <% if(order.orderStatus==='Cancelled' || order.orderStatus==='Returned' ) { %>
-        <h4 class="section-title">
-          <%= order.orderStatus==='Cancelled' ? 'Cancellation Information' : 'Return Information' %>
-        </h4>
-        <% if(order.orderStatus==='Cancelled' ) { %>
-          <p><strong>Cancelled Reason:</strong>
-            <%= order.cancelReason || "No reason provided" %>
-          </p>
-          <% } else if(order.orderStatus==='Returned' ) { %>
-            <p><strong>Returned Reason:</strong>
-              <%= order.returnReason || "No reason provided" %>
-            </p>
-            <% if(order.returnImages && order.returnImages.length> 0) { %>
-              <div class="return-images">
-                <% order.returnImages.forEach(img=> { %>
-                  <img src="/uploads/returns/<%= img %>" alt="Return Image"
-                    style="width:120px;margin:5px;border-radius:8px;" />
-                  <% }) %>
+            <h4 class="section-title">Order Summary</h4>
+            <div class="price-box">
+              <div class="box">
+                <h4>Shipping Details</h4>
+                <% if(order.shippingAddressId){ %>
+                  <p><strong>
+                      <%= order.shippingAddressId.name %>
+                    </strong></p>
+                  <p>
+                    <%= order.shippingAddressId.addressLine %>
+                  </p>
+                  <p>
+                    <%= order.shippingAddressId.city %>
+                      <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %>
+                  </p>
+                  <p>Phone: <%= order.shippingAddressId.phone %>
+                  </p>
+                  <% } else { %>
+                    <p>No Address Found</p>
+                    <% } %>
               </div>
-              <% } %>
-                <% } %>
-                  <% } %>
-<h4 class="section-title">Order Timeline</h4>
-<div class="date-box">
-  <p><strong>Ordered:</strong> <%= order.createdAt.toDateString() %></p>
 
-  <% if(order.statusTimeline?.shipped){ %>
-    <p><strong>Shipped:</strong> <%= order.statusTimeline.shipped.toDateString() %></p>
-  <% } %>
+              <div class="box">
+                <h4>Price Details</h4>
+                <p>Items Total: Rs.<%= order.subtotal.toFixed(2) %>
+                </p>
+                <p>Delivery Charge: Rs.<%= order.deliveryCharge || 0 %>
+                </p>
+                <p>Tax: Rs.<%= order.tax.toFixed(2) %>
+                </p>
+                <p>Coupon Discount:- Rs.<%= order.couponDiscount.toFixed(2) %>
+                </p>
+                <p>Grand Total: Rs.<%= order.totalPrice.toFixed(2) %>
+                </p>
+              </div>
+            </div>
 
-  <% if(order.statusTimeline?.outForDelivery){ %>
-    <p><strong>Out for Delivery:</strong> <%= order.statusTimeline.outForDelivery.toDateString() %></p>
-  <% } %>
+         <% if (order.orderStatus === 'Cancelled') { %>
+  <h4 class="section-title">Cancellation Information</h4>
 
-  <% if(order.statusTimeline?.delivered){ %>
-    <p><strong>Delivered:</strong> <%= order.statusTimeline.delivered.toDateString() %></p>
-  <% } %>
+  <p>
+    <strong>Cancelled Reason:</strong>
+    <%= order.cancelReason || "No reason provided" %>
+  </p>
 
-  <% if(order.statusTimeline?.cancelled){ %>
-    <p><strong>Cancelled:</strong> <%= order.statusTimeline.cancelled.toDateString() %></p>
+  <% if (order.statusTimeline?.cancelled) { %>
+    <p>
+      <strong>Cancelled On:</strong>
+      <%= order.statusTimeline.cancelled.toDateString() %>
+    </p>
   <% } %>
-</div>
+<% } %>
+
+                        <h4 class="section-title">Order Timeline</h4>
+                        <div class="date-box">
+                          <p><strong>Ordered:</strong>
+                            <%= order.createdAt.toDateString() %>
+                          </p>
+
+                          <% if(order.statusTimeline?.shipped){ %>
+                            <p><strong>Shipped:</strong>
+                              <%= order.statusTimeline.shipped.toDateString() %>
+                            </p>
+                            <% } %>
+
+                              <% if(order.statusTimeline?.outForDelivery){ %>
+                                <p><strong>Out for Delivery:</strong>
+                                  <%= order.statusTimeline.outForDelivery.toDateString() %>
+                                </p>
+                                <% } %>
+
+                                  <% if(order.statusTimeline?.delivered){ %>
+                                    <p><strong>Delivered:</strong>
+                                      <%= order.statusTimeline.delivered.toDateString() %>
+                                    </p>
+                                    <% } %>
+
+                                      <% if(order.statusTimeline?.cancelled){ %>
+                                        <p><strong>Cancelled:</strong>
+                                          <%= order.statusTimeline.cancelled.toDateString() %>
+                                        </p>
+                                        <% } %>
+                        </div>
     </div>
   </div>
 
   <script>
     function updateStatus(id) {
       const status = document.getElementById("orderStatus").value;
-    fetch(`/admin/orders/update-status/${id}`, {
+      fetch(`/admin/orders/update-status/${id}`, {
 
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -339,22 +422,22 @@
       }).catch(err => console.error(err));
     }
 
-    function approveReturn(orderID){
-  fetch(`/admin/orders/approve-return/${orderID}`, {
-    method: "POST"
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data.success){
-     Swal.fire("Success!", "Return Approved", "success").then(() => {
-    window.location.href = '/admin/orders/list';
-});
+    function approveReturn(orderID) {
+      fetch(`/admin/orders/approve-return/${orderID}`, {
+        method: "POST"
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire("Success!", "Return Approved", "success").then(() => {
+              window.location.href = '/admin/orders/list';
+            });
 
-    } else {
-      Swal.fire("Error", data.message, "error");
+          } else {
+            Swal.fire("Error", data.message, "error");
+          }
+        });
     }
-  });
-}
   </script>
 
   <%- include("../partials/adminFooter") %>

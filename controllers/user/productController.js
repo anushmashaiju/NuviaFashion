@@ -6,7 +6,7 @@ import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
 
 // HOME PAGE
-export const getHomePage = async (req, res) => {
+const getHomePage = async (req, res) => {
   try {
     const categories = await Category.find({ isListed: true });
     const categoryId = req.query.category;
@@ -85,7 +85,7 @@ export const getHomePage = async (req, res) => {
 };
 
 //CATEGORY OFFER
-export const getCategoryOffer = async (req, res) => {
+const getCategoryOffer = async (req, res) => {
   try {
     const { categoryId } = req.params;
 
@@ -118,7 +118,7 @@ export const getCategoryOffer = async (req, res) => {
 };
 
 //GET MAX OFFER
-export const getMaxOfferProductByCategory = async (req, res) => {
+const getMaxOfferProductByCategory = async (req, res) => {
   try {
     const categoryId = req.params.categoryId;
 
@@ -135,19 +135,19 @@ export const getMaxOfferProductByCategory = async (req, res) => {
     if (!product) {
       return res.status(STATUS.NOT_FOUND).json({
         success: false,
-        message: "No offer product found for this category."
+        message: MESSAGES.CATEGORY_OFFER_NOT_FOUND
       });
     }
 
     res.status(STATUS.SUCCESS).json({ success: true, product });
   } catch (err) {
     console.error("MaxOfferProduct Error:", err);
-    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
+    res.status(STATUS.SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
 };
 
 // PRODUCT LIST PAGE
-export const getUserProductListPage = async (req, res) => {
+const getUserProductListPage = async (req, res) => {
   try {
     const search = req.query.search || "";
     const categoryFilter = req.query.category || "";
@@ -259,7 +259,7 @@ export const getUserProductListPage = async (req, res) => {
 };
 
 // PRODUCT DETAILS PAGE
-export const getProductDetailsPage = async (req, res) => {
+const getProductDetailsPage = async (req, res) => {
   try {
     const productId = req.params.id;
 
@@ -272,7 +272,7 @@ export const getProductDetailsPage = async (req, res) => {
       .populate("category")
       .populate("coupons");
 
-    if (!product || product.isDeleted || product.isBlocked || !product.isListed) {
+    if (!product || product.isDeleted || product.isBlocked) {
       req.flash("error", MESSAGES.PRODUCT_NOT_FOUND);
       return res.status(STATUS.NOT_FOUND).redirect("/products");
     }
@@ -281,17 +281,17 @@ export const getProductDetailsPage = async (req, res) => {
       category: product.category._id,
       _id: { $ne: product._id },
       isDeleted: false,
-      isBlocked: false,
-      isListed: true,
+      isBlocked: false
     }).limit(8);
 
     if (!recommendedProducts.length) {
       recommendedProducts = await Product.find({
         _id: { $ne: product._id },
         isDeleted: false,
-        isBlocked: false,
-        isListed: true,
-      }).sort({ createdAt: -1 }).limit(8);
+        isBlocked: false
+      })
+        .sort({ createdAt: -1 })
+        .limit(8);
     }
 
     res.status(STATUS.SUCCESS).render("user/productDetails", {
@@ -308,3 +308,32 @@ export const getProductDetailsPage = async (req, res) => {
   }
 };
 
+// PRODUCT STATUS 
+const getProductStatus = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .select("isBlocked isDeleted stock");
+
+    if (!product) {
+      return res.status(STATUS.NOT_FOUND).json({ isDeleted: true });
+    }
+
+    return res.json({
+      isBlocked: product.isBlocked,
+      isDeleted: product.isDeleted,
+      stock: product.stock
+    });
+  } catch (error) {
+    console.error("Product Status Error:", error);
+    return res.status(STATUS.SERVER_ERROR).json({ error: MESSAGES.SERVER_ERROR });
+  }
+};
+
+export {
+  getHomePage,
+  getCategoryOffer,
+  getMaxOfferProductByCategory,
+  getUserProductListPage,
+  getProductDetailsPage,
+  getProductStatus
+};

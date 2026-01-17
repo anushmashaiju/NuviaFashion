@@ -160,15 +160,28 @@
                 <td>Rs.<%= item.finalPrice.toFixed(2) %>
                 </td>
 
-                <td>
-                  <% if(item.isCancelled) { %>
+                <td id="action-<%= item.productId %>">
+                  <% if (item.isCancelled) { %>
                     <span style="color:red; font-weight:600;">Cancelled</span>
-                    <% } else if(!["Cancelled","Returned","Delivered"].includes(order.orderStatus)) { %>
-                      <button class="btn btn-cancel"
-                        onclick="cancelProduct('<%= order.orderID %>', '<%= item.productId %>')">
-                        Cancel Item
-                      </button>
-                      <% } %>
+
+                    <% } else if (item.isReturned) { %>
+                      <span style="color:green; font-weight:600;">Returned</span>
+
+                      <% } else if (item.returnRequested) { %>
+                        <span style="color:#a04c74; font-weight:600;">Return Requested</span>
+
+                        <% } else if ( order.orderStatus==="Delivered" || order.orderStatus==="Return Requested" ) { %>
+                          <button class="btn btn-return"
+                            onclick="requestItemReturn('<%= order.orderID %>', '<%= item.productId %>')">
+                            Return Item
+                          </button>
+
+                          <% } else { %>
+                            <button class="btn btn-cancel"
+                              onclick="cancelProduct('<%= order.orderID %>', '<%= item.productId %>')">
+                              Cancel Item
+                            </button>
+                            <% } %>
                 </td>
               </tr>
               <% }) %>
@@ -232,21 +245,22 @@
           <% } %>
 
             <hr>
-           <%
-const billItems = order.items.filter(i => !i.isCancelled && !i.isReturned);
+   <%
+  const billItems = order.items.filter(function(i) {
+    return !i.isCancelled && !i.isReturned;
+  });
 
-const subtotal = billItems.reduce(
-  (s, i) => s + (i.finalPrice * i.quantity),
-  0
-);
-const GST_RATE = 0.18;
-const tax = subtotal * GST_RATE;
+  const subtotal = billItems.reduce(function(s, i) {
+    return s + (i.finalPrice * i.quantity);
+  }, 0);
 
-const couponDiscount = billItems.length > 0 ? order.couponDiscount : 0;
-const deliveryCharge = billItems.length > 0 ? order.deliveryCharge : 0;
-
-const total = subtotal + tax + deliveryCharge - couponDiscount;
+  const GST_RATE = 0.18;
+  const tax = subtotal * GST_RATE;
+  const couponDiscount = billItems.length > 0 ? order.couponDiscount : 0;
+  const deliveryCharge = billItems.length > 0 ? order.deliveryCharge : 0;
+  const total = subtotal + tax + deliveryCharge - couponDiscount;
 %>
+
               <h3>Price Details</h3>
               <div class="bill-box">
                 <div class="bill-row">
@@ -323,9 +337,9 @@ const total = subtotal + tax + deliveryCharge - couponDiscount;
       }
 
       function requestReturn(orderID) {
-        Swal.fire({
-          title: "Request Return",
-          html: `
+  Swal.fire({
+    title: "Request Return",
+    html: `
       <textarea id="return-reason" class="swal2-textarea" placeholder="Enter reason"></textarea>
       <div style="text-align:left; margin-top:10px;">
         <label>
@@ -338,39 +352,41 @@ const total = subtotal + tax + deliveryCharge - couponDiscount;
         </label>
       </div>
     `,
-          confirmButtonText: "Submit Request",
-          confirmButtonColor: "#a04c74",
-          showCancelButton: true,
-          preConfirm: () => {
-            const reason = document.getElementById("return-reason").value;
-            const returnType = document.querySelector('input[name="returnType"]:checked')?.value;
+    confirmButtonText: "Submit Request",
+    confirmButtonColor: "#a04c74",
+    showCancelButton: true,
+    preConfirm: () => {
+      const reason = document.getElementById("return-reason").value;
+      const returnType = document.querySelector('input[name="returnType"]:checked')?.value;
 
-            if (!reason) {
-              Swal.showValidationMessage("Reason is required");
-              return false;
-            }
-
-            return { reason, returnType };
-          }
-        }).then(result => {
-          if (result.isConfirmed) {
-            fetch(`/order/${orderID}/return`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(result.value)
-            })
-              .then(res => res.json())
-              .then(data => {
-                if (data.success) {
-                  Swal.fire("Submitted", data.message, "success");
-                  location.reload();
-                } else {
-                  Swal.fire("Error", data.message, "error");
-                }
-              });
-          }
-        });
+      if (!reason) {
+        Swal.showValidationMessage("Reason is required");
+        return false;
       }
+
+      return { reason, returnType };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(`/order/${orderID}/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result.value)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire("Submitted", data.message, "success").then(() => {
+            location.reload(); // reload to update UI
+          });
+        } else {
+          Swal.fire("Error", data.message, "error");
+        }
+      });
+    }
+  });
+}
+
       function cancelProduct(orderID, productId) {
         Swal.fire({
           title: "Cancel Item",
@@ -397,6 +413,75 @@ const total = subtotal + tax + deliveryCharge - couponDiscount;
                   }
                 } else { Swal.fire("Error", data.message, "error"); }
               });
+          }
+        });
+      }
+
+      function requestItemReturn(orderID, productId) {
+        Swal.fire({
+          title: "Return Item",
+          html: `
+      <textarea id="return-reason" class="swal2-textarea" placeholder="Enter reason"></textarea>
+      <div style="text-align:left; margin-top:10px;">
+        <label>
+          <input type="radio" name="returnType" value="REFUND" checked>
+          Refund to Wallet
+        </label><br/>
+        <label>
+          <input type="radio" name="returnType" value="REPLACEMENT">
+          Replacement
+        </label>
+      </div>
+    `,
+          confirmButtonText: "Submit Return",
+          confirmButtonColor: "#a04c74",
+          showCancelButton: true,
+          preConfirm: () => {
+            const reason = document.getElementById("return-reason").value;
+            const returnType = document.querySelector('input[name="returnType"]:checked')?.value;
+
+            if (!reason) {
+              Swal.showValidationMessage("Reason is required");
+              return false;
+            }
+
+            return { reason, returnType };
+          }
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch(`/order/${orderID}/return-item`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                productId,
+                reason: result.value.reason,
+                returnType: result.value.returnType
+              })
+            })
+             .then(async res => {
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Something went wrong");
+  }
+
+  return data;
+})
+.then(data => {
+  Swal.fire("Submitted", data.message, "success");
+
+  const actionCell = document.getElementById(`action-${productId}`);
+  if (actionCell) {
+    actionCell.innerHTML =
+      `<span style="color:#a04c74; font-weight:600;">Return Requested</span>`;
+  }
+})
+.catch(err => {
+  Swal.fire("Error", err.message, "error");
+});
+
+
+             
           }
         });
       }

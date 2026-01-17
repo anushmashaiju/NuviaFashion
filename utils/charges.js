@@ -1,22 +1,19 @@
 import Product from "../models/productModel.js";
 
 //  PRICE CALCULATION 
-export const calculateFinalPrice = (basePrice, product) => {
+const calculateFinalPrice = (basePrice, product) => {
   if (!product || typeof basePrice !== "number") return 0;
 
   let discount = 0;
 
   if (product.activeOffer?.percentage > 0) {
     discount = product.activeOffer.percentage;
-  } else if (product.productOffer?.percentage > 0) {
-    discount = product.productOffer.percentage;
   }
-
   return Math.round(basePrice - (basePrice * discount) / 100);
 };
 
 //  CART NORMALIZATION 
-export const normalizeCartPrices = async (cart) => {
+const normalizeCartPrices = async (cart) => {
   for (const item of cart.items) {
     const product = await Product.findById(item.productId);
     if (!product) continue;
@@ -36,32 +33,42 @@ export const normalizeCartPrices = async (cart) => {
 };
 
 //  DELIVERY CHARGE 
-export const calculateDeliveryCharge = ({
+const calculateDeliveryCharge = ({
   subtotal = 0,
-paymentMethod = "Razorpay",
+  paymentMethod = "Razorpay",
   address
 }) => {
   if (!address) return 0;
 
-  let deliveryCharge = 0;
-const state = address.state?.trim().toLowerCase();
-const isKerala = state === "kerala";
+  const state = address.state?.trim().toLowerCase();
+  const isKerala = state === "kerala";
+
+  let charge = 0;
 
   if (isKerala) {
-    if (subtotal >= 1000) deliveryCharge = 0;
-    else if (subtotal >= 500) deliveryCharge = 30;
-    else deliveryCharge = 50;
+    if (subtotal >= 1000) charge = 0;
+    else if (subtotal >= 500) charge = 30;
+    else charge = 50;
   } else {
-    if (subtotal >= 1000) deliveryCharge = 50;
-    else if (subtotal >= 500) deliveryCharge = 80;
-    else deliveryCharge = 100;
+    if (subtotal >= 1000) charge = 50;
+    else if (subtotal >= 500) charge = 80;
+    else charge = 100;
   }
 
-  return deliveryCharge;
+  if (paymentMethod === "COD") {
+    charge += 30;
+  }
+console.log("calculateDeliveryCharge called with:", {
+  subtotal,
+  state: address?.state,
+  paymentMethod
+});
+  return charge;
 };
 
+
 // ACTIVE OFFER
-export const applyActiveOffer = (products) => {
+const applyActiveOffer = (products) => {
   const now = new Date();
 
   return products.map((p) => {
@@ -94,5 +101,10 @@ export const applyActiveOffer = (products) => {
 };
 
 
-
+export {
+  calculateFinalPrice,
+  normalizeCartPrices,
+  calculateDeliveryCharge,
+  applyActiveOffer
+};
 

@@ -1,4 +1,4 @@
-<%- include("../partials/userHeader", { title: "Payment Gateway" }) %>
+;<%- include("../partials/userHeader", { title: "Payment Gateway" }) %>
 
   <style>
     body {
@@ -427,7 +427,6 @@ document.querySelectorAll("input[name='paymentMethod']").forEach(radio => {
     const data = await res.json();
     if (!data.success) return;
 
-    // 🔥 FIX: Update UI using backend values
     document.getElementById("deliveryChargeDisplay").textContent =
       "₹" + data.deliveryCharge.toFixed(2);
 

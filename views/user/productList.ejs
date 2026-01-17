@@ -12,19 +12,17 @@
       color: #a04c74;
     }
 
-   .search-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
+    .search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
 
-
-.search-row input {
-  width: 100%;
-  max-width: 420px;
-}
-
+    .search-row input {
+      width: 100%;
+      max-width: 420px;
+    }
 
     .btn-add {
       background-color: #a04c74;
@@ -63,7 +61,7 @@
       min-height: 100vh;
       padding: 30px 20px 0;
       position: sticky;
-  
+
     }
 
     .filter-section {
@@ -173,20 +171,21 @@
       transform: translateY(-3px);
     }
 
-   .product-card img {
-  height: 220px;
-  max-height: 220px;
-  width: 100%;
-  object-fit: contain;
-}
-.product-actions {
-  flex-wrap: wrap;
-}
+    .product-card img {
+      height: 220px;
+      max-height: 220px;
+      width: 100%;
+      object-fit: contain;
+    }
 
-.product-actions .btn-add {
-  padding: 6px 12px;
-  font-size: 14px;
-}
+    .product-actions {
+      flex-wrap: wrap;
+    }
+
+    .product-actions .btn-add {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
 
     .card-body {
       padding: 12px;
@@ -223,12 +222,12 @@
       margin-left: 3px;
     }
 
-   .pagination-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
+    .pagination-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
 
 
     .page-btn {
@@ -266,73 +265,78 @@
       transform: translateX(-320px);
       opacity: 1;
     }
-    .out-stock {  
+
+    .out-stock {
       color: #ff4f4f;
       font-weight: 600;
     }
+
     .in-stock {
       color: #28a745;
       font-weight: 500;
     }
 
-.product-actions .wishlist-btn i {
-  transition: color 0.3s ease;
-}
-
-.product-actions .wishlist-btn.active i {
-  color: #ff4f8a !important;
-}
-@media (max-width: 992px) {
-.product-listing {
-      padding: 100px 20px;
+    .product-actions .wishlist-btn i {
+      transition: color 0.3s ease;
     }
-  .filter-sidebar {
-    position: relative;
-    min-height: auto;
-    margin-top: 0;
-    padding: 15px;
-    border-radius: 10px;
-  }
 
-  .filter-sidebar form {
-    display: none;
-  }
+    .product-actions .wishlist-btn.active i {
+      color: #ff4f8a !important;
+    }
 
-  .filter-sidebar.show form {
-    display: block;
-  }
+    @media (max-width: 992px) {
+      .product-listing {
+        padding: 100px 20px;
+      }
 
-  .filter-toggle {
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
-  }
+      .filter-sidebar {
+        position: relative;
+        min-height: auto;
+        margin-top: 0;
+        padding: 15px;
+        border-radius: 10px;
+      }
+
+      .filter-sidebar form {
+        display: none;
+      }
+
+      .filter-sidebar.show form {
+        display: block;
+      }
+
+      .filter-toggle {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+      }
 
     }
+
     @media (max-width: 576px) {
 
-  h2 {
-    font-size: 1.4rem;
-  }
+      h2 {
+        font-size: 1.4rem;
+      }
 
-  .card-title {
-    font-size: 0.95rem;
-  }
+      .card-title {
+        font-size: 0.95rem;
+      }
 
-  .brand {
-    font-size: 0.85rem;
-  }
+      .brand {
+        font-size: 0.85rem;
+      }
 
-  .product-price {
-    font-size: 1rem;
-  }
+      .product-price {
+        font-size: 1rem;
+      }
 
-  .wishlist-toast {
-    right: 10px;
-    bottom: 10px;
-    transform: none;
-  }
-}
+      .wishlist-toast {
+        right: 10px;
+        bottom: 10px;
+        transform: none;
+      }
+    }
   </style>
 
   <div class="container-fluid mt-4 mb-5">
@@ -346,24 +350,24 @@
     </form>
 
     <div class="row">
-             <div class="col-12 d-lg-none mb-2">
-  <button type="button" class="btn-add filter-toggle w-100" id="filterToggle">
-    Filters
-  </button>
-</div>
-     
+      <div class="col-12 d-lg-none mb-2">
+        <button type="button" class="btn-add filter-toggle w-100" id="filterToggle">
+          Filters
+        </button>
+      </div>
+
       <div class="col-lg-3 filter-sidebar">
         <form method="GET" action="/products">
           <input type="hidden" name="search" value="<%= currentFilters.search || '' %>">
 
           <div class="filter-section">
-       <div class="filter-title">Sort by:</div>
+            <div class="filter-title">Sort by:</div>
             <% const sortOptions=[ { value: 'priceAsc' , label: 'Price: low to high' }, { value: 'priceDesc' ,
-              label: 'Price: high to low' }, { value: 'aToZ' , label: 'A→Z' }, { value: 'zToA' ,
-              label: 'Z→A' }, { value: 'popularity' , label: 'Popularity' }, { value: 'newArrivals' , label: 'New Arrivals' }, { value: 'featured' ,
-              label: 'Featured' } ]; %>
+              label: 'Price: high to low' }, { value: 'aToZ' , label: 'A→Z' }, { value: 'zToA' , label: 'Z→A' }, {
+              value: 'popularity' , label: 'Popularity' }, { value: 'newArrivals' , label: 'New Arrivals' }, {
+              value: 'featured' , label: 'Featured' } ]; %>
               <% sortOptions.forEach((opt, idx)=> { %>
-               
+
 
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="sort" value="<%= opt.value %>"
@@ -432,7 +436,7 @@
             <p class="text-center">No products found.</p>
             <% } else { %>
               <% products.forEach(product=> { %>
-              <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
 
                   <div class="product-card">
                     <img
@@ -445,46 +449,44 @@
                       <p class="brand">
                         <%= product.brand || 'No Brand' %>
                       </p>
-                       <p class="<%= product.stock>0 ? 'in-stock':'out-stock' %>">
-                    <%= product.stock>0 ? 'In Stock':'Out of Stock' %>
-                  </p>
-                 
-                     <p>
-  <% if (product.activeOffer && product.activeOffer.type) { %>
+                      <p class="<%= product.stock>0 ? 'in-stock':'out-stock' %>">
+                        <%= product.stock>0 ? 'In Stock':'Out of Stock' %>
+                      </p>
 
-    <span class="product-price" style="color: green; font-weight:600;">
-      ₹<%= product.finalPrice.toFixed(2) %>
-    </span>
+                      <p>
+                        <% if (product.activeOffer && product.activeOffer.type) { %>
 
-    <span class="old-price" style="color: red; text-decoration: line-through;">
-      ₹<%= product.price.toFixed(2) %>
-    </span>
+                          <span class="product-price" style="color: green; font-weight:600;">
+                            ₹<%= product.finalPrice.toFixed(2) %>
+                          </span>
 
-    <span class="discount">
-      <%= product.activeOffer.percentage %>% off
-      
-    </span>
+                          <span class="old-price" style="color: red; text-decoration: line-through;">
+                            ₹<%= product.price.toFixed(2) %>
+                          </span>
 
-  <% } else { %>
+                          <span class="discount">
+                            <%= product.activeOffer.percentage %>% off
 
-    <span class="product-price">
-      ₹<%= product.price.toFixed(2) %>
-    </span>
+                          </span>
 
-  <% } %>
-</p>
+                          <% } else { %>
+
+                            <span class="product-price">
+                              ₹<%= product.price.toFixed(2) %>
+                            </span>
+
+                            <% } %>
+                      </p>
 
                       <div class="product-actions mt-2 d-flex justify-content-center" style="gap: 10px;">
                         <a href="/product/<%= product._id %>" class="btn-add">View Details</a>
-   
 
-<button 
-  class="btn-add wishlist-btn <%= product.inWishlist ? 'active' : '' %>" 
-  data-product-id="<%= product._id %>" 
-  data-in-wishlist="<%= product.inWishlist ? 'true' : 'false' %>">
-  <i class="fa fa-heart"></i>
-</button>
 
+                        <button class="btn-add wishlist-btn <%= product.inWishlist ? 'active' : '' %>"
+                          data-product-id="<%= product._id %>"
+                          data-in-wishlist="<%= product.inWishlist ? 'true' : 'false' %>">
+                          <i class="fa fa-heart"></i>
+                        </button>
 
                         <button class="btn-add cart-btn" data-product-id="<%= product._id %>">
                           <i class="fa fa-shopping-cart"></i>
@@ -513,117 +515,134 @@
 
   <%- include("../../views/partials/userFooter.ejs") %>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
 
-  const minSlider = document.getElementById('minPrice');
-  const maxSlider = document.getElementById('maxPrice');
-  const minLabel = document.getElementById('minPriceLabel');
-  const maxLabel = document.getElementById('maxPriceLabel');
-  const sliderRange = document.getElementById('sliderRange');
-  const minGap = 500;
-  const sliderMax = parseInt(maxSlider.max);
+        const minSlider = document.getElementById('minPrice');
+        const maxSlider = document.getElementById('maxPrice');
+        const minLabel = document.getElementById('minPriceLabel');
+        const maxLabel = document.getElementById('maxPriceLabel');
+        const sliderRange = document.getElementById('sliderRange');
+        const minGap = 500;
+        const sliderMax = parseInt(maxSlider.max);
 
-  function updateSlider(event) {
-    let minVal = parseInt(minSlider.value);
-    let maxVal = parseInt(maxSlider.value);
+        function updateSlider(event) {
+          let minVal = parseInt(minSlider.value);
+          let maxVal = parseInt(maxSlider.value);
 
-    if (maxVal - minVal <= minGap) {
-      if (event.target === minSlider) minSlider.value = maxVal - minGap;
-      else maxSlider.value = minVal + minGap;
-    }
-
-    minVal = parseInt(minSlider.value);
-    maxVal = parseInt(maxSlider.value);
-    minLabel.textContent = `₹${minVal}`;
-    maxLabel.textContent = `₹${maxVal}`;
-
-    const percent1 = (minVal / sliderMax) * 100;
-    const percent2 = (maxVal / sliderMax) * 100;
-    sliderRange.style.left = percent1 + "%";
-    sliderRange.style.width = (percent2 - percent1) + "%";
-  }
-
-  minSlider.addEventListener("input", updateSlider);
-  maxSlider.addEventListener("input", updateSlider);
-  updateSlider();
-
-  const toast = document.getElementById("action-toast");
-  const wishlistBadge = document.getElementById("wishlist-count");
-  const cartBadge = document.getElementById("cart-count");
-
-  const showToast = (message, error = false) => {
-    toast.innerText = message;
-    toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
-    toast.classList.add("show");
-    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
-    toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
-  };
-
-  document.querySelectorAll(".wishlist-btn").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const productId = btn.dataset.productId;
-
-      try {
-        const res = await fetch(`/wishlist/add/${productId}`, { method: "POST" });
-        const data = await res.json();
-
-        if (data.success) {
-          const inWishlist = data.inWishlist === true || data.inWishlist === "true";
-          btn.classList.toggle("active", inWishlist);
-          btn.dataset.inWishlist = inWishlist;
-
-          if (wishlistBadge) {
-            wishlistBadge.innerText = data.count || 0;
+          if (maxVal - minVal <= minGap) {
+            if (event.target === minSlider) minSlider.value = maxVal - minGap;
+            else maxSlider.value = minVal + minGap;
           }
 
-          showToast(inWishlist ? "Added to Wishlist" : "Removed from Wishlist");
-        } else {
-          showToast(data.message || "Action failed", true);
+          minVal = parseInt(minSlider.value);
+          maxVal = parseInt(maxSlider.value);
+          minLabel.textContent = `₹${minVal}`;
+          maxLabel.textContent = `₹${maxVal}`;
+
+          const percent1 = (minVal / sliderMax) * 100;
+          const percent2 = (maxVal / sliderMax) * 100;
+          sliderRange.style.left = percent1 + "%";
+          sliderRange.style.width = (percent2 - percent1) + "%";
         }
-      } catch (err) {
-        console.error(err);
-        showToast("Something went wrong", true);
-      }
-    });
-  });
 
-document.querySelectorAll(".cart-btn").forEach(btn => {
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    const productId = btn.dataset.productId;
+        minSlider.addEventListener("input", updateSlider);
+        maxSlider.addEventListener("input", updateSlider);
+        updateSlider();
 
-    try {
-      const res = await fetch(`/cart/add-ajax/${productId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" }
+        const toast = document.getElementById("action-toast");
+        const wishlistBadge = document.getElementById("wishlist-count");
+        const cartBadge = document.getElementById("cart-count");
+
+        const showToast = (message, error = false) => {
+          toast.innerText = message;
+          toast.style.backgroundColor = error ? "#e2577a" : "#28a745";
+          toast.classList.add("show");
+          if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+          toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
+        };
+
+        document.querySelectorAll(".wishlist-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const productId = btn.dataset.productId;
+
+            try {
+              const res = await fetch(`/wishlist/add/${productId}`, {
+                method: "POST",
+                headers: {
+                  "Accept": "application/json"
+                }
+              });
+
+              if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+              }
+
+              const data = await res.json();
+
+              if (data.success) {
+                const inWishlist = data.inWishlist === true || data.inWishlist === "true";
+                btn.classList.toggle("active", inWishlist);
+                btn.dataset.inWishlist = inWishlist;
+
+                if (wishlistBadge) {
+                  wishlistBadge.innerText = data.wishlistCount || 0;
+
+                }
+
+                showToast(inWishlist ? "Added to Wishlist" : "Removed from Wishlist");
+              } else {
+                showToast(data.message || "Action failed", true);
+              }
+            } catch (err) {
+              console.error(err);
+              showToast("Something went wrong", true);
+            }
+          });
+        });
+
+        document.querySelectorAll(".cart-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const productId = btn.dataset.productId;
+
+            try {
+              const res = await fetch(`/cart/add-ajax/${productId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" }
+              });
+              if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+              }
+
+              const data = await res.json();
+
+              if (data.success) {
+
+                if (cartBadge) {
+                  cartBadge.innerText = data.cartCount || 0;
+                }
+                showToast(data.message || "Added to cart!");
+              } else {
+                showToast(data.message || "Action failed", true);
+              }
+            } catch (err) {
+              console.error(err);
+              showToast("Something went wrong", true);
+            }
+          });
+        });
+
       });
-      const data = await res.json();
+      const filterToggle = document.getElementById("filterToggle");
+      const filterSidebar = document.querySelector(".filter-sidebar");
 
-      if (data.success) {
-
-        if (cartBadge) {
-          cartBadge.innerText = data.cartCount || 0; 
-        }
-        showToast(data.message || "Added to cart!");
-      } else {
-        showToast(data.message || "Action failed", true);
+      if (filterToggle) {
+        filterToggle.addEventListener("click", () => {
+          filterSidebar.classList.toggle("show");
+        });
       }
-    } catch (err) {
-      console.error(err);
-      showToast("Something went wrong", true);
-    }
-  });
-});
-
-});
- const filterToggle = document.getElementById("filterToggle");
-  const filterSidebar = document.querySelector(".filter-sidebar");
-
-  if (filterToggle) {
-    filterToggle.addEventListener("click", () => {
-      filterSidebar.classList.toggle("show");
-    });
-  }
-</script>
+    </script>

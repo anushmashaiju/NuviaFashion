@@ -6,7 +6,7 @@ const variantSchema = new mongoose.Schema({
   sku: { type: String, trim: true },
   price: { type: Number, required: true },
   stock: { type: Number, default: 0 },
-    finalPrice: { type: Number }, 
+  finalPrice: { type: Number },
   image: { type: String, trim: true },
 });
 
@@ -33,7 +33,7 @@ const productSchema = new mongoose.Schema(
     brand: { type: String, trim: true },
     price: { type: Number, required: true },
     finalPrice: { type: Number },
-     deliveryCharge: { type: Number, default: 0 },
+    deliveryCharge: { type: Number, default: 0 },
     description: { type: String, trim: true },
     color: { type: String, trim: true },
     size: { type: String, trim: true },
@@ -48,7 +48,6 @@ const productSchema = new mongoose.Schema(
 
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
-    isListed: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

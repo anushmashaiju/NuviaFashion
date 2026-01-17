@@ -6,10 +6,10 @@ const couponSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
-      "MIN_PURCHASE",   // always available above amount
-      "ONE_TIME",       // user one-time
-      "FIRST_ORDER",    // first-time user
-      "FESTIVAL"        // seasonal
+      "MIN_PURCHASE",   
+      "ONE_TIME",       
+      "FIRST_ORDER",    
+      "FESTIVAL"       
     ],
     required: true
   },
@@ -30,8 +30,7 @@ minimumPrice: {
   required: true
 },
 
-  maxDiscount: Number,      // optional for percent coupons
-
+  maxDiscount: Number,    
   expireOn: { type: Date, required: true},
   isList: { type: Boolean, default: true },
   isActive: { type: Boolean, default: true },

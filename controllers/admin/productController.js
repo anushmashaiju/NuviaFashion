@@ -12,7 +12,7 @@ function calculateFinalPrice(product) {
   const productOffer = product.productOffer;
   const categoryOffer = product.category?.categoryOffer;
 
-  if (productOffer && productOffer.percentage > 0 && productOffer.startDate && productOffer.endDate ) {
+  if (productOffer && productOffer.percentage > 0 && productOffer.startDate && productOffer.endDate) {
     productOfferActive =
       now >= new Date(productOffer.startDate) &&
       now <= new Date(productOffer.endDate);
@@ -48,8 +48,8 @@ function calculateFinalPrice(product) {
 
   return {
     finalPrice: Number(finalPrice.toFixed(2)),
-    activeOffer,                
-    hasAnyOffer: !!activeOffer,  
+    activeOffer,
+    hasAnyOffer: !!activeOffer,
   };
 }
 
@@ -61,7 +61,7 @@ function isOfferActive(startDate, endDate) {
 }
 
 //LIST PRODUCTS
-export const showAllProducts = async (req, res) => {
+const showAllProducts = async (req, res) => {
   try {
     const search = req.query.search || "";
     const page = parseInt(req.query.page) || 1;
@@ -72,11 +72,11 @@ export const showAllProducts = async (req, res) => {
       isDeleted: false,
       ...(search
         ? {
-            $or: [
-              { name: { $regex: search, $options: "i" } },
-              { brand: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { brand: { $regex: search, $options: "i" } },
+          ],
+        }
         : {}),
     };
 
@@ -95,13 +95,13 @@ export const showAllProducts = async (req, res) => {
         ...product.toObject(),
         finalPrice: offerData.finalPrice,
         activeOffer: offerData.activeOffer,
-          hasAnyOffer: offerData.hasAnyOffer
+        hasAnyOffer: offerData.hasAnyOffer
       };
     });
 
     res.status(STATUS.SUCCESS).render("admin/products", {
       title: "All Products",
-      products: enrichedProducts, 
+      products: enrichedProducts,
       admin: req.session.user,
       search,
       currentPage: page,
@@ -116,7 +116,7 @@ export const showAllProducts = async (req, res) => {
 
 // RENDER ADD PRODUCT PAGE
 
-export const getAddProductPage = async (req, res) => {
+const getAddProductPage = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true, isListed: true });
 
@@ -137,8 +137,7 @@ export const getAddProductPage = async (req, res) => {
 
 
 // ADD PRODUCT
-
-export const addProduct = [
+const addProduct = [
   async (req, res) => {
     try {
       const {
@@ -169,12 +168,12 @@ export const addProduct = [
         return req.xhr
           ? res.status(STATUS.BAD_REQUEST).json({ success: false, errors })
           : res.status(STATUS.BAD_REQUEST).render("admin/addProduct", {
-              title: "Add Product",
-              admin: req.session.user,
-              categories,
-              formData: req.body,
-              errors,
-            });
+            title: "Add Product",
+            admin: req.session.user,
+            categories,
+            formData: req.body,
+            errors,
+          });
       }
 
       const categoryDoc = await Category.findById(category);
@@ -282,7 +281,7 @@ export const addProduct = [
 
 // RENDER EDIT PRODUCT PAGE
 
-export const getEditProductPage = async (req, res) => {
+const getEditProductPage = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category");
     if (!product || product.isDeleted)
@@ -304,8 +303,7 @@ export const getEditProductPage = async (req, res) => {
 
 
 // UPDATE PRODUCT
-
-export const updateProduct = async (req, res) => {
+const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product)
@@ -411,24 +409,24 @@ export const updateProduct = async (req, res) => {
 
     return req.xhr
       ? res.status(STATUS.SERVER_ERROR).json({
-          success: false,
-          errorMessage: MESSAGES.SERVER_ERROR,
-          error: err.message,
-        })
+        success: false,
+        errorMessage: MESSAGES.SERVER_ERROR,
+        error: err.message,
+      })
       : res.status(STATUS.SERVER_ERROR).render("admin/editProduct", {
-          pageTitle: "Edit Product",
-          admin: req.session.user,
-          categories,
-          formData: req.body,
-          errors: { general: "Internal server error" },
-        });
+        pageTitle: "Edit Product",
+        admin: req.session.user,
+        categories,
+        formData: req.body,
+        errors: { general: "Internal server error" },
+      });
   }
 };
 
 
 // SOFT DELETE PRODUCT
 
-export const deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndUpdate(req.params.id, { isDeleted: true });
     res.status(STATUS.SUCCESS).redirect("/admin/products");
@@ -441,7 +439,7 @@ export const deleteProduct = async (req, res) => {
 
 // TOGGLE BLOCK / UNBLOCK PRODUCT
 
-export const toggleBlockProduct = async (req, res) => {
+const blockProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product)
@@ -458,20 +456,15 @@ export const toggleBlockProduct = async (req, res) => {
 };
 
 
-// TOGGLE LIST / UNLIST PRODUCT
+export {
+  showAllProducts,
 
-export const toggleListProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product)
-      return res.status(STATUS.NOT_FOUND).send(MESSAGES.PRODUCT_NOT_FOUND);
+  getAddProductPage,
+  addProduct,
 
-    product.isListed = !product.isListed;
-    await product.save();
+  getEditProductPage,
+  updateProduct,
 
-    res.status(STATUS.SUCCESS).redirect("/admin/products");
-  } catch (error) {
-    console.error("Toggle List Error:", error);
-    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
-  }
+  deleteProduct,
+  blockProduct
 };

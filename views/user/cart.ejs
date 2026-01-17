@@ -76,10 +76,10 @@ body {
           <%= item.productId.name %>
           <% if (variant) { %> <%= variant.name %><% } %>
         </h3>
-        <p>
+      <p>
   ₹<%= item.price.toFixed(2) %>
 
-  <% if (item.offerPercent > 0) { %>
+  <% if (item.productId.activeOffer && item.offerPercent > 0) { %>
     <span style="text-decoration: line-through; color:#888; margin-left:6px;">
       ₹<%= item.originalPrice.toFixed(2) %>
     </span>
@@ -88,7 +88,6 @@ body {
     </span>
   <% } %>
 </p>
-
 
         <div class="qty-box">
           <button onclick="updateQty('<%= item.productId._id %>','<%= item.variantId || '' %>','dec')">−</button>
@@ -114,7 +113,11 @@ body {
 
     <div class="summary-box">
       <h3>Total Amount: ₹ <span id="cart-total"><%= total.toFixed(2) %></span></h3>
-      <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+
+       <a href="#" onclick="validateBeforeCheckout()" class="checkout-btn">
+  Proceed to Checkout
+</a>
+
     </div>
 
   <% } %>
@@ -199,26 +202,21 @@ async function removeItem(productId, variantId) {
     console.error(err);
   }
 }
+async function validateBeforeCheckout() {
+  const res = await fetch("/checkout/validate-stock", { method: "POST" })
 
-// async function removeItem(productId, variantId) {
-//   try {
-//     const res = await fetch("/cart/remove", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ productId, variantId })
-//     });
+  const data = await res.json();
 
-//     const data = await res.json();
-//     if (!data.success) return showToast(data.message);
+  if (!data.success) {
+    showToast(data.message);
 
-//     const key = productId + (variantId ? "-" + variantId : "");
-//     document.getElementById(`cart-${key}`)?.remove();
-//     if (data.total !== undefined) document.getElementById("cart-total").innerText = data.total.toFixed(2);
+    if (data.removed) {
+      setTimeout(() => location.reload(), 1500);
+    }
+    return;
+  }
 
-//     if (data.total && data.total === 0) location.reload();
-//   } catch (err) {
-//     showToast("Something went wrong!");
-//     console.error(err);
-//   }
-// }
+  window.location.href = "/checkout";
+}
+
 </script>

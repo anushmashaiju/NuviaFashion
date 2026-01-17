@@ -35,7 +35,7 @@
     table th,
     table td {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 5px;
       text-align: center;
     }
 
@@ -76,84 +76,67 @@
 </head>
 
 <body>
-  <h2>Sales Report</h2>
- <table>
+
+<h2>Sales Report</h2>
+
+<table>
   <thead>
     <tr>
-      <th>
-        <h6>Total Orders</h6>
-        <p><%= grandTotal.totalOrders %></p>
-      </th>
-
-      <th>
-        <h6>Total Sales (Subtotal)</h6>
-        <p>₹ <%= grandTotal.totalAmount.toFixed(2) %></p>
-      </th>
-
-      <th>
-        <h6>Total Tax</h6>
-        <p>₹ <%= grandTotal.totalTax.toFixed(2) %></p>
-      </th>
-
-      <th>
-        <h6>Total Delivery</h6>
-        <p>₹ <%= grandTotal.deliveryCharge.toFixed(2) %></p>
-      </th>
-
-  <th>
-        <h6>Total Discounts</h6>
-        <p>₹ <%= grandTotal.totalDiscount.toFixed(2) %></p>
-      </th>
-
-      <th>
-        <h6>Net Revenue</h6>
-        <p>₹ <%= grandTotal.finalAmount.toFixed(2) %></p>
-      </th>
+      <th>Total Orders<br><%= grandTotal.totalOrders || 0 %></th>
+      <th>Subtotal<br>₹ <%= (grandTotal.subtotal || 0).toFixed(2) %></th>
+      <th>Tax<br>₹ <%= (grandTotal.totalTax || 0).toFixed(2) %></th>
+      <th>Delivery<br>₹ <%= (grandTotal.deliveryCharge || 0).toFixed(2) %></th>
+      <th>Discount<br>₹ <%= (grandTotal.totalDiscount || 0).toFixed(2) %></th>
+      <th>Debit<br>₹ <%= (grandTotal.totalDebit || 0).toFixed(2) %></th>
+      <th>Credit<br>₹ <%= (grandTotal.totalCredit || 0).toFixed(2) %></th>
+      <th>Net Revenue<br>₹ <%= (grandTotal.netRevenue || 0).toFixed(2) %></th>
     </tr>
   </thead>
 </table>
 
-  <div class="section-card">
-    <table>
-      <thead>
-  <tr>
-    <th>Date</th>
-    <th>Order ID</th>
-    <th>Customer</th>
-    <th>Subtotal</th>
-    <th>Tax</th>
-    <th>Delivery</th>
-       <th>Discount</th>
-    <th>Final Amount</th>
-    <th>Payment</th>
-  </tr>
-</thead>
+<br>
 
-      <tbody>
+<table>
+  <thead>
+    <tr>
+     <th>Date</th>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Subtotal</th>
+                                <th>Tax</th>
+                                <th>Delivery</th>
+                                <th>Discount</th>
+                                <th>Sales</th>
+                                <th>Refund</th>
+                                <th>Net</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+    </tr>
+  </thead>
+
+  <tbody>
   <% orders.forEach(order => { %>
     <tr>
-      <td><%= order.createdAt.toLocaleDateString() %></td>
-
+      <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
       <td><%= order.orderID %></td>
-
       <td><%= order.user_id?.name || "Unknown" %></td>
 
-      <td>₹ <%= order.subtotal.toFixed(2) %></td>  
-
+      <td>₹ <%= (order.subtotal || 0).toFixed(2) %></td>
       <td>₹ <%= (order.tax || 0).toFixed(2) %></td>
-
       <td>₹ <%= (order.deliveryCharge || 0).toFixed(2) %></td>
+      <td>₹ <%= (order.couponDiscount || 0).toFixed(2) %></td>
 
-       <td>₹ <%= (order.couponDiscount || 0).toFixed(2) %></td>
+      <td>₹ <%= (order.debit || 0).toFixed(2) %></td>
+      <td>₹ <%= (order.credit || 0).toFixed(2) %></td>
+      <td>₹ <%= (order.net || 0).toFixed(2) %></td>
 
-      <td>₹ <%= order.totalPrice.toFixed(2) %></td>
-
+      <td><%= order.orderStatus %></td>
       <td><%= order.paymentMethod %></td>
     </tr>
   <% }) %>
 </tbody>
 
-    </table>
-  </div>
+</table>
+
 </body>
 </html>

@@ -33,21 +33,21 @@ const upload = multer({
   storage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, 
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
 // Upload Single Category Image
-export const uploadSingleImage = upload.single("thumbnail");
+const uploadSingleImage = upload.single("thumbnail");
 
 // Upload Product Images (Main + Variant)
-export const uploadProductImages = upload.fields([
-  { name: "images", maxCount: 20 },         
+const uploadProductImages = upload.fields([
+  { name: "images", maxCount: 20 },
   { name: "variantImages", maxCount: 50 },
 ]);
 
 //  Upload Buffer to Cloudinary
-export const uploadToCloudinary = (fileBuffer, folder = "products") =>
+const uploadToCloudinary = (fileBuffer, folder = "products") =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder },
@@ -61,7 +61,7 @@ export const uploadToCloudinary = (fileBuffer, folder = "products") =>
 
 
 //  Process Category Image
-export const processCategoryImage = async (req, res, next) => {
+const processCategoryImage = async (req, res, next) => {
   try {
     if (req.file) {
       const imageUrl = await uploadToCloudinary(req.file.buffer, "nuvia_categories");
@@ -70,12 +70,12 @@ export const processCategoryImage = async (req, res, next) => {
     next();
   } catch (error) {
     console.error(" Cloudinary category upload error:", error);
-    res.status(500).send("Category image upload failed");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
 //  Process Product Images (Add Product)
-export const processProductImages = async (req, res, next) => {
+const processProductImages = async (req, res, next) => {
   try {
     req.imageUrls = [];
     req.variantImageUrls = [];
@@ -96,11 +96,11 @@ export const processProductImages = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Cloudinary Upload Error:", error);
-    res.status(500).send("Error uploading images");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 }
 //  Process Product Images (Edit Product)
-export const processProductImagesForEdit = async (req, res, next) => {
+const processProductImagesForEdit = async (req, res, next) => {
   try {
     const mainFiles = req.files?.["images"] || [];
     const variantFiles = req.files?.["variantImages"] || [];
@@ -122,15 +122,15 @@ export const processProductImagesForEdit = async (req, res, next) => {
     next();
   } catch (error) {
     console.error(" Edit product upload error:", error);
-    res.status(500).send("Product image upload failed");
+    res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
 //uploadProfileImage
-export const uploadProfileImage = upload.single("profileImage");
+const uploadProfileImage = upload.single("profileImage");
 
 //processProfileImage
-export const processProfileImage = async (req, res, next) => {
+const processProfileImage = async (req, res, next) => {
   try {
     if (!req.file) return next();
 
@@ -157,3 +157,13 @@ export const processProfileImage = async (req, res, next) => {
   }
 };
 
+export {
+  uploadSingleImage,
+  uploadProductImages,
+  uploadToCloudinary,
+  processCategoryImage,
+  processProductImages,
+  processProductImagesForEdit,
+  uploadProfileImage,
+  processProfileImage
+};

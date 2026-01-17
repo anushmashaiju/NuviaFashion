@@ -1,119 +1,391 @@
 <%- include("../partials/adminHeader", { pageTitle: "Return Request Details" }) %>
 
-<style>
-  .container { margin: 100px 20px 40px 240px; font-family: "Poppins", sans-serif; width: 1000px; }
-  .order-box { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #ff3b85; margin-bottom: 30px; }
-  .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  .order-id { font-size: 22px; font-weight: 700; color: #ff1476; }
-  .order-status { font-size: 20px; color: #ff3b85; font-weight: 600; }
-  .section-title { margin-top: 25px; font-size: 20px; color: #333; border-bottom: 2px solid #ffe7ef; padding-bottom: 5px; font-weight: 600; }
-  .items { margin-top: 15px; }
-  .item { display: flex; gap: 15px; padding: 12px; background: #fff7f9; border-radius: 10px; margin-bottom: 15px; align-items: center; }
-  .item img { width: 85px; height: 85px; border-radius: 10px; object-fit: contain; }
-  .box { width: 48%; background: #fff7f9; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-  .box h4 { margin-bottom: 12px; color: #ff1476; font-size: 18px; }
-  .return-images img { width: 120px; margin: 5px; border-radius: 8px; }
-  .btn-action { margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px; }
-  @media (max-width: 992px) {
-    .container { margin: 80px 15px 20px 15px; width: auto; }
-    .order-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .items { flex-direction: column; }
-    .item { flex-direction: column; align-items: flex-start; }
-    .box { width: 100%; }
-    .btn-action { flex-direction: column; align-items: stretch; }
-    .btn-action button { width: 100%; }
-  }
+  <style>
+    .container {
+      margin: 100px 20px 40px 240px;
+      font-family: "Poppins", sans-serif;
+      width: 1000px;
+    }
 
-  @media (max-width: 576px) {
-    .order-id { font-size: 18px; }
-    .order-status { font-size: 16px; }
-    .section-title { font-size: 16px; }
-    .item img { width: 70px; height: 70px; }
-    .return-images img { width: 90px; }
-    .box h4 { font-size: 16px; }
-    .btn-action button { font-size: 14px; padding: 10px; }
-  }
-</style>
+    .order-box {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-left: 5px solid #ff3b85;
+      margin-bottom: 30px;
+    }
 
-<div class="container">
-  <div class="order-box">
-    <div class="order-header">
-      <h3 class="order-id">Return Request #<%= order.orderID %></h3>
-      <span class="order-status"><%= order.orderStatus %></span>
-    </div>
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
 
-    <p><strong>User:</strong> <%= order.user_id?.name || "Unknown" %> (<%= order.user_id?.email || "N/A" %>)</p>
-    <p><strong>Requested On:</strong> <%= order.returnRequestedAt?.toDateString() || 'N/A' %></p>
+    .order-id {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ff1476;
+    }
 
-    <h4 class="section-title">Products</h4>
-    <div class="items">
-  <% order.items.forEach(item => { %>
-    <div class="item">
-                  <img src="<%= item.productId?.images?.[0] %>" />
+    .order-status {
+      font-size: 20px;
+      color: #ff3b85;
+      font-weight: 600;
+    }
 
-      <div>
-        <p><strong><%= item.productName || 'N/A' %></strong></p>
-        <p>Variant: <%= item.color || item.size ? item.color + ' / ' + item.size : 'N/A' %></p>
-        <p>Qty: <%= item.quantity %></p>
-        <p>Price: ₹<%= item.finalPrice %></p>
+    .section-title {
+      margin-top: 25px;
+      font-size: 20px;
+      color: #333;
+      border-bottom: 2px solid #ffe7ef;
+      padding-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .items {
+      margin-top: 15px;
+    }
+
+    .item {
+      display: flex;
+      gap: 15px;
+      padding: 12px;
+      background: #fff7f9;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .item img {
+      width: 85px;
+      height: 85px;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .box {
+      width: 48%;
+      background: #fff7f9;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .box h4 {
+      margin-bottom: 12px;
+      color: #ff1476;
+      font-size: 18px;
+    }
+
+    .return-images img {
+      width: 120px;
+      margin: 5px;
+      border-radius: 8px;
+    }
+
+    .btn-action {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+    }
+
+    .not-returned {
+      opacity: 0.5;
+      background: #f3f3f3;
+    }
+
+
+    @media (max-width: 992px) {
+      .container {
+        margin: 80px 15px 20px 15px;
+        width: auto;
+      }
+
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .items {
+        flex-direction: column;
+      }
+
+      .item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .box {
+        width: 100%;
+      }
+
+      .btn-action {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-action button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .order-id {
+        font-size: 18px;
+      }
+
+      .order-status {
+        font-size: 16px;
+      }
+
+      .section-title {
+        font-size: 16px;
+      }
+
+      .item img {
+        width: 70px;
+        height: 70px;
+      }
+
+      .return-images img {
+        width: 90px;
+      }
+
+      .box h4 {
+        font-size: 16px;
+      }
+
+      .btn-action button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+
+  <div class="container">
+    <div class="order-box">
+      <div class="order-header">
+        <h3 class="order-id">Return Request #<%= order.orderID %>
+        </h3>
+        <span class="order-status">
+          <%= order.orderStatus %>
+        </span>
       </div>
-    </div>
-  <% }) %>
-</div>
 
+      <p><strong>User:</strong>
+        <%= order.user_id?.name || "Unknown" %> (<%= order.user_id?.email || "N/A" %>)
+      </p>
+      <p><strong>Requested On:</strong>
+        <%= order.items.find(i=> i.returnRequested)?.returnRequestedAt?.toDateString() || 'N/A' %>
+      </p>
 
-    <h4 class="section-title">Delivery Info</h4>
-    <div class="box">
-      <% if(order.shippingAddressId) { %>
-     
-<p><strong>Delivered On:</strong> <%= order.deliveredAt ? order.deliveredAt.toDateString() : 'N/A' %></p>
+      <h4 class="section-title">Items Requested for Return</h4>
+      <div class="items">
+        <%order.items.filter(i => i.returnRequested)
 
-        <p><strong>Address:</strong> <%= order.shippingAddressId.addressLine %> <%= order.shippingAddressId.city %> <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %></p>
-        <p><strong>Phone: </strong><%= order.shippingAddressId.phone %></p>
-      <% } else { %>
-        <p>No Address Found</p>
-      <% } %>
-    </div>
+.forEach(item => { %>
+          <div class="item">
+            <img src="<%= item.productId?.images?.[0] %>" />
 
-    <h4 class="section-title">Customer Reason</h4>
-    <div class="box">
-      <p><%= order.returnReason || 'N/A' %></p>
-      <% if(order.returnImages && order.returnImages.length > 0){ %>
-        <div class="return-images">
-          <% order.returnImages.forEach(img => { %>
-            <img src="/uploads/returns/<%= img %>" />
-          <% }) %>
-        </div>
-      <% } %>
-    </div>
+            <div>
+              <p><strong>
+                  <%= item.productName %>
+                </strong></p>
+              <p>Variant: <%= item.color || item.size ? item.color + ' / ' + item.size : 'N/A' %>
+              </p>
+              <p>Qty: <%= item.quantity %>
+              </p>
+              <p>Price: ₹<%= item.finalPrice %>
+              </p>
+                          <p>
+  <strong>Return Reason:</strong>
+  <%= item.returnReason || "N/A" %>
+</p>
+              <p style="color:#1b7f3a; font-weight:600;">
+  Status: <%= item.returnStatus === "Approved" ? "Request Approved" : item.returnStatus %>
+</p>
 
-    <h4 class="section-title">Return Policy Summary</h4> 
-    <div class="box"> 
-        <ul> 
-            <li>Return within <strong>7 days</strong> of delivery.</li>
-             <li>Product must be unused and in original packaging.</li> 
-             <li>Damaged or incorrect items eligible for full refund.</li> 
-             <li>After approval, reverse pickup will be scheduled.</li>
-             </ul> 
+  
+<%
+  const itemSubtotal = item.finalPrice * item.quantity;
+  const itemTax = Number((itemSubtotal * 0.18).toFixed(2));
+
+  const refundAmount = Number((itemSubtotal + itemTax ).toFixed(2));
+%>
+
+<p style="color:#1b7f3a; font-weight:600;">
+  Refund Amount: ₹<%= refundAmount %>
+</p>
+
+              <% if (item.returnStatus==="Requested" ) { %>
+                <button class="btn btn-success"
+                  onclick="approveItemReturn('<%= order.orderID %>', '<%= item.productId._id %>')
+">
+                  Approve Item
+                </button>
+                <% } %>
             </div>
-    <div class="btn-action">
-     <button onclick="approveReturn('<%= order.orderID %>', '<%= order.returnReason %>')" class="btn btn-success btn-lg">
-  Approve
-</button>
+          </div>
+          <% }) %>
+      </div>
+      <h4 class="section-title">Other Items (Not Returned)</h4>
+      <div class="items">
+        <% order.items.filter(i=> !i.returnRequested).forEach(item => { %>
+          <div class="item not-returned">
+            <img src="<%= item.productId?.images?.[0] %>" />
 
-      <button onclick="rejectReturn('<%= order.orderID %>')" class="btn btn-danger btn-lg">Reject</button>
+            <div>
+              <p><strong>
+                  <%= item.productName %>
+                </strong></p>
+              <p>Variant: <%= item.color || item.size ? item.color + ' / ' + item.size : 'N/A' %>
+              </p>
+              <p>Qty: <%= item.quantity %>
+              </p>
+              <p>Price: ₹<%= item.finalPrice %>
+              </p>
+            </div>
+          </div>
+          <% }) %>
+      </div>
+
+      <h4 class="section-title">Delivery Info</h4>
+      <div class="box">
+        <% if(order.shippingAddressId) { %>
+
+          <p><strong>Delivered On:</strong>
+            <%= order.deliveredAt ? order.deliveredAt.toDateString() : 'N/A' %>
+          </p>
+
+          <p><strong>Address:</strong>
+            <%= order.shippingAddressId.addressLine %>
+              <%= order.shippingAddressId.city %>
+                <%= order.shippingAddressId.state %> - <%= order.shippingAddressId.pincode %>
+          </p>
+          <p><strong>Phone: </strong>
+            <%= order.shippingAddressId.phone %>
+          </p>
+          <% } else { %>
+            <p>No Address Found</p>
+            <% } %>
+      </div>
+
+   <% if (order.items.filter(i => i.returnRequested).length === 0) { %>
+  <h4 class="section-title">Customer Reason</h4>
+  <div class="box">
+    <p><%= order.returnReason || 'N/A' %></p>
+
+    <% if(order.returnImages?.length > 0){ %>
+      <div class="return-images">
+        <% order.returnImages.forEach(img => { %>
+          <img src="/uploads/returns/<%= img %>" />
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+<% } %>
+
+
+      <h4 class="section-title">Return Policy Summary</h4>
+      <div class="box">
+        <ul>
+          <li>Return within <strong>7 days</strong> of delivery.</li>
+          <li>Product must be unused and in original packaging.</li>
+          <li>Damaged or incorrect items eligible for full refund.</li>
+          <li>After approval, reverse pickup will be scheduled.</li>
+        </ul>
+      </div>
+      <% if (order.items.filter(i => i.returnRequested).length === 0) { %>
+  <div class="btn-action">
+    <button onclick="approveReturn('<%= order.orderID %>', '<%= order.returnReason %>')"
+      class="btn btn-success btn-lg">
+      Approve
+    </button>
+
+    <button onclick="rejectReturn('<%= order.orderID %>')" class="btn btn-danger btn-lg">
+      Reject
+    </button>
+  </div>
+<% } %>
+
+
     </div>
   </div>
-</div>
 
-<script>
-function approveReturn(orderID, reason) {
-  Swal.fire({
-    title: "Approve Return",
-    html: `
+  <script>
+    function approveReturn(orderID, reason) {
+      Swal.fire({
+        title: "Approve Return",
+        html: `
       <p><strong>Customer Reason:</strong></p>
       <p>${reason || "No reason provided"}</p>
       <hr>
+      <p>Should this item be restocked?</p>
+    `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Restock",
+        cancelButtonText: "Do NOT Restock",
+        reverseButtons: true
+      }).then(result => {
+        fetch(`/admin/return-requests/approve/${orderID}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restock: result.isConfirmed
+          }),
+          credentials: "same-origin"
+        })
+          .then(r => r.json())
+          .then(data => {
+            Swal.fire(
+              data.success ? "Success" : "Error",
+              data.message,
+              data.success ? "success" : "error"
+            ).then(() => {
+              if (data.success) window.location.href = "/admin/orders";
+            });
+          });
+      });
+    }
+
+    function rejectReturn(orderID) {
+      Swal.fire({
+        title: "Reject Return",
+        input: "text",
+        inputLabel: "Reason",
+        showCancelButton: true,
+        inputValidator: v => !v && "Reason is required"
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch(`/admin/return-requests/reject/${orderID}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason: result.value }),
+            credentials: "same-origin"
+          })
+            .then(r => r.json())
+            .then(data => {
+              Swal.fire(
+                data.success ? "Rejected" : "Error",
+                data.message,
+                data.success ? "success" : "error"
+              ).then(() => {
+                if (data.success) window.location.href = '/admin/orders';
+              });
+            });
+        }
+      });
+    }
+   function approveItemReturn(orderID, productId) {
+  Swal.fire({
+    title: "Approve Item Return",
+    html: `
       <p>Should this item be restocked?</p>
     `,
     icon: "question",
@@ -122,54 +394,25 @@ function approveReturn(orderID, reason) {
     cancelButtonText: "Do NOT Restock",
     reverseButtons: true
   }).then(result => {
-    fetch(`/admin/return-requests/approve/${orderID}`, {
+    fetch(`/admin/return-requests/approve-item/${orderID}/${productId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({
         restock: result.isConfirmed
-      }),
-      credentials: "same-origin"
+      })
     })
     .then(r => r.json())
     .then(data => {
       Swal.fire(
-        data.success ? "Success" : "Error",
+        data.success ? "Approved" : "Error",
         data.message,
         data.success ? "success" : "error"
       ).then(() => {
-        if (data.success) window.location.href = "/admin/orders";
-      });
+  if (data.success) window.location.href = "/admin/orders";
+});
+
     });
   });
 }
-
-function rejectReturn(orderID) {
-  Swal.fire({
-    title: "Reject Return",
-    input: "text",
-    inputLabel: "Reason",
-    showCancelButton: true,
-    inputValidator: v => !v && "Reason is required"
-  }).then(result => {
-    if(result.isConfirmed){
-      fetch(`/admin/return-requests/reject/${orderID}`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ reason: result.value }),
-        credentials: "same-origin"
-      })
-      .then(r => r.json())
-      .then(data => {
-        Swal.fire(
-          data.success ? "Rejected" : "Error",
-          data.message,
-          data.success ? "success" : "error"
-        ).then(() => {
-          // Redirect to Orders page after rejection
-          if(data.success) window.location.href = '/admin/orders';
-        });
-      });
-    }
-  });
-}
-</script>
+  </script>

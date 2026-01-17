@@ -318,7 +318,7 @@
             </td>
 
             <td>
-              <% if(order.orderStatus==='Return Requested' ) { %>
+               <% if (order.hasReturnRequest) { %>
                 <button class="btn btn-warning btn-sm return-requested-btn" data-order-id="<%= order.orderID %>">
                   Return Requested
                 </button>
@@ -326,7 +326,6 @@
                 <% } else if(order.orderStatus==='Cancelled' || order.orderStatus==='Returned' ||
                   order.orderStatus==='Return Approved' || order.orderStatus==='Return Rejected' ) { %>
 
-                  <!-- Show Status Text Only -->
                   <span style="color:<%= 
         order.orderStatus.includes('Rejected') ? 'red' : 
         order.orderStatus.includes('Approved') ? 'green' : 

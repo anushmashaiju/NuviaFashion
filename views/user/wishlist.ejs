@@ -16,12 +16,14 @@
       border-radius: 15px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-.wishlist-container h2{
-  margin-bottom: 25px; 
-  color: #030303; 
-  font-weight: 600;
-  text-align: center; 
-}
+
+    .wishlist-container h2 {
+      margin-bottom: 25px;
+      color: #030303;
+      font-weight: 600;
+      text-align: center;
+    }
+
     .wishlist-item {
       display: grid;
       grid-template-columns: 120px 1fr 160px;
@@ -127,81 +129,81 @@
     }
   </style>
 
- <div class="wishlist-container">
-  <h2>My Wishlist</h2>
-  <hr>
+  <div class="wishlist-container">
+    <h2>My Wishlist</h2>
+    <hr>
 
-  <% if (!wishlist || wishlist.products.length === 0) { %>
-    <div class="empty-box">
-      <img src="/img/empty-wishlist.png" alt="">
-      <h3>Your wishlist is empty</h3>
-      <a href="/products">Continue Shopping</a>
-    </div>
+    <% if (!wishlist || wishlist.products.length===0) { %>
+      <div class="empty-box">
+        <img src="/img/empty-wishlist.png" alt="">
+        <h3>Your wishlist is empty</h3>
+        <a href="/products">Continue Shopping</a>
+      </div>
 
-  <% } else { %>
+      <% } else { %>
 
-    <% wishlist.products.forEach(item => { %>
-      <% if (item.productId) { %>
+        <% wishlist.products.forEach(item=> { %>
+          <% if (item.productId) { %>
 
-       <%
-  const product = item.productId;
+            <% const product=item.productId; const variant=item.variantId ? product.variants.find(v=>
+              v._id.toString() === item.variantId.toString()
+              )
+              : null;
 
-  const variant = item.variantId
-    ? product.variants.find(v =>
-        v._id.toString() === item.variantId.toString()
-      )
-    : null;
+              const image = variant?.image || product.images[0];
 
-  const image = variant?.image || product.images[0];
+              const price = variant?.finalPrice
+              || variant?.price
+              || product.finalPrice
+              || product.price;
 
-  const price = variant?.finalPrice
-    || variant?.price
-    || product.finalPrice
-    || product.price;
+              const stock = typeof variant?.stock === "number"
+              ? variant.stock
+              : product.stock;
+              %>
 
-  const stock = typeof variant?.stock === "number"
-    ? variant.stock
-    : product.stock;
-%>
+              <div class="wishlist-item" id="wish-<%= product._id %>">
 
-        <div class="wishlist-item" id="wish-<%= product._id %>">
+                <img src="<%= image %>" alt="">
 
-          <img src="<%= image %>" alt="">
+                <div>
+                  <h4>
+                    <%= product.name %>
+                  </h4>
 
-          <div>
-            <h4><%= product.name %></h4>
+                  <% if (variant) { %>
+                    <p>Color: <%= variant.color %> | Size: <%= variant.size %>
+                    </p>
+                    <% } %>
 
-            <% if (variant) { %>
-              <p>Color: <%= variant.color %> | Size: <%= variant.size %></p>
-            <% } %>
+                      <p>₹ <%= price %>
+                      </p>
 
-            <p>₹ <%= price %></p>
+                      <p style="color:<%= stock > 0 ? 'green' : 'red' %>;">
+                        <%= stock> 0 ? 'In Stock' : 'Out of Stock' %>
+                      </p>
+                </div>
 
-            <p style="color:<%= stock > 0 ? 'green' : 'red' %>;">
-              <%= stock > 0 ? 'In Stock' : 'Out of Stock' %>
-            </p>
-          </div>
+                <div class="wishlist-actions">
+                  <button class="btn-cart"
+                    onclick="moveToCart('<%= product._id %>', '<%= variant ? variant._id : "" %>')">
+                    Move to Cart
+                  </button>
 
-          <div class="wishlist-actions">
-            <button class="btn-cart"
-              onclick="moveToCart('<%= product._id %>', '<%= variant ? variant._id : "" %>')">
-              Move to Cart
-            </button>
+                  <button class="btn-remove"
+                    onclick="removeWishlist('<%= product._id %>', '<%= variant ? variant._id : "" %>')">
+                    Remove
+                  </button>
+                </div>
 
-            <button class="btn-remove"
-              onclick="removeWishlist('<%= product._id %>', '<%= variant ? variant._id : "" %>')">
-              Remove
-            </button>
-          </div>
+              </div>
 
-        </div>
+              <% } %>
+                <% }) %>
 
-      <% } %>   
-    <% }) %>    
+                  <% } %>
 
-  <% } %>        
-
-</div>
+  </div>
 
 
   <script>
@@ -219,74 +221,44 @@
         toast.classList.remove("show");
       }, 2000);
     }
-function removeWishlist(productId, variantId = null) {
-  fetch('/wishlist/remove', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, variantId })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById("wish-" + productId).remove();
+    function removeWishlist(productId, variantId = null) {
+      fetch('/wishlist/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, variantId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById("wish-" + productId).remove();
 
-        updateHeaderCounts({
-          wishlistCount: data.count
+            updateHeaderCounts({
+              wishlistCount: data.count
+            });
+          }
         });
-      }
-    });
-}
+    }
+    function moveToCart(productId, variantId = null) {
+      fetch(`/cart/add-ajax/${productId}`, {
+        method: 'POST',
+        credentials: "include",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variantId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          showToast(data.message);
 
-    // function removeWishlist(productId, variantId = null) {
-    //   fetch('/wishlist/remove', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ productId, variantId })
-    //   })
-    //     .then(res => res.json())
-    //     .then(data => {
-    //       if (data.success) {
-    //         document.getElementById("wish-" + productId).remove();
-    //       }
-    //     });
-    // }
+          if (data.success) {
+            removeWishlist(productId, variantId);
 
-    // function moveToCart(productId, variantId = null) {
-    //   fetch(`/cart/add-ajax/${productId}`, {
-    //     method: 'POST',
-    //     credentials: "include",
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ variantId })
-    //   })
-    //     .then(res => res.json())
-    //     .then(data => {
-    //       showToast(data.message);
-    //       if (data.success) removeWishlist(productId, variantId);
-    //     });
-    // }
-function moveToCart(productId, variantId = null) {
-  fetch(`/cart/add-ajax/${productId}`, {
-    method: 'POST',
-    credentials: "include",
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ variantId })
-  })
-    .then(res => res.json())
-    .then(data => {
-      showToast(data.message);
-
-      if (data.success) {
-        removeWishlist(productId, variantId);
-
-        updateHeaderCounts({
-          cartCount: data.cartCount,
-          wishlistCount: data.wishlistCount
+            updateHeaderCounts({
+              cartCount: data.cartCount,
+              wishlistCount: data.wishlistCount
+            });
+          }
         });
-      }
-    });
-}
-
-
+    }
   </script>
 
   <%- include("../partials/userFooter") %>

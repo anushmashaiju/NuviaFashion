@@ -8,8 +8,18 @@ import STATUS from "../../utils/statusCodes.js";
 import { processWalletRefund } from "../../utils/walletRefund.js";
 import Coupon from "../../models/couponModel.js";
 
+const getCouponEligibleSubtotal = (order, productIdToExclude) => {
+  return order.items
+    .filter(i =>
+      !i.isCancelled &&
+      !i.isReturned &&
+      i.productId.toString() !== productIdToExclude
+    )
+    .reduce((sum, i) => sum + (i.finalPrice * i.quantity), 0);
+};
+
 // LIST ORDERS
-export const listOrders = async (req, res) => {
+const listOrders = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/login");
@@ -17,23 +27,23 @@ export const listOrders = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
     const skip = (page - 1) * limit;
-  const twoDaysAgo = new Date();
-twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-const filterCondition = {
-  user_id: userId,
-  $or: [
-    { paymentStatus: { $ne: "failed" } },
-    {
-      paymentStatus: "failed",
-      createdAt: { $gte: twoDaysAgo }
-    }
-  ]
-};
+    const filterCondition = {
+      user_id: userId,
+      $or: [
+        { paymentStatus: { $ne: "failed" } },
+        {
+          paymentStatus: "failed",
+          createdAt: { $gte: twoDaysAgo }
+        }
+      ]
+    };
     const totalOrders = await Order.countDocuments(filterCondition);
 
     const orders = await Order.find(filterCondition)
-      .sort({ createdAt: -1 }) 
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -46,36 +56,37 @@ const filterCondition = {
       totalPages
     });
 
-  } catch (err) {    
+  } catch (err) {
     console.error("List Orders Error:", err);
 
-    return res.status(STATUS.SERVER_ERROR).send("Server Error");
+    return res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
 };
 
 // ORDER DETAILS
-export const getOrderDetail = async (req, res) => {
+const getOrderDetail = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/login");
+    const { orderID } = req.params;
 
     const order = await Order.findOne({
-  $or: [
-    { orderID: req.params.id },
-    { razorpayOrderId: req.params.id }
-  ],
-  user_id: userId
-}).populate("shippingAddressId");
+      $or: [
+        { orderID: orderID },
+        { razorpayOrderId: orderID }
+      ],
+      user_id: userId
+    }).populate("shippingAddressId");
 
     if (!order)
       return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
-if (
-  order.paymentStatus === "failed" &&
-  !req.originalUrl.includes("/payment/failed")
-) {
-  return res.redirect(`/payment/failed/${order.razorpayOrderId}`);
-}
+    if (
+      order.paymentStatus === "failed" &&
+      !req.originalUrl.includes("/payment/failed")
+    ) {
+      return res.redirect(`/payment/failed/${order.razorpayOrderId}`);
+    }
     const minDays = 3;
     const maxDays = 7;
 
@@ -114,96 +125,153 @@ if (
 };
 
 // CANCEL ORDER
-export const cancelOrder = async (req, res) => {
+const cancelOrder = async (req, res) => {
   try {
     const { reason } = req.body;
     const userId = req.session.user?.id;
-    if (!userId) return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: "Login required" });
 
-    const order = await Order.findOne({ orderID: req.params.id, user_id: userId });
-    if (!order) return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.LOGIN_REQUIRED
+      });
+    }
+ const { orderID } = req.params;
 
-    if (order.orderStatus === "Cancelled")
-      return res.status(SERVER.BAD_REQUEST).json({ success: false, message: "Order already cancelled" });
+    const order = await Order.findOne({
+      orderID,
+      user_id: userId
+    });
 
-if (order.paymentStatus === "success") {
-  const refundAmount = Number((order.totalPrice).toFixed(2));
-  await processWalletRefund({
-    userId: order.user_id,
-    amount: refundAmount,
-    description: "Refund for cancelled order"
-  });
+    if (!order) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.ORDER_NOT_FOUND
+      });
+    }
+
+    if (order.orderStatus === "Cancelled") {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.ORDER_ALREADY_CANCELLED
+      });
+    }
+
+  const refundable =
+  order.paymentMethod !== "COD" ||
+  (order.paymentMethod === "COD" && order.orderStatus === "Delivered");
+
+if (refundable) {
+  for (const item of order.items) {
+    if (item.refundProcessed || item.isCancelled) continue;
+
+    item.isCancelled = true;
+
+    await processWalletRefund({
+      userId: order.user_id,
+      order,
+      item,
+      description: `Refund for cancelled order ${order.orderID}`
+    });
+  }
 }
+
     order.orderStatus = "Cancelled";
     order.cancelReason = reason || null;
     await order.save();
 
     for (let item of order.items) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: item.quantity }
+      });
     }
 
-    res.status(STATUS.SUCCESS).json({ success: true, message: "Order cancelled and refunded to wallet" });
+    return res.status(STATUS.SUCCESS).json({
+      success: true,
+      message: MESSAGES.ORDER_CANCELLED
+    });
 
   } catch (err) {
     console.error("Cancel Order Error:", err);
-    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
+    return res.status(STATUS.SERVER_ERROR).json({
+      success: false,
+      message: MESSAGES.SERVER_ERROR
+    });
   }
 };
 
 // CANCEL SPECIFIC PRODUCT
-export const cancelProduct = async (req, res) => {
+const cancelProduct = async (req, res) => {
   try {
     const { productId, reason } = req.body;
     const userId = req.session.user?.id;
 
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.LOGIN_REQUIRED
+      });
+    }
+ const { orderID } = req.params;
     const order = await Order.findOne({
-      orderID: req.params.id,
+      orderID,
       user_id: userId
     });
 
-    if (!order)
-      return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
+    if (!order) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.ORDER_NOT_FOUND
+      });
+    }
 
     const item = order.items.find(
       i => i.productId.toString() === productId
     );
 
-    if (!item)
-      return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Item not found" });
+    if (!item) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.PRODUCT_NOT_IN_ORDER
+      });
+    }
 
-    if (item.isCancelled)
-      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "Item already cancelled" });
+    if (item.isCancelled) {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.PRODUCT_ALREADY_CANCELLED
+      });
+    }
 
-    /* =====================================================
-       🔒 COUPON MINIMUM PURCHASE VALIDATION (FIXED & STRICT)
-    ===================================================== */
-    if (
-      order.couponApplied &&
-      order.couponDiscount > 0 &&
-      order.couponMinimumPrice > 0
-    ) {
+    if (item.isReturned) {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.PRODUCT_ALREADY_RETURNED
+      });
+    }
+
+    if (order.couponApplied && order.couponMinimumPrice > 0) {
       const activeItems = order.items.filter(
         i => !i.isCancelled && !i.isReturned
       );
 
-      // Only block partial cancellation
-      if (activeItems.length > 1) {
-      const remainingSubtotal =
-  order.subtotal - (item.finalPrice * item.quantity);
+      if (activeItems.length === 1) {
+        return res.status(STATUS.BAD_REQUEST).json({
+          success: false,
+          message: MESSAGES.COUPON_ITEM_CANCEL_NOT_ALLOWED
+        });
+      }
 
+      const remainingSubtotal = getCouponEligibleSubtotal(order, productId);
 
-        if (remainingSubtotal < order.couponMinimumPrice) {
-          return res.status(STATUS.BAD_REQUEST).json({
-            success: false,
-            message: `This item cannot be cancelled because the remaining order value (₹${remainingSubtotal}) is below the minimum purchase amount (₹${order.couponMinimumPrice}) required for the applied coupon.`
-          });
-        }
+      if (remainingSubtotal < order.couponMinimumPrice) {
+        return res.status(STATUS.BAD_REQUEST).json({
+          success: false,
+          message: MESSAGES.COUPON_MINIMUM_NOT_MET(remainingSubtotal, order.couponMinimumPrice)
+        });
       }
     }
 
-    /* =======================
-       REFUND ELIGIBILITY
-    ======================= */
     const isOnlinePaid = ["Razorpay", "Wallet"].includes(order.paymentMethod);
     const isCODDelivered =
       order.paymentMethod === "COD" && order.orderStatus === "Delivered";
@@ -220,25 +288,23 @@ export const cancelProduct = async (req, res) => {
 
     if (allowRefund) {
       const itemSubtotal = item.finalPrice * item.quantity;
-      const itemTax = itemSubtotal * 0.18;
+      const itemTax = Number((itemSubtotal * 0.18).toFixed(2));
 
-      refundAmount = isOnlyItem ? order.totalPrice : itemSubtotal + itemTax;
-      refundAmount = Number(refundAmount.toFixed(2));
+      refundAmount = itemSubtotal + itemTax;
 
       if (refundAmount > 0) {
-        await processWalletRefund({
-          userId: order.user_id,
-          amount: refundAmount,
-          description: isOnlyItem
-            ? `Refund for cancelled order ${order.orderID}`
-            : `Refund for cancelled item: ${item.productName}`
-        });
+      await processWalletRefund({
+  userId: order.user_id,
+  order,
+  item,
+  description: isOnlyItem
+    ? `Refund for cancelled order ${order.orderID}`
+    : `Refund for cancelled item: ${item.productName}`
+});
+
       }
     }
 
-    /* =======================
-       CANCEL ITEM & RESTOCK
-    ======================= */
     item.isCancelled = true;
     item.cancelReason = reason || null;
     item.cancelledAt = new Date();
@@ -247,9 +313,6 @@ export const cancelProduct = async (req, res) => {
       $inc: { stock: item.quantity }
     });
 
-    /* =======================
-       RECALCULATE ORDER TOTAL
-    ======================= */
     const activeItemsAfter = order.items.filter(
       i => !i.isCancelled && !i.isReturned
     );
@@ -268,11 +331,13 @@ export const cancelProduct = async (req, res) => {
 
       order.tax = Number((order.subtotal * 0.18).toFixed(2));
 
-      order.totalPrice =
+      order.totalPrice = Math.max(
         order.subtotal +
         order.tax +
         order.deliveryCharge -
-        (order.couponDiscount || 0);
+        (order.couponDiscount || 0),
+        0
+      );
     }
 
     await order.save();
@@ -283,18 +348,17 @@ export const cancelProduct = async (req, res) => {
     console.error("Cancel Product Error:", err);
     return res.status(STATUS.SERVER_ERROR).json({
       success: false,
-      message: "Server error"
+      message: MESSAGES.SERVER_ERROR
     });
   }
 };
 
-
-
 // SEARCH ORDERS
-export const searchOrders = async (req, res) => {
+const searchOrders = async (req, res) => {
   try {
     const query = req.params.query;
     const userId = req.session.user?.id;
+ 
     if (!userId) return res.redirect("/login");
 
     const orConditions = [
@@ -312,21 +376,21 @@ export const searchOrders = async (req, res) => {
         },
       });
     }
-const twoDaysAgo = new Date();
-twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-const orders = await Order.find({
-  user_id: userId,
-  $and: [
-    {
-      $or: [
-        { paymentStatus: { $ne: "failed" } },
-        { paymentStatus: "failed", createdAt: { $gte: twoDaysAgo } }
+    const orders = await Order.find({
+      user_id: userId,
+      $and: [
+        {
+          $or: [
+            { paymentStatus: { $ne: "failed" } },
+            { paymentStatus: "failed", createdAt: { $gte: twoDaysAgo } }
+          ]
+        },
+        { $or: orConditions }
       ]
-    },
-    { $or: orConditions }
-  ]
-});
+    });
 
 
     res.status(STATUS.SUCCESS).render("user/orderList", { activePage: "My Orders", orders, currentPage: 1, totalPages: 1 });
@@ -337,9 +401,13 @@ const orders = await Order.find({
 };
 
 // DOWNLOAD INVOICE
-export const downloadInvoice = async (req, res) => {
+const downloadInvoice = async (req, res) => {
   try {
-    const order = await Order.findOne({ orderID: req.params.id }).populate("shippingAddressId");
+    const { orderID } = req.params;
+
+const order = await Order.findOne({ orderID })
+  .populate("shippingAddressId");
+
     if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
     ejs.renderFile(path.join("views", "user", "invoice.ejs"), { order, items: order.items }, (err, html) => {
@@ -359,38 +427,174 @@ export const downloadInvoice = async (req, res) => {
   }
 };
 
-// RETURN REQUEST (USER SIDE)
-export const requestReturn = async (req, res) => {
+// RETURN REQUEST
+const requestReturn = async (req, res) => {
   try {
     const userId = req.session.user?.id;
-    if (!userId)
-      return res.status(STATUS.UNAUTHORIZED).json({ success: false, message: "Login required" });
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.LOGIN_REQUIRED
+      });
+    }
 
- const { reason, returnType } = req.body;
-    if (!reason)
-      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "Reason required" });
+    const { reason, returnType } = req.body;
+    if (!reason) {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.RETURN_REASON_REQUIRED
+      });
+    }
+const { orderID } = req.params;
 
-    const order = await Order.findOne({
-      orderID: req.params.id,
-      user_id: userId
-    });
+const order = await Order.findOne({
+  orderID,
+  user_id: userId
+});
 
-    if (!order)
-      return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
 
-    if (order.orderStatus !== "Delivered")
-      return res.status(STATUS.BAD_REQUEST).json({ success: false, message: "Only delivered orders can be returned" });
+    if (!order) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.ORDER_NOT_FOUND
+      });
+    }
 
+    if (!["Delivered", "Return Requested"].includes(order.orderStatus))
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.ONLY_DELIVERED_CAN_RETURN
+      });
+
+    order.hasReturnRequest = true;
     order.orderStatus = "Return Requested";
     order.returnReason = reason;
     order.returnRequestedAt = new Date();
-order.returnType = returnType || "REFUND";
+    order.returnType = returnType || "REFUND";
+
+    order.items.forEach(item => {
+      if (!item.isCancelled) {
+        item.returnRequested = true;
+        item.returnStatus = "Requested";
+        item.returnReason = reason;
+        item.returnRequestedAt = new Date();
+      }
+    });
+
     await order.save();
 
-    res.status(STATUS.SUCCESS).json({ success: true, message: "Return request submitted to admin" });
+    return res.status(STATUS.SUCCESS).json({
+      success: true,
+      message: MESSAGES.RETURN_REQUEST_SUCCESS
+    });
 
   } catch (err) {
     console.error("Return Error:", err);
-    res.status(STATUS.SERVER_ERROR).json({ success: false, message: "Server error" });
+    return res.status(STATUS.SERVER_ERROR).json({
+      success: false,
+      message: MESSAGES.SERVER_ERROR
+    });
   }
+};
+
+const requestItemReturn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { productId, reason, returnType } = req.body;
+
+    const userId = req.session.user?._id || req.session.user?.id;
+    if (!userId) {
+      return res.status(STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.LOGIN_REQUIRED
+      });
+    }
+
+    if (!productId) {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.INVALID_ITEM
+      });
+    }
+
+ const { orderID } = req.params;
+
+const order = await Order.findOne({
+  orderID,
+  user_id: userId
+});
+
+
+    if (!order) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.ORDER_NOT_FOUND
+      });
+    }
+
+    const item = order.items.find(
+      i => i.productId.toString() === productId
+    );
+
+    if (!item) {
+      return res.status(STATUS.NOT_FOUND).json({
+        success: false,
+        message: MESSAGES.INVALID_ITEM
+      });
+    }
+
+    if (item.returnRequested || item.isReturned) {
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: MESSAGES.ITEM_RETURN_REQUEST_SUCCESS
+      });
+    }
+
+    if (order.couponApplied && order.couponMinimumPrice > 0) {
+      const remainingSubtotal = getCouponEligibleSubtotal(order, productId);
+
+      if (remainingSubtotal < order.couponMinimumPrice) {
+        return res.status(STATUS.BAD_REQUEST).json({
+          success: false,
+          message: MESSAGES.COUPON_MINIMUM_NOT_MET_FOR_RETURN(
+            remainingSubtotal,
+            order.couponMinimumPrice)
+        });
+      }
+    }
+
+    item.returnRequested = true;
+    item.returnRequestedAt = new Date();
+    item.returnReason = reason;
+    item.returnType = returnType || "REFUND";
+    item.returnStatus = "Requested";
+
+    order.hasReturnRequest = true;
+    order.orderStatus = "Return Requested";
+
+    await order.save();
+
+    return res.status(STATUS.SUCCESS).json({
+      success: true,
+      message: MESSAGES.ITEM_RETURN_REQUEST_SUCCESS
+    });
+  } catch (err) {
+    console.error("Request Item Return Error:", err);
+    return res.status(STATUS.SERVER_ERROR).json({
+      success: false,
+      message: MESSAGES.SERVER_ERROR
+    });
+  }
+};
+
+export {
+  getCouponEligibleSubtotal,
+  listOrders,
+  getOrderDetail,
+  cancelOrder,
+  cancelProduct,
+  searchOrders,
+  downloadInvoice,
+  requestReturn,
+  requestItemReturn
 };

@@ -5,8 +5,9 @@ import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
 import { processWalletRefund } from "../../utils/walletRefund.js";
 
+
 // ADMIN — LIST ALL ORDERS
-export const getOrdersPage = async (req, res) => {
+const getOrdersPage = async (req, res) => {
   try {
     let { page = 1, search = "", sort = "-createdAt", status = "" } = req.query;
     page = parseInt(page);
@@ -72,11 +73,21 @@ export const getOrdersPage = async (req, res) => {
 };
 
 // UPDATE ORDER STATUS 
-export const updateOrderStatus = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
+    
+if (!order) {
+  return res.status(STATUS.NOT_FOUND).render("partials/errorPage", {
+    statusCode: STATUS.NOT_FOUND,
+    message: MESSAGES.ORDER_NOT_FOUND,
+    redirectPath: "/admin/return-requests",
+    admin: req.session.admin
+  });
+}
+
+
 
     if (!order.statusTimeline) order.statusTimeline = {};
     const now = new Date();
@@ -105,8 +116,8 @@ export const updateOrderStatus = async (req, res) => {
       case "Delivered":
         if (!order.statusTimeline.delivered) {
           order.statusTimeline.delivered = now;
-          order.deliveredAt = now; 
-          
+          order.deliveredAt = now;
+
           if (order.paymentMethod === "COD" && order.paymentStatus === "pending") {
             order.paymentStatus = "success";
           }
@@ -138,14 +149,23 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 // VIEW SINGLE ORDER
-export const viewSingleOrder = async (req, res) => {
+const viewSingleOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("user_id")
       .populate("items.productId")
       .populate("shippingAddressId");
 
-    if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
+    
+if (!order) {
+  return res.status(STATUS.NOT_FOUND).render("partials/errorPage", {
+    statusCode: STATUS.NOT_FOUND,
+    message: MESSAGES.ORDER_NOT_FOUND,
+    redirectPath: "/admin/return-requests",
+    admin: req.session.admin
+  });
+}
+
 
     const purchasedDate = order.createdAt;
     const approxStart = new Date(purchasedDate);
@@ -169,7 +189,7 @@ export const viewSingleOrder = async (req, res) => {
 };
 
 // ADMIN APPROVES RETURN
-export const approveReturn = async (req, res) => {
+const approveReturn = async (req, res) => {
   try {
     const { orderID } = req.params;
 
@@ -195,7 +215,7 @@ export const approveReturn = async (req, res) => {
 };
 
 // getReturnRequests
-export const getReturnRequests = async (req, res) => {
+const getReturnRequests = async (req, res) => {
   try {
     const orders = await Order.find({ orderStatus: "Return Requested" })
       .populate("user_id")
@@ -210,7 +230,7 @@ export const getReturnRequests = async (req, res) => {
 };
 
 // GET SINGLE RETURN REQUEST
-export const getSingleReturnRequest = async (req, res) => {
+const getSingleReturnRequest = async (req, res) => {
   try {
     const { orderID } = req.params;
 
@@ -219,7 +239,16 @@ export const getSingleReturnRequest = async (req, res) => {
       .populate("items.productId")
       .populate("shippingAddressId");
 
-    if (!order) return res.status(STATUS.NOT_FOUND).send("Order not found");
+   
+if (!order) {
+  return res.status(STATUS.NOT_FOUND).render("partials/errorPage", {
+    statusCode: STATUS.NOT_FOUND,
+    message: MESSAGES.ORDER_NOT_FOUND,
+    redirectPath: "/admin/return-requests",
+    admin: req.session.admin
+  });
+}
+
 
     res.status(STATUS.SUCCESS).render("admin/returnRequestDetail", { order });
   } catch (err) {
@@ -229,10 +258,10 @@ export const getSingleReturnRequest = async (req, res) => {
 };
 
 //APPROVE RETURN
-export const approveReturnRequest = async (req, res) => {
+const approveReturnRequest = async (req, res) => {
   try {
     const { orderID } = req.params;
-    const { restock } = req.body; // true / false
+    const { restock } = req.body;
 
     const order = await Order.findOne({ orderID });
     if (!order)
@@ -243,9 +272,8 @@ export const approveReturnRequest = async (req, res) => {
 
     order.orderStatus = "Returned";
     order.returnApprovedAt = new Date();
-    order.restocked = restock; // optional (audit)
+    order.restocked = restock;
 
-    // ✅ RESTOCK ONLY IF ADMIN ALLOWED
     if (restock === true) {
       await Promise.all(
         order.items.map(item =>
@@ -256,7 +284,6 @@ export const approveReturnRequest = async (req, res) => {
       );
     }
 
-    // 💰 REFUND (unchanged)
     if (
       order.returnType === "REFUND" &&
       !order.refundProcessed &&
@@ -280,9 +307,8 @@ export const approveReturnRequest = async (req, res) => {
   }
 };
 
-
 // REJECT RETURN
-export const rejectReturnRequest = async (req, res) => {
+const rejectReturnRequest = async (req, res) => {
   console.log("Reject return called", req.params, req.body);
   try {
     const { orderID } = req.params;
@@ -290,7 +316,7 @@ export const rejectReturnRequest = async (req, res) => {
 
     const order = await Order.findOne({ orderID });
     if (!order) {
-      console.log("Order not found");
+      console.log("");
       return res.status(STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
     }
 
@@ -307,7 +333,7 @@ export const rejectReturnRequest = async (req, res) => {
 };
 
 // CANCEL ORDER
-export const adminCancelOrder = async (req, res) => {
+const adminCancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
@@ -330,4 +356,102 @@ export const adminCancelOrder = async (req, res) => {
     console.error(err);
     res.status(STATUS.SERVER_ERROR).send(MESSAGES.SERVER_ERROR);
   }
+};
+
+// ADMIN APPROVES SINGLE ITEM RETURN
+const approveItemReturn = async (req, res) => {
+  try {
+    const { orderID, productId } = req.params;
+    const { restock } = req.body;
+
+    const order = await Order.findOne({ orderID }).populate("items.productId");
+    
+if (!order) {
+  return res.status(STATUS.NOT_FOUND).render("partials/errorPage", {
+    statusCode: STATUS.NOT_FOUND,
+    message: MESSAGES.ORDER_NOT_FOUND,
+    redirectPath: "/admin/return-requests",
+    admin: req.session.admin
+  });
+}
+
+
+    const item = order.items.find(
+      i => i.productId._id.toString() === productId
+    );
+
+    if (!item || item.returnStatus !== "Requested")
+      return res.status(STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "Return not requested or already processed"
+      });
+
+    item.returnStatus = "Approved";
+    item.isReturned = true;
+    item.returnRequested = false;
+    item.returnApprovedAt = new Date();
+
+    if (restock === true) {
+      await Product.findByIdAndUpdate(item.productId._id, {
+        $inc: { stock: item.quantity }
+      });
+    }
+
+    if (item.returnType === "REFUND" && !item.refundProcessed) {
+      await processWalletRefund({
+        userId: order.user_id,
+        order,
+        item,
+        description: `Refund for returned item: ${item.productName}`
+      });
+    }
+
+    const activeItems = order.items.filter(
+      i => !i.isCancelled && !i.isReturned
+    );
+
+    const pendingReturns = order.items.some(
+      i => i.returnStatus === "Requested"
+    );
+
+    if (activeItems.length === 0) {
+      order.orderStatus = "Returned";
+      order.returnApprovedAt = new Date();
+    } else if (pendingReturns) {
+      order.orderStatus = "Return Requested";
+    } else {
+      order.orderStatus = "Delivered";
+    }
+
+    order.hasReturnRequest = pendingReturns;
+
+    await order.save();
+
+    return res.json({
+      success: true,
+      message: restock
+        ? "Item return approved and restocked"
+        : "Item return approved"
+    });
+
+  } catch (err) {
+    console.error("Approve Item Return Error:", err);
+    return res.status(STATUS.SERVER_ERROR).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+export {
+  getOrdersPage,
+  updateOrderStatus,
+  viewSingleOrder,
+  approveReturn,
+  getReturnRequests,
+  getSingleReturnRequest,
+  approveReturnRequest,
+  rejectReturnRequest,
+  adminCancelOrder,
+  approveItemReturn
 };

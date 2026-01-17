@@ -22,7 +22,7 @@ const validateAddressInput = ({ name, phone, addressLine, area, state, pincode }
 };
 
 // Render Addresses Page
-export const getAddressPage = async (req, res) => {
+const getAddressPage = async (req, res) => {
   try {
     if (!req.session.user || !req.session.user.id)
       return res.status(STATUS.UNAUTHORIZED).redirect("/login");
@@ -79,7 +79,7 @@ export const getAddressPage = async (req, res) => {
 };
 
 // Add New Address
-export const addAddress = async (req, res) => {
+const addAddress = async (req, res) => {
   try {
     const { name, phone, addressLine, landmark, area, state, pincode, addressType } = req.body;
     const userId = req.session.user?.id;
@@ -121,7 +121,7 @@ export const addAddress = async (req, res) => {
 };
 
 // Get Edit Address Page
-export const getEditAddress = async (req, res) => {
+const getEditAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
     const userId = req.session.user.id;
@@ -178,7 +178,7 @@ export const getEditAddress = async (req, res) => {
 };
 
 // Post Edit Address
-export const postEditAddress = async (req, res) => {
+const postEditAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
     const userId = req.session.user.id;
@@ -229,7 +229,7 @@ export const postEditAddress = async (req, res) => {
 };
 
 // Set Default Address
-export const setDefaultAddress = async (req, res) => {
+const setDefaultAddress = async (req, res) => {
   try {
     const userId = req.session.user.id;
     const addressId = req.params.id;
@@ -245,7 +245,7 @@ export const setDefaultAddress = async (req, res) => {
 };
 
 // Delete Address
-export const deleteAddress = async (req, res) => {
+const deleteAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
 
@@ -256,4 +256,13 @@ export const deleteAddress = async (req, res) => {
     console.error("Error deleting address:", error);
     res.status(STATUS.SERVER_ERROR).render("errorPage", { errorMessage: MESSAGES.ADDRESS_DELETE_FAILED });
   }
+};
+
+export {
+  getAddressPage,
+  addAddress,
+  getEditAddress,
+  postEditAddress,
+  setDefaultAddress,
+  deleteAddress
 };

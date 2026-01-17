@@ -8,12 +8,12 @@ import { generateReferralCode } from "../../utils/referralHelper.js";
 import STATUS from "../../utils/statusCodes.js";
 
 //  Welcome Page
-export const getWelcomePage = (req, res) => {
+const getWelcomePage = (req, res) => {
   res.status(STATUS.SUCCESS).render("user/welcome", { title: "Welcome" });
 };
 
 // Signup Page
-export const getSignupPage = (req, res) => {
+const getSignupPage = (req, res) => {
   return res.status(STATUS.SUCCESS).render("user/signup", {
     errorField: null,
     errorMessage: null,
@@ -24,14 +24,14 @@ export const getSignupPage = (req, res) => {
 };
 
 //  Register User (with OTP)
-export const registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
   try {
     const { name, email, mobile, password, confirmPassword, referralCode } = req.body;
 
     if (!name || !/^[A-Za-z\s]+$/.test(name)) {
       return res.status(STATUS.BAD_REQUEST).render("user/signup", {
         errorField: "name",
-        errorMessage: "Enter a valid name",
+        errorMessage: MESSAGES.NAME_INVALID,
         name, email, mobile
       });
     }
@@ -39,7 +39,7 @@ export const registerUser = async (req, res) => {
     if (!email) {
       return res.status(STATUS.BAD_REQUEST).render("user/signup", {
         errorField: "email",
-        errorMessage: "Email is required",
+        errorMessage: MESSAGES.EMAIL_REQUIRED,
         name, email, mobile
       });
     }
@@ -48,7 +48,7 @@ export const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(STATUS.CONFLICT).render("user/signup", {
         errorField: "email",
-        errorMessage: "User already exists",
+        errorMessage: MESSAGES.USER_ALREADY_EXISTS,
         name, email, mobile
       });
     }
@@ -56,7 +56,7 @@ export const registerUser = async (req, res) => {
     if (!/^\d{10}$/.test(mobile)) {
       return res.status(STATUS.BAD_REQUEST).render("user/signup", {
         errorField: "mobile",
-        errorMessage: "Enter a valid 10-digit mobile number",
+        errorMessage: MESSAGES.MOBILE_INVALID,
         name, email, mobile
       });
     }
@@ -65,7 +65,7 @@ export const registerUser = async (req, res) => {
     if (!strongRegex.test(password)) {
       return res.status(STATUS.BAD_REQUEST).render("user/signup", {
         errorField: "password",
-        errorMessage: "Password must contain uppercase, lowercase, number and special character",
+        errorMessage: MESSAGES.PASSWORD_WEAK,
         name, email, mobile
       });
     }
@@ -73,7 +73,7 @@ export const registerUser = async (req, res) => {
     if (password !== confirmPassword) {
       return res.status(STATUS.BAD_REQUEST).render("user/signup", {
         errorField: "confirmPassword",
-        errorMessage: "Passwords do not match",
+        errorMessage: MESSAGES.PASSWORD_MISMATCH,
         name, email, mobile
       });
     }
@@ -86,7 +86,7 @@ export const registerUser = async (req, res) => {
       if (!referral || referral.usedCount >= referral.usageLimit) {
         return res.status(STATUS.BAD_REQUEST).render("user/signup", {
           errorField: "referralCode",
-          errorMessage: "Invalid or expired referral code",
+          errorMessage: MESSAGES.REFERRAL_INVALID_OR_EXPIRED,
           name, email, mobile
         });
       }
@@ -100,7 +100,7 @@ export const registerUser = async (req, res) => {
     if (!emailSent) {
       return res.status(STATUS.SERVER_ERROR).render("user/signup", {
         errorField: "email",
-        errorMessage: "Failed to send OTP. Try again.",
+        errorMessage: MESSAGES.OTP_SEND_FAILED,
         name, email, mobile
       });
     }
@@ -115,7 +115,9 @@ export const registerUser = async (req, res) => {
       referralCode: refCode || null
     };
 
-    res.status(STATUS.SUCCESS).render("user/verifyOtp", { email, errorMessage: "OTP sent to your email" });
+    res.status(STATUS.SUCCESS).render("user/verifyOtp", {
+      email, errorMessage: MESSAGES.OTP_SEND_SUCCESS
+    });
 
   } catch (error) {
     console.error("Signup error:", error);
@@ -124,16 +126,16 @@ export const registerUser = async (req, res) => {
 };
 
 // Verify OTP
-export const verifyOtp = async (req, res) => {
+const verifyOtp = async (req, res) => {
   const otp = `${req.body.otp1}${req.body.otp2}${req.body.otp3}${req.body.otp4}`;
   const { userOtp, userData } = req.session;
 
   if (!userOtp || !userData) {
-    return res.status(STATUS.BAD_REQUEST).render("user/signup", { errorMessage: "Session expired. Please sign up again." });
+    return res.status(STATUS.BAD_REQUEST).render("user/signup", { errorMessage: MESSAGES.SESSION_EXPIRED_SIGNUP });
   }
 
   if (otp !== userOtp) {
-    return res.status(STATUS.BAD_REQUEST).render("user/verifyOtp", { email: userData.email, errorMessage: "Invalid OTP" });
+    return res.status(STATUS.BAD_REQUEST).render("user/verifyOtp", { email: userData.email, errorMessage: MESSAGES.OTP_INVALID });
   }
 
   try {
@@ -219,11 +221,11 @@ export const verifyOtp = async (req, res) => {
 };
 
 // RESEND OTP
-export const resendOtp = async (req, res) => {
+const resendOtp = async (req, res) => {
   try {
     const { userData } = req.session;
     if (!userData) {
-      return res.status(STATUS.BAD_REQUEST).render("user/signup", { errorMessage: "Session expired. Please sign up again." });
+      return res.status(STATUS.BAD_REQUEST).render("user/signup", { errorMessage: MESSAGES.SESSION_EXPIRED_SIGNUP });
     }
 
     const newOtp = generateOtp();
@@ -231,11 +233,17 @@ export const resendOtp = async (req, res) => {
 
     const emailSent = await sendVerificationEmail(userData.email, newOtp);
     if (!emailSent) {
-      return res.status(STATUS.SERVER_ERROR).render("user/verifyOtp", { email: userData.email, errorMessage: "Failed to resend OTP. Try again." });
+      return res.status(STATUS.SERVER_ERROR).render("user/verifyOtp", {
+        email: userData.email,
+        errorMessage: MESSAGES.OTP_RESEND_FAILED
+      });
     }
 
     req.session.userOtp = newOtp;
-    res.status(STATUS.SUCCESS).render("user/verifyOtp", { email: userData.email, errorMessage: "A new OTP has been sent to your email." });
+    res.status(STATUS.SUCCESS).render("user/verifyOtp", {
+      email: userData.email,
+      errorMessage: MESSAGES.OTP_RESEND_SUCCESS
+    });
   } catch (error) {
     console.error("Resend OTP Error:", error);
     res.status(STATUS.SERVER_ERROR).redirect("/error");
@@ -243,7 +251,7 @@ export const resendOtp = async (req, res) => {
 };
 
 // Login Page
-export const getLoginPage = (req, res) => {
+const getLoginPage = (req, res) => {
   res.status(STATUS.SUCCESS).render("user/userLogin", {
     title: "Login",
     errorField: null,
@@ -253,7 +261,7 @@ export const getLoginPage = (req, res) => {
 };
 
 // Login User (Check Admin/User)
-export const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -261,7 +269,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "Email is required",
+        errorMessage: MESSAGES.EMAIL_REQUIRED,
         error: null
       });
     }
@@ -270,7 +278,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/userLogin", {
         title: "Login",
         errorField: "password",
-        errorMessage: "Password is required",
+        errorMessage: MESSAGES.NEW_PASSWORD_REQUIRED,
         error: null
       });
     }
@@ -280,7 +288,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.NOT_FOUND).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "User not found.",
+        errorMessage: MESSAGES.NOT_FOUND,
         error: null
       });
     }
@@ -289,7 +297,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.FORBIDDEN).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "Please verify your account first.",
+        errorMessage: MESSAGES.EMAIL_NOT_VERIFIED,
         error: null
       });
     }
@@ -298,7 +306,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.FORBIDDEN).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "Your account is blocked. Contact support.",
+        errorMessage: MESSAGES.ACCOUNT_BLOCKED,
         error: null
       });
     }
@@ -308,7 +316,7 @@ export const loginUser = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/userLogin", {
         title: "Login",
         errorField: "password",
-        errorMessage: "Incorrect password.",
+        errorMessage: MESSAGES.INCORRECT_PASSWORD,
         error: null
       });
     }
@@ -332,13 +340,13 @@ export const loginUser = async (req, res) => {
       title: "Login",
       errorField: null,
       errorMessage: null,
-      error: "Something went wrong. Please try again."
+      error: MESSAGES.LOGIN_FAILED
     });
   }
 };
 
 // Google Auth Success (Check Role + Blocked)
-export const googleAuthSuccess = async (req, res) => {
+const googleAuthSuccess = async (req, res) => {
   try {
     if (!req.user) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
@@ -347,7 +355,7 @@ export const googleAuthSuccess = async (req, res) => {
       return res.status(STATUS.NOT_FOUND).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "User not found.",
+        errorMessage: MESSAGES.NOT_FOUND,
         error: null
       });
     }
@@ -356,7 +364,7 @@ export const googleAuthSuccess = async (req, res) => {
       return res.status(STATUS.FORBIDDEN).render("user/userLogin", {
         title: "Login",
         errorField: "email",
-        errorMessage: "Your account is blocked. Contact support.",
+        errorMessage: MESSAGES.ACCOUNT_BLOCKED,
         error: null
       });
     }
@@ -380,27 +388,27 @@ export const googleAuthSuccess = async (req, res) => {
       title: "Login",
       errorField: null,
       errorMessage: null,
-      error: "Something went wrong."
+      error: MESSAGES.LOGIN_FAILED
     });
   }
 };
 
 // Logout
-export const logoutUser = (req, res) => {
+const logoutUser = (req, res) => {
   req.session.user = null;
   res.status(STATUS.SUCCESS).redirect("/login");
 };
 
 // Google Auth Controllers
-export const googleLogin = passport.authenticate("google", {
+const googleLogin = passport.authenticate("google", {
   scope: ["profile", "email"],
 });
 
-export const googleCallback = passport.authenticate("google", {
+const googleCallback = passport.authenticate("google", {
   failureRedirect: "/login",
 });
 
-export const googleRedirectSuccess = (req, res) => {
+const googleRedirectSuccess = (req, res) => {
   if (!req.user) return res.status(STATUS.UNAUTHORIZED).redirect("/login");
 
   req.session.user = {
@@ -418,7 +426,7 @@ export const googleRedirectSuccess = (req, res) => {
 };
 
 // Forgot Password Page
-export const getForgotPasswordPage = (req, res) => {
+const getForgotPasswordPage = (req, res) => {
   res.status(STATUS.SUCCESS).render("user/forgotPassword", {
     email: "",
     errorField: null,
@@ -427,7 +435,7 @@ export const getForgotPasswordPage = (req, res) => {
 };
 
 // Handle Forgot Password (send OTP)
-export const sendForgotPasswordOtp = async (req, res) => {
+const sendForgotPasswordOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -435,7 +443,7 @@ export const sendForgotPasswordOtp = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/forgotPassword", {
         email: "",
         errorField: "email",
-        errorMessage: "Email address is required."
+        errorMessage: MESSAGES.EMAIL_REQUIRED
       });
     }
 
@@ -444,7 +452,7 @@ export const sendForgotPasswordOtp = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/forgotPassword", {
         email,
         errorField: "email",
-        errorMessage: "Email address is invalid."
+        errorMessage: MESSAGES.EMAIL_INVALID
       });
     }
 
@@ -453,7 +461,7 @@ export const sendForgotPasswordOtp = async (req, res) => {
       return res.status(STATUS.NOT_FOUND).render("user/forgotPassword", {
         email,
         errorField: "email",
-        errorMessage: "No user found with this email."
+        errorMessage: MESSAGES.USER_NOT_FOUND_EMAIL
       });
     }
 
@@ -462,13 +470,17 @@ export const sendForgotPasswordOtp = async (req, res) => {
 
     const emailSent = await sendVerificationEmail(email, otp);
     if (!emailSent) {
-      return res.status(STATUS.SERVER_ERROR).render("user/forgotPassword", { errorMessage: "Failed to send OTP. Try again." });
+      return res.status(STATUS.SERVER_ERROR).render("user/forgotPassword", {
+        errorMessage: MESSAGES.OTP_SEND_FAILED
+      });
     }
 
     req.session.resetOtp = otp;
     req.session.resetEmail = email;
 
-    res.status(STATUS.SUCCESS).render("user/otpForgotPassword", { email, errorMessage: "OTP sent to your email" });
+    res.status(STATUS.SUCCESS).render("user/otpForgotPassword", {
+      email, errorMessage: MESSAGES.OTP_SEND_SUCCESS
+    });
   } catch (error) {
     console.error("Forgot Password Error:", error);
     res.status(STATUS.SERVER_ERROR).redirect("/error");
@@ -476,21 +488,21 @@ export const sendForgotPasswordOtp = async (req, res) => {
 };
 
 // Verify OTP for Forgot Password
-export const verifyForgotOtp = async (req, res) => {
+const verifyForgotOtp = async (req, res) => {
   try {
     const otp = `${req.body.otp1}${req.body.otp2}${req.body.otp3}${req.body.otp4}`;
     const { resetOtp, resetEmail } = req.session;
 
     if (!resetOtp || !resetEmail) {
       return res.status(STATUS.BAD_REQUEST).render("user/forgotPassword", {
-        errorMessage: "Session expired. Try again."
+        errorMessage: MESSAGES.SESSION_EXPIRED_SIGNUP
       });
     }
 
     if (otp !== resetOtp) {
       return res.status(STATUS.BAD_REQUEST).render("user/otpForgotPassword", {
         email: resetEmail,
-        errorMessage: "Invalid OTP"
+        errorMessage: MESSAGES.OTP_INVALID
       });
     }
 
@@ -507,13 +519,13 @@ export const verifyForgotOtp = async (req, res) => {
     console.error(error);
     return res.status(STATUS.SERVER_ERROR).render("user/otpForgotPassword", {
       email: req.session.resetEmail,
-      errorMessage: "Something went wrong. Try again."
+      error: MESSAGES.LOGIN_FAILED
     });
   }
 };
 
 // Resend Forgot Password OTP
-export const resendForgotOtp = async (req, res) => {
+const resendForgotOtp = async (req, res) => {
   try {
     const email = req.query.email || req.session.resetEmail;
 
@@ -530,32 +542,32 @@ export const resendForgotOtp = async (req, res) => {
     if (!emailSent) {
       return res.status(STATUS.SERVER_ERROR).render("user/otpForgotPassword", {
         email,
-        errorMessage: "Failed to resend OTP. Please try again.",
+        errorMessage: MESSAGES.OTP_RESEND_FAILED,
       });
     }
 
     res.status(STATUS.SUCCESS).render("user/otpForgotPassword", {
       email,
-      errorMessage: "A new OTP has been sent to your email.",
+      errorMessage: MESSAGES.OTP_RESEND_SUCCESS,
     });
   } catch (error) {
     console.error("Resend Forgot OTP Error:", error);
     res.status(STATUS.SERVER_ERROR).render("user/otpForgotPassword", {
       email: req.session.resetEmail,
-      errorMessage: "Something went wrong. Please try again.",
+      error: MESSAGES.LOGIN_FAILED,
     });
   }
 };
 
 // Reset Password
-export const resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { password, confirmPassword, email } = req.body;
     if (!password) {
       return res.status(STATUS.BAD_REQUEST).render("user/resetPassword", {
         email,
         errorField: "password",
-        errorMessage: "Password is required"
+        errorMessage: MESSAGES.NEW_PASSWORD_REQUIRED
       });
     }
     const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
@@ -563,21 +575,21 @@ export const resetPassword = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("user/resetPassword", {
         email,
         errorField: "password",
-        errorMessage: "Password must contain uppercase, lowercase, number & special character"
+        errorMessage: MESSAGES.PASSWORD_WEAK
       });
     }
     if (!confirmPassword) {
       return res.status(STATUS.BAD_REQUEST).render("user/resetPassword", {
         email,
         errorField: "confirmPassword",
-        errorMessage: "Please confirm your password"
+        errorMessage: MESSAGES.CONFIRM_PASSWORD_REQUIRED_RESET
       });
     }
     if (password !== confirmPassword) {
       return res.status(STATUS.BAD_REQUEST).render("user/resetPassword", {
         email,
         errorField: "password",
-        errorMessage: "Passwords do not match"
+        errorMessage: MESSAGES.PASSWORD_MISMATCH
       });
     }
 
@@ -595,7 +607,7 @@ export const resetPassword = async (req, res) => {
 };
 
 // Referral Page
-export const getReferralPage = async (req, res) => {
+const getReferralPage = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/login");
@@ -612,7 +624,7 @@ export const getReferralPage = async (req, res) => {
         code: newCode,
         referralLink,
         usedCount: 0,
-        rewardAmount: 100   
+        rewardAmount: 100
       });
     }
 
@@ -642,4 +654,25 @@ export const getReferralPage = async (req, res) => {
     console.error("Referral Page Error:", error);
     res.redirect("/error");
   }
+};
+
+export {
+  getWelcomePage,
+  getSignupPage,
+  registerUser,
+  verifyOtp,
+  resendOtp,
+  getLoginPage,
+  loginUser,
+  googleAuthSuccess,
+  logoutUser,
+  googleLogin,
+  googleCallback,
+  googleRedirectSuccess,
+  getForgotPasswordPage,
+  sendForgotPasswordOtp,
+  verifyForgotOtp,
+  resendForgotOtp,
+  resetPassword,
+  getReferralPage
 };

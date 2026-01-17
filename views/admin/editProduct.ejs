@@ -1,4 +1,4 @@
- <%- include("../partials/adminHeader", { pageTitle: "Edit Product" }) %>
+<%- include("../partials/adminHeader", { pageTitle: "Edit Product" }) %>
 
   <style>
     body {
@@ -130,69 +130,70 @@
       font-size: 13px;
       margin-top: 4px;
     }
-@media (max-width: 992px) {
-  .admin-layout {
-    flex-direction: column;
-  }
 
-  .admin-main {
-    margin-left: 0 !important;
-    padding: 20px;
-    min-height: auto;
-  }
+    @media (max-width: 992px) {
+      .admin-layout {
+        flex-direction: column;
+      }
 
-  .card {
-    margin: 15px 10px;
-    padding: 20px;
-  }
+      .admin-main {
+        margin-left: 0 !important;
+        padding: 20px;
+        min-height: auto;
+      }
 
-  .row.g-3 {
-    flex-direction: column;
-  }
+      .card {
+        margin: 15px 10px;
+        padding: 20px;
+      }
 
-  .col-md-2,
-  .col-md-3,
-  .col-md-4,
-  .col-md-5,
-  .col-md-6 {
-    width: 100% !important;
-  }
+      .row.g-3 {
+        flex-direction: column;
+      }
 
-  .variant-table,
-  .variant-table th,
-  .variant-table td {
-    font-size: 13px;
-  }
+      .col-md-2,
+      .col-md-3,
+      .col-md-4,
+      .col-md-5,
+      .col-md-6 {
+        width: 100% !important;
+      }
 
-  .preview-thumb {
-    width: 80px;
-    height: 80px;
-  }
+      .variant-table,
+      .variant-table th,
+      .variant-table td {
+        font-size: 13px;
+      }
 
-  .add-variant-btn {
-    font-size: 16px;
-    padding: 4px 8px;
-  }
-}
+      .preview-thumb {
+        width: 80px;
+        height: 80px;
+      }
 
-@media (max-width: 576px) {
-  .form-control,
-  .form-select,
-  textarea {
-    font-size: 14px;
-  }
+      .add-variant-btn {
+        font-size: 16px;
+        padding: 4px 8px;
+      }
+    }
 
-  .btn-submit {
-    width: 100%;
-    padding: 10px;
-  }
+    @media (max-width: 576px) {
 
-  .variant-table {
-    display: block;
-    overflow-x: auto;
-  }
-}
+      .form-control,
+      .form-select,
+      textarea {
+        font-size: 14px;
+      }
 
+      .btn-submit {
+        width: 100%;
+        padding: 10px;
+      }
+
+      .variant-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
   </style>
 
   <div class="admin-layout">
@@ -212,13 +213,13 @@
                   value="<%= (_formData.images || []).join(',') %>">
 
                 <div class="row g-3">
-          
+
                   <div class="col-md-5">
                     <label>Product Name</label>
                     <input type="text" name="name" class="form-control" value="<%= _formData.name || '' %>">
                     <div class="field-error" data-field="name"></div>
                   </div>
-     
+
                   <div class="col-md-5">
                     <label>Category</label>
                     <select name="category" class="form-select">
@@ -249,7 +250,7 @@
                     <label>Category Offer (%)</label>
                     <input type="number" id="categoryOffer" class="form-control" readonly>
                   </div>
-  
+
                   <div class="col-md-6">
                     <label>Brand</label>
                     <input type="text" name="brand" class="form-control" value="<%= _formData.brand || '' %>">
@@ -276,7 +277,7 @@
                   </div>
 
                   <div class="col-md-4">
-                    <label>Product Offer  (%)</label>
+                    <label>Product Offer (%)</label>
                     <input type="number" name="offerPercentage" id="offerPercentage" class="form-control"
                       value="<%= _formData.productOffer?.percentage || 0 %>" min="0" max="90">
                   </div>
@@ -289,10 +290,11 @@
 
                   <div class="col-md-3">
                     <label>Color</label>
-                    <input type="text" name="color" class="form-control image-input" value="<%= _formData.color || '' %>">
-                     <div class="field-error" data-field="color"></div>
+                    <input type="text" name="color" class="form-control image-input"
+                      value="<%= _formData.color || '' %>">
+                    <div class="field-error" data-field="color"></div>
                   </div>
-                  
+
                   <div class="col-md-3">
                     <label>Size</label>
                     <input type="text" name="size" class="form-control" value="<%= _formData.size || '' %>">
@@ -323,30 +325,30 @@
                   </div>
 
 
-           <div class="col-12">
-  <label>Existing Images</label>
-  <div id="existingPreview" class="d-flex flex-wrap">
+                  <div class="col-12">
+                    <label>Existing Images</label>
+                    <div id="existingPreview" class="d-flex flex-wrap">
 
-    <% (_formData.images || []).forEach(img => { %>
-      <div class="image-wrapper" data-src="<%= img %>">
+                      <% (_formData.images || []).forEach(img=> { %>
+                        <div class="image-wrapper" data-src="<%= img %>">
 
-        <img class="preview-thumb"
-          src="<%= img.startsWith('http') ? img : '/uploads/' + img %>"
-          onerror="this.src='/images/placeholder.png'"/>
+                          <img class="preview-thumb" src="<%= img.startsWith('http') ? img : '/uploads/' + img %>"
+                            onerror="this.src='/images/placeholder.png'" />
 
-        <button type="button" class="remove-btn"
-          onclick="removeExistingImage('<%= img %>')">×</button>
-      </div>
-    <% }) %>
+                          <button type="button" class="remove-btn"
+                            onclick="removeExistingImage('<%= img %>')">×</button>
+                        </div>
+                        <% }) %>
 
-  </div>
-</div>
-<div class="col-12 mt-3">
-  <label>Upload New Images (Optional)</label>
-  <input type="file" id="imageInput" name="images" multiple accept="image/*" class="form-control image-input mt-1">
+                    </div>
+                  </div>
+                  <div class="col-12 mt-3">
+                    <label>Upload New Images (Optional)</label>
+                    <input type="file" id="imageInput" name="images" multiple accept="image/*"
+                      class="form-control image-input mt-1">
 
-  <div id="preview" class="d-flex flex-wrap mt-2"></div>
-</div>
+                    <div id="preview" class="d-flex flex-wrap mt-2"></div>
+                  </div>
 
                   <div class="col-12 mt-4">
                     <label>Variants</label>
@@ -363,29 +365,35 @@
                           <th>Preview</th>
                           <th>Action</th>
                         </tr>
-                      </thead
-                      <tbody id="variantBody">
-                        <% (_formData.variants || []).forEach((v)=> { %>
-                          <tr>
-                            <td><input type="text" class="form-control" name="variantName[]" value="<%= v.color %>">
-                            </td>
-                            <td><input type="text" class="form-control" name="variantSize[]" value="<%= v.size %>"></td>
-                            <td><input type="text" class="form-control" name="variantSKU[]" value="<%= v.sku %>"></td>
-                            <td><input type="number" class="form-control variant-price" name="variantPrice[]"
-                                value="<%= v.price %>" step="0.01"></td>
-                            <td><input type="number" class="form-control variantFinalPrice" name="variantFinalPrice[]"
-                                readonly value="<%= v.finalPrice %>"></td>
-                            <td><input type="number" class="form-control" name="variantStock[]" value="<%= v.stock %>">
-                            </td>
-                           <td><input  type="file" name="variantImages[]" class="form-control image-input variant-input" accept="image/*" ></td>
-<td class="variant-preview"> <% if (v.image) { %>
-    <img src="<%= v.image %>" style="width:70px;height:70px;border-radius:6px;"> <% } %></td>
+                      </thead> <tbody id="variantBody">
+                      <% (_formData.variants || []).forEach((v)=> { %>
+                        <tr>
+                          <td><input type="text" class="form-control" name="variantName[]" value="<%= v.color %>">
+                          </td>
+                          <td><input type="text" class="form-control" name="variantSize[]" value="<%= v.size %>"></td>
+                          <td><input type="text" class="form-control" name="variantSKU[]" value="<%= v.sku %>"></td>
+                          <td><input type="number" class="form-control variant-price" name="variantPrice[]"
+                              value="<%= v.price %>" step="0.01"></td>
+                          <td><input type="number" class="form-control variantFinalPrice" name="variantFinalPrice[]"
+                              readonly value="<%= v.finalPrice %>"></td>
+                          <td><input type="number" class="form-control" name="variantStock[]" value="<%= v.stock %>">
+                          </td>
+                          <td>
+  <input type="file" name="variantImages[]" class="form-control image-input variant-input" accept="image/*">
+  <input type="hidden" name="variantId[]" value="<%= v._id %>">
+</td>
 
-                            <td><i class="bi bi-trash text-danger" style="cursor:pointer"
-                                onclick="this.closest('tr').remove(); updateTotalStock();"></i></td>
-                          </tr>
-                          <% }) %>
-                      </tbody>
+                          <td class="variant-preview">
+                            <% if (v.image) { %>
+                              <img src="<%= v.image %>" style="width:70px;height:70px;border-radius:6px;">
+                              <% } %>
+                          </td>
+
+                          <td><i class="bi bi-trash text-danger" style="cursor:pointer"
+                              onclick="this.closest('tr').remove(); updateTotalStock();"></i></td>
+                        </tr>
+                        <% }) %>
+                          </tbody>
                     </table>
                     <button type="button" class="add-variant-btn" onclick="addVariant()">+</button>
                   </div>
@@ -403,225 +411,251 @@
   <%- include("../partials/adminFooter") %>
 
 
-   <script>
-         const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/jpg"
-  ];
+    <script>
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/jpg"
+      ];
 
-  document.addEventListener("change", function (e) {
-    const input = e.target;
+      document.addEventListener("change", function (e) {
+        const input = e.target;
 
-    if (!input.classList.contains("image-input")) return;
+        if (!input.classList.contains("image-input")) return;
 
-    const files = Array.from(input.files);
-    if (!files.length) return;
+        const files = Array.from(input.files);
+        if (!files.length) return;
 
-    const invalidFile = files.find(
-      file => !allowedTypes.includes(file.type)
-    );
+        const invalidFile = files.find(
+          file => !allowedTypes.includes(file.type)
+        );
 
-    if (invalidFile) {
+        if (invalidFile) {
+          Swal.fire({
+            icon: "error",
+            title: "Invalid File",
+            text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+            confirmButtonColor: "#e63946",
+          });
+
+          input.value = "";
+        }
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+
+        const form = document.getElementById("productForm");
+        const priceInput = document.getElementById("price");
+        const finalPriceInput = document.getElementById("finalPrice");
+        const imageInput = document.getElementById("imageInput");
+        const mainStockInput = document.getElementById("mainStock");
+        const totalStockInput = document.getElementById("totalStock");
+        const preview = document.getElementById("preview");
+        const existingPreview = document.getElementById("existingPreview");
+        const imageFilenamesInput = document.getElementById("imageFilenames");
+        const categorySelect = document.querySelector("select[name='category']");
+        const categoryOfferInput = document.getElementById("categoryOffer");
+        const offerPercentageInput = document.getElementById("offerPercentage");
+        const offerStartDateInput = document.getElementById("offerStartDate");
+        const offerEndDateInput = document.getElementById("offerEndDate");
+
+        let uploadedFiles = [];
+
+        function clearFieldErrors() {
+          document.querySelectorAll(".field-error").forEach(el => el.innerHTML = "");
+        }
+        function showFieldError(field, msg) {
+          const container = document.querySelector(`.field-error[data-field="${field}"]`);
+          if (container) container.innerHTML = `<p class="error-text">${msg}</p>`;
+        }
+
+        function updateCategoryOffer() {
+          if (!categorySelect) return;
+          const selected = categorySelect.selectedOptions[0];
+          const offer = selected?.dataset?.offer || 0;
+          if (categoryOfferInput) categoryOfferInput.value = offer;
+          updateFinalPrice();
+        }
+        if (categorySelect) {
+          categorySelect.addEventListener("change", updateCategoryOffer);
+          updateCategoryOffer();
+        }
+
+        function updateFinalPrice() {
+          const price = parseFloat(priceInput?.value || 0);
+          const productOffer = parseFloat(offerPercentageInput?.value || 0);
+          const productStart = new Date(offerStartDateInput?.value || "");
+          const productEnd = new Date(offerEndDateInput?.value || "");
+          const now = new Date();
+
+          const productActive =
+            productOffer > 0 &&
+            !isNaN(productStart) &&
+            !isNaN(productEnd) &&
+            now >= productStart &&
+            now <= productEnd;
+
+          const categoryOption = categorySelect?.selectedOptions?.[0];
+          const categoryOffer = parseFloat(categoryOption?.dataset?.offer || 0);
+          const catStart = new Date(categoryOption?.dataset?.start || "");
+          const catEnd = new Date(categoryOption?.dataset?.end || "");
+          const catActive =
+            categoryOption?.dataset?.active === "true" &&
+            !isNaN(catStart) &&
+            !isNaN(catEnd) &&
+            now >= catStart &&
+            now <= catEnd;
+
+          const applicableOffer = Math.max(productActive ? productOffer : 0, catActive ? categoryOffer : 0);
+
+          if (finalPriceInput) finalPriceInput.value = price > 0 ? (price - (price * applicableOffer) / 100).toFixed(2) : "";
+          document.querySelectorAll(".variant-price").forEach((vp, i) => {
+            const vf = document.querySelectorAll(".variantFinalPrice")[i];
+            if (!vf) return;
+            const vPrice = parseFloat(vp.value || 0);
+            vf.value = vPrice > 0 ? (vPrice - (vPrice * applicableOffer) / 100).toFixed(2) : "";
+          });
+        }
+        if (priceInput) priceInput.addEventListener("input", updateFinalPrice);
+        if (offerPercentageInput) offerPercentageInput.addEventListener("input", updateFinalPrice);
+        if (offerStartDateInput) offerStartDateInput.addEventListener("input", updateFinalPrice);
+        if (offerEndDateInput) offerEndDateInput.addEventListener("input", updateFinalPrice);
+        if (categorySelect) categorySelect.addEventListener("change", updateFinalPrice);
+
+        function updateInputFiles() {
+          const dt = new DataTransfer();
+          uploadedFiles.forEach(file => dt.items.add(file));
+          if (imageInput) imageInput.files = dt.files;
+        }
+       function renderPreview() {
+  if (!preview) return;
+
+  preview.innerHTML = "";
+
+  uploadedFiles.forEach((file, index) => {
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "image-wrapper";
+
+      wrapper.innerHTML = `
+        <img src="${e.target.result}" class="preview-thumb">
+        <button type="button" class="remove-btn">&times;</button>
+      `;
+
+      wrapper.querySelector(".remove-btn").onclick = () => {
+        uploadedFiles.splice(index, 1); // ✅ correct removal
+        updateInputFiles();
+        renderPreview();
+      };
+
+      preview.appendChild(wrapper);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+        
+        const MAX_IMAGES = 5;
+
+        if (imageInput) {
+         imageInput.addEventListener("change", function () {
+  const newFiles = Array.from(this.files);
+
+  for (const file of newFiles) {
+    if (uploadedFiles.length >= MAX_IMAGES) {
       Swal.fire({
         icon: "error",
-        title: "Invalid File",
-        text: "Only JPG, JPEG, PNG, WEBP images are allowed",
-        confirmButtonColor: "#e63946",
+        title: "Limit reached",
+        text: `You can upload only ${MAX_IMAGES} images`
       });
-
-      input.value = "";
+      break;
     }
-  });
-document.addEventListener("DOMContentLoaded", () => {
-
-  const form = document.getElementById("productForm");
-  const priceInput = document.getElementById("price");
-  const finalPriceInput = document.getElementById("finalPrice");
-  const imageInput = document.getElementById("imageInput");
-  const mainStockInput = document.getElementById("mainStock");
-  const totalStockInput = document.getElementById("totalStock");
-  const preview = document.getElementById("preview"); 
-  const existingPreview = document.getElementById("existingPreview"); 
-  const imageFilenamesInput = document.getElementById("imageFilenames"); 
-  const categorySelect = document.querySelector("select[name='category']");
-  const categoryOfferInput = document.getElementById("categoryOffer");
-  const offerPercentageInput = document.getElementById("offerPercentage");
-  const offerStartDateInput = document.getElementById("offerStartDate");
-  const offerEndDateInput = document.getElementById("offerEndDate");
-
-  let uploadedFiles = []; 
-
-  function clearFieldErrors() {
-    document.querySelectorAll(".field-error").forEach(el => el.innerHTML = "");
-  }
-  function showFieldError(field, msg) {
-    const container = document.querySelector(`.field-error[data-field="${field}"]`);
-    if (container) container.innerHTML = `<p class="error-text">${msg}</p>`;
+    uploadedFiles.push(file); // ✅ APPEND
   }
 
-  function updateCategoryOffer() {
-    if (!categorySelect) return;
-    const selected = categorySelect.selectedOptions[0];
-    const offer = selected?.dataset?.offer || 0;
-    if (categoryOfferInput) categoryOfferInput.value = offer;
-    updateFinalPrice();
-  }
-  if (categorySelect) {
-    categorySelect.addEventListener("change", updateCategoryOffer);
-    updateCategoryOffer();
-  }
+  updateInputFiles();
+  renderPreview();
 
-  function updateFinalPrice() {
-    const price = parseFloat(priceInput?.value || 0);
-    const productOffer = parseFloat(offerPercentageInput?.value || 0);
-    const productStart = new Date(offerStartDateInput?.value || "");
-    const productEnd = new Date(offerEndDateInput?.value || "");
-    const now = new Date();
 
-    const productActive =
-      productOffer > 0 &&
-      !isNaN(productStart) &&
-      !isNaN(productEnd) &&
-      now >= productStart &&
-      now <= productEnd;
+});
 
-    const categoryOption = categorySelect?.selectedOptions?.[0];
-    const categoryOffer = parseFloat(categoryOption?.dataset?.offer || 0);
-    const catStart = new Date(categoryOption?.dataset?.start || "");
-    const catEnd = new Date(categoryOption?.dataset?.end || "");
-    const catActive =
-      categoryOption?.dataset?.active === "true" &&
-      !isNaN(catStart) &&
-      !isNaN(catEnd) &&
-      now >= catStart &&
-      now <= catEnd;
+        }
 
-    const applicableOffer = Math.max(productActive ? productOffer : 0, catActive ? categoryOffer : 0);
-
-    if (finalPriceInput) finalPriceInput.value = price > 0 ? (price - (price * applicableOffer) / 100).toFixed(2) : "";
-    document.querySelectorAll(".variant-price").forEach((vp, i) => {
-      const vf = document.querySelectorAll(".variantFinalPrice")[i];
-      if (!vf) return;
-      const vPrice = parseFloat(vp.value || 0);
-      vf.value = vPrice > 0 ? (vPrice - (vPrice * applicableOffer) / 100).toFixed(2) : "";
-    });
-  }
-  if (priceInput) priceInput.addEventListener("input", updateFinalPrice);
-  if (offerPercentageInput) offerPercentageInput.addEventListener("input", updateFinalPrice);
-  if (offerStartDateInput) offerStartDateInput.addEventListener("input", updateFinalPrice);
-  if (offerEndDateInput) offerEndDateInput.addEventListener("input", updateFinalPrice);
-  if (categorySelect) categorySelect.addEventListener("change", updateFinalPrice);
-
-  function updateInputFiles() {
-    const dt = new DataTransfer();
-    uploadedFiles.forEach(file => dt.items.add(file));
-    if (imageInput) imageInput.files = dt.files;
-  }
-  function renderPreview() {
-    if (!preview) return;
-    preview.innerHTML = "";
-    Array.from(imageInput?.files || []).forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "image-wrapper";
-        wrapper.dataset.idx = index;
-        wrapper.innerHTML = `
-          <img src="${e.target.result}" class="preview-thumb">
-          <button type="button" class="remove-btn preview-remove" title="Remove image">&times;</button>
-        `;
-        wrapper.querySelector(".preview-remove").onclick = () => {
-          uploadedFiles = uploadedFiles.filter((_, i) => i !== index);
-          updateInputFiles();
-          renderPreview();
+        window.removeExistingImage = function (imgUrl) {
+          if (!existingPreview || !imageFilenamesInput) return;
+          const nodes = Array.from(existingPreview.querySelectorAll(".image-wrapper"));
+          nodes.forEach(node => { if (node.dataset.src === imgUrl) node.remove(); });
+          const current = (imageFilenamesInput.value || "").split(",").map(s => s.trim()).filter(Boolean);
+          const updated = current.filter(s => s !== imgUrl);
+          imageFilenamesInput.value = updated.join(",");
         };
-        preview.appendChild(wrapper);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-  if (imageInput) {
-    imageInput.addEventListener("change", function () {
-      uploadedFiles = Array.from(this.files);
-      updateInputFiles();
-      renderPreview();
-    });
-  }
 
-  window.removeExistingImage = function (imgUrl) {
-    if (!existingPreview || !imageFilenamesInput) return;
-    const nodes = Array.from(existingPreview.querySelectorAll(".image-wrapper"));
-    nodes.forEach(node => { if (node.dataset.src === imgUrl) node.remove(); });
-    const current = (imageFilenamesInput.value || "").split(",").map(s => s.trim()).filter(Boolean);
-    const updated = current.filter(s => s !== imgUrl);
-    imageFilenamesInput.value = updated.join(",");
-  };
+        function updateTotalStock() {
+          let total = parseInt(mainStockInput?.value || 0);
+          document.querySelectorAll('input[name="variantStock[]"]').forEach(input => {
+            total += parseInt(input.value || 0);
+          });
+          if (totalStockInput) totalStockInput.value = total;
+        }
+        if (mainStockInput) mainStockInput.addEventListener("input", updateTotalStock);
+        updateTotalStock();
 
-  function updateTotalStock() {
-    let total = parseInt(mainStockInput?.value || 0);
-    document.querySelectorAll('input[name="variantStock[]"]').forEach(input => {
-      total += parseInt(input.value || 0);
-    });
-    if (totalStockInput) totalStockInput.value = total;
-  }
-  if (mainStockInput) mainStockInput.addEventListener("input", updateTotalStock);
-  updateTotalStock();
+        function attachVariantPreview(row) {
+          if (!row) return;
+          const fileInput = row.querySelector(".variant-input");
+          const previewCell = row.querySelector(".variant-preview");
+          if (!fileInput || !previewCell) return;
 
-  function attachVariantPreview(row) {
-    if (!row) return;
-    const fileInput = row.querySelector(".variant-input");
-    const previewCell = row.querySelector(".variant-preview");
-    if (!fileInput || !previewCell) return;
+          if (!fileInput.getAttribute("name")) fileInput.setAttribute("name", "variantImages[]");
 
-    if (!fileInput.getAttribute("name")) fileInput.setAttribute("name", "variantImages[]");
+          fileInput.addEventListener("change", function () {
+            previewCell.innerHTML = "";
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const img = document.createElement("img");
+            const url = URL.createObjectURL(file);
+            img.src = url;
+            img.style.width = "70px";
+            img.style.height = "70px";
+            img.style.objectFit = "cover";
+            img.style.borderRadius = "6px";
+            previewCell.appendChild(img);
 
-    fileInput.addEventListener("change", function () {
-      previewCell.innerHTML = "";
-      const file = this.files && this.files[0];
-      if (!file) return;
-      const img = document.createElement("img");
-      const url = URL.createObjectURL(file);
-      img.src = url;
-      img.style.width = "70px";
-      img.style.height = "70px";
-      img.style.objectFit = "cover";
-      img.style.borderRadius = "6px";
-      previewCell.appendChild(img);
+            const badge = document.createElement("p");
+            badge.textContent = "New image selected";
+            badge.style.fontSize = "12px";
+            badge.style.color = "green";
+            badge.style.marginTop = "4px";
+            previewCell.appendChild(badge);
 
-      const badge = document.createElement("p");
-      badge.textContent = "New image selected";
-      badge.style.fontSize = "12px";
-      badge.style.color = "green";
-      badge.style.marginTop = "4px";
-      previewCell.appendChild(badge);
+            img.onload = () => URL.revokeObjectURL(url);
+          });
+        }
+        document.querySelectorAll("#variantBody tr").forEach(row => attachVariantPreview(row));
 
-      img.onload = () => URL.revokeObjectURL(url);
-    });
-  }
-  document.querySelectorAll("#variantBody tr").forEach(row => attachVariantPreview(row));
+        function ensureVariantInputNames() {
+          document.querySelectorAll(".variant-input").forEach(inp => {
+            if (!inp.getAttribute("name")) inp.setAttribute("name", "variantImages[]");
+            const row = inp.closest("tr");
+            if (row && !row.querySelector("input[name='variantExistingImage[]']")) {
+              const hidden = document.createElement("input");
+              hidden.type = "hidden";
+              hidden.name = "variantExistingImage[]";
+              hidden.value = "";
+              row.appendChild(hidden);
+            }
+          });
+        }
+        ensureVariantInputNames();
 
-  function ensureVariantInputNames() {
-    document.querySelectorAll(".variant-input").forEach(inp => {
-      if (!inp.getAttribute("name")) inp.setAttribute("name", "variantImages[]");
-      const row = inp.closest("tr");
-      if (row && !row.querySelector("input[name='variantExistingImage[]']")) {
-        const hidden = document.createElement("input");
-        hidden.type = "hidden";
-        hidden.name = "variantExistingImage[]";
-        hidden.value = "";
-        row.appendChild(hidden);
-      }
-    });
-  }
-  ensureVariantInputNames();
-
-  window.addVariant = function () {
-    const tbody = document.getElementById("variantBody");
-    if (!tbody) return;
-    const row = document.createElement("tr");
-    row.innerHTML = `
+        window.addVariant = function () {
+          const tbody = document.getElementById("variantBody");
+          if (!tbody) return;
+          const row = document.createElement("tr");
+          row.innerHTML = `
       <td><input type="text" class="form-control" name="variantName[]" placeholder="Color"></td>
       <td><input type="text" class="form-control" name="variantSize[]" placeholder="Size"></td>
       <td><input type="text" class="form-control" name="variantSKU[]" placeholder="SKU"></td>
@@ -633,119 +667,120 @@ document.addEventListener("DOMContentLoaded", () => {
       <td class="variant-preview"></td>
       <td><i class="bi bi-trash text-danger" style="cursor:pointer"></i></td>
     `;
-    tbody.appendChild(row);
-    attachVariantPreview(row);
+          tbody.appendChild(row);
+          attachVariantPreview(row);
 
-    const variantPriceInput = row.querySelector(".variant-price");
-    const variantFinalInput = row.querySelector(".variantFinalPrice");
-    function calculateVariantFinal() {
-      const price = parseFloat(variantPriceInput.value || 0);
-      const productOffer = parseFloat(offerPercentageInput?.value || 0);
-      const productStart = new Date(offerStartDateInput?.value || "");
-      const productEnd = new Date(offerEndDateInput?.value || "");
-      const now = new Date();
-      const productActive = productOffer > 0 && !isNaN(productStart) && !isNaN(productEnd) && now >= productStart && now <= productEnd;
+          const variantPriceInput = row.querySelector(".variant-price");
+          const variantFinalInput = row.querySelector(".variantFinalPrice");
+          function calculateVariantFinal() {
+            const price = parseFloat(variantPriceInput.value || 0);
+            const productOffer = parseFloat(offerPercentageInput?.value || 0);
+            const productStart = new Date(offerStartDateInput?.value || "");
+            const productEnd = new Date(offerEndDateInput?.value || "");
+            const now = new Date();
+            const productActive = productOffer > 0 && !isNaN(productStart) && !isNaN(productEnd) && now >= productStart && now <= productEnd;
 
-      const categoryOption = categorySelect?.selectedOptions?.[0];
-      const categoryOffer = parseFloat(categoryOption?.dataset?.offer || 0);
-      const catStart = new Date(categoryOption?.dataset?.start || "");
-      const catEnd = new Date(categoryOption?.dataset?.end || "");
-      const catActive = categoryOption?.dataset?.active === "true" && !isNaN(catStart) && !isNaN(catEnd) && now >= catStart && now <= catEnd;
+            const categoryOption = categorySelect?.selectedOptions?.[0];
+            const categoryOffer = parseFloat(categoryOption?.dataset?.offer || 0);
+            const catStart = new Date(categoryOption?.dataset?.start || "");
+            const catEnd = new Date(categoryOption?.dataset?.end || "");
+            const catActive = categoryOption?.dataset?.active === "true" && !isNaN(catStart) && !isNaN(catEnd) && now >= catStart && now <= catEnd;
 
-      const applicableOffer = Math.max(productActive ? productOffer : 0, catActive ? categoryOffer : 0);
-      variantFinalInput.value = price > 0 ? (price - (price * applicableOffer) / 100).toFixed(2) : "";
-    }
-    variantPriceInput.addEventListener("input", calculateVariantFinal);
-    if (offerPercentageInput) offerPercentageInput.addEventListener("input", calculateVariantFinal);
-    if (offerStartDateInput) offerStartDateInput.addEventListener("input", calculateVariantFinal);
-    if (offerEndDateInput) offerEndDateInput.addEventListener("input", calculateVariantFinal);
-    if (categorySelect) categorySelect.addEventListener("change", calculateVariantFinal);
+            const applicableOffer = Math.max(productActive ? productOffer : 0, catActive ? categoryOffer : 0);
+            variantFinalInput.value = price > 0 ? (price - (price * applicableOffer) / 100).toFixed(2) : "";
+          }
+          variantPriceInput.addEventListener("input", calculateVariantFinal);
+          if (offerPercentageInput) offerPercentageInput.addEventListener("input", calculateVariantFinal);
+          if (offerStartDateInput) offerStartDateInput.addEventListener("input", calculateVariantFinal);
+          if (offerEndDateInput) offerEndDateInput.addEventListener("input", calculateVariantFinal);
+          if (categorySelect) categorySelect.addEventListener("change", calculateVariantFinal);
 
-    row.querySelector('input[name="variantStock[]"]').addEventListener("input", updateTotalStock);
+          row.querySelector('input[name="variantStock[]"]').addEventListener("input", updateTotalStock);
 
-    row.querySelector("i.bi-trash").addEventListener("click", () => { row.remove(); updateTotalStock(); });
+          row.querySelector("i.bi-trash").addEventListener("click", () => { row.remove(); updateTotalStock(); });
 
-    updateTotalStock();
-  };
+          updateTotalStock();
+        };
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearFieldErrors();
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          clearFieldErrors();
 
-    let hasError = false;
-    const name = form.name?.value?.trim();
-    const category = form.category?.value;
-    const brand = form.brand?.value?.trim();
-    const price = parseFloat(form.price?.value || 0);
-    const offerPercentage = offerPercentageInput?.value?.trim();
-    const finalPrice = finalPriceInput?.value?.trim();
-    const color = form.color?.value?.trim();
-    const size = form.size?.value?.trim();
-    const sku = form.sku?.value?.trim();
-    const stock = form.stock?.value?.trim();
-    const description = form.description?.value?.trim();
-    const images = imageInput?.files;
+          let hasError = false;
+          const name = form.name?.value?.trim();
+          const category = form.category?.value;
+          const brand = form.brand?.value?.trim();
+          const price = parseFloat(form.price?.value || 0);
+          const offerPercentage = offerPercentageInput?.value?.trim();
+          const finalPrice = finalPriceInput?.value?.trim();
+          const color = form.color?.value?.trim();
+          const size = form.size?.value?.trim();
+          const sku = form.sku?.value?.trim();
+          const stock = form.stock?.value?.trim();
+          const description = form.description?.value?.trim();
+          const images = imageInput?.files;
 
-    if (!name) { showFieldError("name", "Product name is required."); hasError = true; }
-    if (!category) { showFieldError("category", "Please select a category."); hasError = true; }
-    if (!brand) { showFieldError("brand", "Brand is required."); hasError = true; }
-    if (isNaN(price) || price <= 0) { showFieldError("price", "Price must be greater than 0."); hasError = true; }
-    if (offerPercentage === "") { showFieldError("offerPercentage", "Offer percentage is required."); hasError = true; }
-    if (!finalPrice) { showFieldError("finalPrice", "Final price is required."); hasError = true; }
-    if (!color) { showFieldError("color", "Color is required."); hasError = true; }
-    if (!size) { showFieldError("size", "Size is required."); hasError = true; }
-    if (!sku) { showFieldError("sku", "SKU is required."); hasError = true; }
-    if (stock === "" || parseInt(stock) < 0) { showFieldError("stock", "Stock must be at least 0."); hasError = true; }
-    if (!description) { showFieldError("description", "Description is required."); hasError = true; }
+          if (!name) { showFieldError("name", "Product name is required."); hasError = true; }
+          if (!category) { showFieldError("category", "Please select a category."); hasError = true; }
+          if (!brand) { showFieldError("brand", "Brand is required."); hasError = true; }
+          if (isNaN(price) || price <= 0) { showFieldError("price", "Price must be greater than 0."); hasError = true; }
+          if (offerPercentage === "") { showFieldError("offerPercentage", "Offer percentage is required."); hasError = true; }
+          if (!finalPrice) { showFieldError("finalPrice", "Final price is required."); hasError = true; }
+          if (!color) { showFieldError("color", "Color is required."); hasError = true; }
+          if (!size) { showFieldError("size", "Size is required."); hasError = true; }
+          if (!sku) { showFieldError("sku", "SKU is required."); hasError = true; }
+          if (stock === "" || parseInt(stock) < 0) { showFieldError("stock", "Stock must be at least 0."); hasError = true; }
+          if (!description) { showFieldError("description", "Description is required."); hasError = true; }
 
-    if (hasError) return;
+          if (hasError) return;
 
-    const confirmResult = await Swal.fire({
-      title: form.getAttribute("data-edit") ? "Confirm Update Product" : "Confirm Add Product",
-      text: form.getAttribute("data-edit") ? "Are you sure you want to update this product?" : "Are you sure you want to add this product?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#f08da4",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: form.getAttribute("data-edit") ? "Update" : "Add"
-    });
+          const confirmResult = await Swal.fire({
+            title: form.getAttribute("data-edit") ? "Confirm Update Product" : "Confirm Add Product",
+            text: form.getAttribute("data-edit") ? "Are you sure you want to update this product?" : "Are you sure you want to add this product?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#f08da4",
+            cancelButtonColor: "#aaa",
+            confirmButtonText: form.getAttribute("data-edit") ? "Update" : "Add"
+          });
 
-    if (!confirmResult.isConfirmed) return;
+          if (!confirmResult.isConfirmed) return;
 
-    const formData = new FormData(form);
-    document.querySelectorAll("input.variant-input").forEach(input => {
-      if (input.files && input.files[0]) {
-        formData.append("variantImages", input.files[0]);
-        formData.append("variantImageIds", input.dataset.variantId || "new");
-      }
-    });
+          const formData = new FormData(form);
 
-    try {
-      const response = await fetch(form.action, {
-        method: "POST",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-        body: formData
+          // document.querySelectorAll("input.variant-input").forEach(input => {
+          //   if (input.files && input.files[0]) {
+          //     formData.append("variantImages", input.files[0]);
+          //     formData.append("variantImageIds", input.dataset.variantId || "new");
+          //   }
+          // });
+
+          try {
+            const response = await fetch(form.action, {
+              method: "POST",
+              headers: { "X-Requested-With": "XMLHttpRequest" },
+              body: formData
+            });
+
+            const ctype = response.headers.get("content-type") || "";
+            if (!ctype.includes("application/json")) {
+              Swal.fire({ icon: "success", title: "Success", timer: 1200, showConfirmButton: false })
+                .then(() => window.location.href = "/admin/products");
+              return;
+            }
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Server error");
+
+            Swal.fire({ icon: "success", title: data.message || "Saved", timer: 1200, showConfirmButton: false })
+              .then(() => window.location.href = data.redirect || "/admin/products");
+          } catch (err) {
+            console.error("Submission error:", err);
+            Swal.fire({ icon: "error", title: "Server Error", text: err.message || "Something went wrong." });
+          }
+        });
+
+        updateFinalPrice();
+        ensureVariantInputNames();
       });
-
-      const ctype = response.headers.get("content-type") || "";
-      if (!ctype.includes("application/json")) {
-        Swal.fire({ icon: "success", title: "Success", timer: 1200, showConfirmButton: false })
-          .then(() => window.location.href = "/admin/products");
-        return;
-      }
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Server error");
-
-      Swal.fire({ icon: "success", title: data.message || "Saved", timer: 1200, showConfirmButton: false })
-        .then(() => window.location.href = data.redirect || "/admin/products");
-    } catch (err) {
-      console.error("Submission error:", err);
-      Swal.fire({ icon: "error", title: "Server Error", text: err.message || "Something went wrong." });
-    }
-  });
-
-  updateFinalPrice();
-  ensureVariantInputNames();
-});
-</script>
+    </script>

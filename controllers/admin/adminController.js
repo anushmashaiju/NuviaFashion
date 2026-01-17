@@ -1,9 +1,10 @@
 import User from "../../models/userModel.js";
 import bcrypt from "bcrypt";
 import STATUS from "../../utils/statusCodes.js";
+import MESSAGES from "../../utils/messages.js";
 
 // Admin Login Page
-export const getAdminLoginPage = (req, res) => {
+ const getAdminLoginPage = (req, res) => {
   res.status(STATUS.SUCCESS).render("admin/adminLogin", { 
     title: "Admin Login",
     email: "",
@@ -13,7 +14,7 @@ export const getAdminLoginPage = (req, res) => {
 };
 
 // Admin Login
-export const adminLogin = async (req, res) => {
+ const adminLogin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -23,7 +24,7 @@ export const adminLogin = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
         title: "Admin Login",
         errorField: "email",
-        errorMessage: "Email is required"
+        errorMessage: MESSAGES.EMAIL_REQUIRED
       });
     }
 
@@ -31,7 +32,7 @@ export const adminLogin = async (req, res) => {
       return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
         title: "Admin Login",
         errorField: "password",
-        errorMessage: "Password is required"
+        errorMessage: MESSAGES.PASSWORD_REQUIRED
       });
     }
 
@@ -40,7 +41,7 @@ export const adminLogin = async (req, res) => {
         title: "Admin Login",
         email,
         errorField: "email",
-        errorMessage: "Email is required"
+        errorMessage: MESSAGES.EMAIL_REQUIRED
       });
     }
 
@@ -50,7 +51,7 @@ export const adminLogin = async (req, res) => {
         title: "Admin Login",
         email,
         errorField: "password",
-        errorMessage: "Incorrect password"
+        errorMessage: MESSAGES.INCORRECT_PASSWORD
       });
     }
 
@@ -67,7 +68,7 @@ export const adminLogin = async (req, res) => {
           title: "Admin Login",
           email,
           errorField: null,
-          errorMessage: "Something went wrong"
+          errorMessage: MESSAGES.SERVER_ERROR
         });
       }
       res.status(STATUS.SUCCESS).redirect("/admin/dashboard");
@@ -78,19 +79,19 @@ export const adminLogin = async (req, res) => {
     res.status(STATUS.SERVER_ERROR).render("admin/adminLogin", {
       title: "Admin Login",
       errorField: "",
-      errorMessage: "Something went wrong"
+      errorMessage: MESSAGES.SERVER_ERROR
     });
   }
 };
 // postAdminForgotPassword
-export const postAdminForgotPassword = async (req, res) => {
+ const postAdminForgotPassword = async (req, res) => {
   const { email } = req.body;
 
   if (!email || email.trim() === "") {
     return res.status(STATUS.BAD_REQUEST).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
-      errorMessage: "Email address is required.",
+      errorMessage: MESSAGES.EMAIL_REQUIRED,
       message: null
     });
   }
@@ -100,7 +101,7 @@ export const postAdminForgotPassword = async (req, res) => {
     return res.status(STATUS.BAD_REQUEST).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
-      errorMessage: "Email address is invalid.",
+      errorMessage: MESSAGES.EMAIL_INVALID,
       message: null
     });
   }
@@ -112,7 +113,7 @@ export const postAdminForgotPassword = async (req, res) => {
       return res.status(STATUS.NOT_FOUND).render("admin/adminForgotPassword", {
         email,
         errorField: "email",
-        errorMessage: "Admin account not found.",
+        errorMessage: MESSAGES.ADMIN_NOT_FOUND,
         message: null
       });
     }
@@ -127,7 +128,7 @@ export const postAdminForgotPassword = async (req, res) => {
       return res.status(STATUS.SERVER_ERROR).render("admin/adminForgotPassword", {
         email,
         errorField: "email",
-        errorMessage: "Failed to send OTP. Try again.",
+        errorMessage:MESSAGES.OTP_INVALID,
         message: null
       });
     }
@@ -140,14 +141,14 @@ export const postAdminForgotPassword = async (req, res) => {
     return res.status(STATUS.SERVER_ERROR).render("admin/adminForgotPassword", {
       email,
       errorField: "email",
-      errorMessage: "Something went wrong. Try again.",
+      errorMessage: MESSAGES.SERVER_ERROR,
       message: null
     });
   }
 };
 
 // Verify OTP 
-export const getAdminForgotOtpPage = (req, res) => {
+ const getAdminForgotOtpPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
   if (!email) return res.status(STATUS.BAD_REQUEST).redirect("/admin/forgot-password");
 
@@ -155,7 +156,7 @@ export const getAdminForgotOtpPage = (req, res) => {
 };
 
 // Verify AdminForgotOtp
-export const verifyAdminForgotOtp = async (req, res) => {
+ const verifyAdminForgotOtp = async (req, res) => {
   const { otp1, otp2, otp3, otp4, email } = req.body;
   const enteredOtp = `${otp1}${otp2}${otp3}${otp4}`;
 
@@ -165,13 +166,13 @@ export const verifyAdminForgotOtp = async (req, res) => {
   } else {
     return res.status(STATUS.UNAUTHORIZED).render("admin/otpForgotPassword", { 
       email, 
-      errorMessage: "Invalid OTP. Try again." 
+      errorMessage: MESSAGES.OTP_INVALID
     });
   }
 };
 
 // Resend OTP 
-export const resendAdminForgotOtp = async (req, res) => {
+ const resendAdminForgotOtp = async (req, res) => {
   try {
     const email = req.query.email || req.session.adminResetEmail;
     if (!email) return res.status(STATUS.BAD_REQUEST).redirect("/admin/forgot-password");
@@ -183,27 +184,27 @@ export const resendAdminForgotOtp = async (req, res) => {
     if (!emailSent) {
       return res.status(STATUS.SERVER_ERROR).render("admin/otpForgotPassword", { 
         email, 
-        errorMessage: "Failed to resend OTP." 
+        errorMessage: MESSAGES.OTP_RESEND_FAILED
       });
     }
 
     console.log("Resent Admin OTP:", newOtp);
     res.status(STATUS.SUCCESS).render("admin/otpForgotPassword", { 
       email, 
-      errorMessage: "New OTP sent successfully." 
+      errorMessage: MESSAGES.OTP_SEND_SUCCESS
     });
 
   } catch (error) {
     console.error("Resend Admin OTP Error:", error);
     res.status(STATUS.SERVER_ERROR).render("admin/otpForgotPassword", { 
       email: req.session.adminResetEmail, 
-      errorMessage: "Something went wrong." 
+      errorMessage: MESSAGES.SERVER_ERROR 
     });
   }
 };
 
 // Admin Reset Password Page
-export const getAdminResetPasswordPage = (req, res) => {
+ const getAdminResetPasswordPage = (req, res) => {
   const email = req.query.email || req.session.adminResetEmail;
 
   if (!req.session.adminOtpVerified) 
@@ -216,14 +217,14 @@ export const getAdminResetPasswordPage = (req, res) => {
 };
 
 // Reset Admin Password 
-export const resetAdminPassword = async (req, res) => {
+ const resetAdminPassword = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
 
   if (password !== confirmPassword) {
     return res.status(STATUS.BAD_REQUEST).render("admin/resetPassword", { 
       email,
       errorField: "confirmPassword",
-      errorMessage: "Passwords do not match." 
+      errorMessage: MESSAGES.PASSWORD_MISMATCH
     });
   }
 
@@ -231,7 +232,7 @@ export const resetAdminPassword = async (req, res) => {
     return res.status(STATUS.BAD_REQUEST).render("admin/resetPassword", { 
       email,
       errorField: "password",
-      errorMessage: "Password must be at least 6 characters." 
+      errorMessage: MESSAGES.PASSWORD_WEAK 
     });
   }
 
@@ -244,7 +245,7 @@ export const resetAdminPassword = async (req, res) => {
 
     res.status(STATUS.SUCCESS).render("admin/adminLogin", { 
       title: "Admin Login", 
-      errorMessage: "Password reset successful. Please login." 
+      errorMessage: MESSAGES.PASSWORD_CHANGED_SUCCESS
     });
 
   } catch (error) {
@@ -252,19 +253,19 @@ export const resetAdminPassword = async (req, res) => {
     res.status(STATUS.SERVER_ERROR).render("admin/resetPassword", { 
       email,
       errorField: "password",
-      errorMessage: "Something went wrong. Try again." 
+      errorMessage: MESSAGES.SERVER_ERROR
     });
   }
 };
 
 // Logout
-export const adminLogout = (req, res) => {
+ const adminLogout = (req, res) => {
   req.session.admin = null; 
   res.status(STATUS.SUCCESS).redirect("/admin/login");
 };
 
 // Get All Users 
-export const getAllUsers = async (req, res) => {
+ const getAllUsers = async (req, res) => {
   try {
     const search = req.query.search?.trim() || "";
     const page = parseInt(req.query.page) || 1;
@@ -305,7 +306,7 @@ export const getAllUsers = async (req, res) => {
 };
 
 // Block / Unblock User
-export const toggleUserStatus = async (req, res) => {
+ const toggleUserStatus = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user || user.isDeleted) 
@@ -322,7 +323,7 @@ export const toggleUserStatus = async (req, res) => {
 };
 
 // Forgot Password 
-export const getAdminForgotPassword = (req, res) => {
+ const getAdminForgotPassword = (req, res) => {
   res.status(STATUS.SUCCESS).render("admin/adminForgotPassword", { 
     email: "",
     errorField: null,
@@ -332,3 +333,17 @@ export const getAdminForgotPassword = (req, res) => {
 };
 
 
+export {
+  getAdminLoginPage,
+  adminLogin,
+  getAdminForgotPassword,
+  postAdminForgotPassword,
+  getAdminForgotOtpPage,
+  verifyAdminForgotOtp,
+  resendAdminForgotOtp,
+  getAdminResetPasswordPage,
+  resetAdminPassword,
+  adminLogout,
+  getAllUsers,
+  toggleUserStatus
+};

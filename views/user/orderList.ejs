@@ -189,12 +189,37 @@
             <% }) %>
 <% if (totalPages > 1) { %>
   <div class="pagination-wrap">
-    <button class="page-btn"
-      <%= currentPage > 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
-      &laquo; Prev
-    </button>
 
-    <% for (let i = 1; i <= totalPages; i++) { %>
+    <% 
+      const windowSize = 5;
+      let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+      let end = Math.min(totalPages, start + windowSize - 1);
+
+      if (end - start < windowSize - 1) {
+        start = Math.max(1, end - windowSize + 1);
+      }
+    %>
+
+    <!-- PREV -->
+    <% if (currentPage > 1) { %>
+      <button class="page-btn"
+        onclick="changePage(<%= currentPage - 1 %>)">
+        &laquo; Prev
+      </button>
+    <% } else { %>
+      <button class="page-btn" disabled>&laquo; Prev</button>
+    <% } %>
+
+    <!-- FIRST PAGE -->
+    <% if (start > 1) { %>
+      <button class="page-btn" onclick="changePage(1)">1</button>
+      <% if (start > 2) { %>
+        <span style="padding:6px 8px;">...</span>
+      <% } %>
+    <% } %>
+
+    <!-- PAGE WINDOW -->
+    <% for (let i = start; i <= end; i++) { %>
       <button
         class="page-btn <%= i === currentPage ? 'active' : '' %>"
         onclick="changePage(<%= i %>)">
@@ -202,12 +227,30 @@
       </button>
     <% } %>
 
-    <button class="page-btn"
-      <%= currentPage < totalPages ? `onclick="changePage(${currentPage + 1})"` : "disabled" %>>
-      Next &raquo;
-    </button>
+    <!-- LAST PAGE -->
+    <% if (end < totalPages) { %>
+      <% if (end < totalPages - 1) { %>
+        <span style="padding:6px 8px;">...</span>
+      <% } %>
+      <button class="page-btn"
+        onclick="changePage(<%= totalPages %>)">
+        <%= totalPages %>
+      </button>
+    <% } %>
+
+    <!-- NEXT -->
+    <% if (currentPage < totalPages) { %>
+      <button class="page-btn"
+        onclick="changePage(<%= currentPage + 1 %>)">
+        Next &raquo;
+      </button>
+    <% } else { %>
+      <button class="page-btn" disabled>Next &raquo;</button>
+    <% } %>
+
   </div>
 <% } %>
+
                   <% } %>
     </div>
   </div>
@@ -296,13 +339,10 @@
 
                     itemDiv.appendChild(statusSpan);
                   }
-
-    
                   if (data.order.orderStatus === "Cancelled") {
                     card.querySelector(".order-status").textContent = "Cancelled";
                     card.querySelectorAll(".cancel-btn").forEach(b => b.remove());
                   }
-
 
                 } else {
                   Swal.fire("Error", data.message, "error");

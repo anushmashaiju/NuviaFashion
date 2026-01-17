@@ -14,11 +14,25 @@ const orderedItemSchema = new mongoose.Schema(
     finalPrice: { type: Number, required: true },
     subtotal: { type: Number, required: true },
     image: { type: String, required: true },
-    isReturned: { type: Boolean, default: false },
-    returnReason: { type: String, default: null },
+    isReturned: { type: Boolean, default: false },       
+    returnRequested: { type: Boolean, default: false },  
+    returnRequestedAt: { type: Date, default: null },   
+    returnReason: { type: String, default: null },      
+    returnStatus: {                                      
+      type: String,
+      enum: ["Requested", "Approved", "Rejected"],
+      default: "Requested"
+    },
+    returnType: {                                        
+      type: String,
+      enum: ["REFUND", "REPLACEMENT"],
+      default: null
+    },
     isCancelled: { type: Boolean, default: false },
     cancelReason: { type: String, default: null },
     cancelledAt: { type: Date, default: null },
+    refundProcessed: { type: Boolean, default: false },
+refundAmount: { type: Number, default: 0 }
 
   },
   { _id: false }
@@ -36,32 +50,30 @@ const orderSchema = new mongoose.Schema(
     tax: { type: Number, default: 0 },
     couponName: { type: String, default: null },
     couponDiscount: { type: Number, default: 0 },
-    couponOfferPrice: { type: Number,default: 0},
-
-  couponMinimumPrice: {type: Number, default: 0},
+    couponOfferPrice: { type: Number, default: 0 },
+    couponMinimumPrice: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 0 },
     totalPrice: { type: Number, required: true },
     walletUsed: { type: Number, default: 0 },
-   orderStatus: {
-  type: String,
-  enum: [
-    "Payment Pending",
-    "Order Placed",
-    "Processing",
-    "Shipped",
-    "Out for Delivery",
-    "Delivered",
-    "Cancelled",
-    "Return Requested",
-    "Return Approved",
-    "Returned",
-    "Return Rejected",
-    "Failed",
-    "Confirmed"
-  ],
-  default: "Payment Pending"
-},
-
+    orderStatus: {
+      type: String,
+      enum: [
+        "Payment Pending",
+        "Order Placed",
+        "Processing",
+        "Shipped",
+        "Out for Delivery",
+        "Delivered",
+        "Cancelled",
+        "Return Requested",
+        "Return Approved",
+        "Returned",
+        "Return Rejected",
+        "Failed",
+        "Confirmed"
+      ],
+      default: "Payment Pending"
+    },
     statusTimeline: {
       orderPlaced: { type: Date },
       processing: { type: Date },
@@ -70,34 +82,34 @@ const orderSchema = new mongoose.Schema(
       outForDelivery: { type: Date },
       delivered: { type: Date },
       returned: { type: Date },
-      failed:{ type: Date }
+      failed: { type: Date }
     },
-
     paymentMethod: { type: String, enum: ["COD", "Razorpay", "Wallet"], required: true },
     paymentStatus: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
     razorpayOrderId: { type: String, default: null },
-razorpayPaymentId: { type: String, default: null },
-
+    razorpayPaymentId: { type: String, default: null },
     isCancelled: { type: Boolean, default: false },
     cancelReason: { type: String, default: null },
     cancelledAt: { type: Date, default: null },
-failedAt: { type: Date, default: null },
-restocked: {type: Boolean,default: null},
+    failedAt: { type: Date, default: null },
+    restocked: { type: Boolean, default: null },
     returnReason: { type: String, default: null },
     returnRequestedAt: { type: Date, default: null },
+    hasReturnRequest: { type: Boolean, default: false },
     returnApprovedAt: { type: Date, default: null },
     refundProcessed: { type: Boolean, default: false },
+    refundAmount: { type: Number, default: 0 },
+    refundDate: Date,
+    refundMethod: { type: String },
     returnType: { type: String, enum: ["REFUND", "REPLACEMENT"], default: null },
     orderDate: { type: Date, default: Date.now },
     deliveredAt: { type: Date, default: null }
   },
-
   { timestamps: true }
 );
-
 orderSchema.index(
   { failedAt: 1 },
-  { expireAfterSeconds: 60 * 60 * 24 * 2 } 
+  { expireAfterSeconds: 60 * 60 * 24 * 2 }
 );
 
 

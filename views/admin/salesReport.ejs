@@ -1,169 +1,143 @@
 <%- include("../../views/partials/adminHeader", { pageTitle: "Sales Report" }) %>
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #ffe6eb;
+}
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
+.content {
+    margin-top: 80px;
+    margin-left: 220px;
+    padding: 10px;
+    min-height: 100vh;
+}
 
-        .page-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+.summary-card {
+    border-radius: 10px;
+    padding: 12px;
+}
 
-        .page-top h3 {
-            color: #a04c74;
-            font-weight: 600;
-        }
+.summary-card h6 {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
 
-        .content {
-            margin-top: 80px;
-            margin-left: 230px;
-            padding: 30px;
-            min-height: 100vh;
-        }
+.summary-card p {
+    font-size: 14px;
+    margin: 0;
+}
 
-        .filter-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-        }
+.filter-card {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+}
 
-        .summary-card {
-            border-radius: 10px;
-            padding: 15px;
-        }
+.table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 8px;
+}
 
-        .pagination-wrap {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 15px;
-            gap: 8px;
-        }
+.small-table {
+    font-size: 10.5px;
+    width: 100%;
+}
 
-        .page-btn {
-            background-color: #ff6fa5;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+.small-table th,
+.small-table td {
+    padding: 6px 8px !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
 
-        .page-btn.active {
-            background-color: #a04c74;
-            font-weight: 600;
-        }
+.small-table thead th {
+    font-size: 10.5px;
+    font-weight: 600;
+}
 
-        .page-btn:disabled {
-            background-color: #ffc4d6;
-            cursor: not-allowed;
-        }
+.small-table tbody td {
+    font-size: 10px;
+}
+
+.small-table td.text-end {
+    text-align: right;
+}
+
+.small-table .badge {
+    font-size: 9px;
+    padding: 4px 6px;
+}
+
+.small-table tr.bg-light td {
+    font-weight: 600;
+    background: #f1f3f5 !important;
+}
+
+.pagination-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.page-btn {
+    background-color: #ff6fa5;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+@media (max-width: 1200px) {
+    .content {
+        margin-left: 200px;
+    }
+}
+
 @media (max-width: 992px) {
     .content {
         margin-left: 15px;
         margin-top: 60px;
-        padding: 20px;
-    }
-
-    .page-top {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .filter-card .col-md-3 {
-        flex: 1 1 100%;
-    }
-
-    .filter-card .col-md-3.d-flex {
-        flex-direction: column;
-        gap: 10px;
+        padding: 18px;
     }
 
     .summary-card {
-        padding: 15px;
-        margin-bottom: 15px;
+        padding: 10px;
     }
 
-    .table-responsive table {
-        font-size: 13px;
-    }
-
-    .pagination-wrap {
-        flex-wrap: wrap;
-        gap: 5px;
+    .small-table {
+        font-size: 12px;
     }
 }
 
 @media (max-width: 576px) {
     .content {
-        margin-left: 10px;
-        padding: 15px;
-    }
-
-    .page-top h3 {
-        font-size: 18px;
-    }
-
-    .filter-card .form-label {
-        font-size: 14px;
-    }
-
-    .filter-card input,
-    .filter-card select,
-    .filter-card button,
-    .filter-card a {
-        font-size: 14px;
+        padding: 14px;
     }
 
     .summary-card h6 {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .summary-card p {
-        font-size: 16px;
+        font-size: 15px;
     }
 
-    .table-responsive table th,
-    .table-responsive table td {
-        font-size: 12px;
-        padding: 6px;
-    }
-
-    .table-responsive {
-        padding: 10px;
-    }
-
-    .table-responsive table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    .pagination-wrap {
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-
-    .page-btn {
-        padding: 4px 8px;
-        font-size: 12px;
+    .small-table th,
+    .small-table td {
+        padding: 5px !important;
     }
 }
-    </style>
-
-    <div class="d-flex">
+</style>
+   <div class="d-flex">
 
         <%- include("../../views/partials/adminSidebar") %>
 
             <div class="content w-100">
 
                 <div class="page-top">
-                    <h3 class="mb-4">
+                    <h3 class="mb-4 p-3">
                         <i class="bi bi-graph-up-arrow me-2"></i>Sales Report
                     </h3>
                 </div>
@@ -213,85 +187,93 @@
                         <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
                     </a>
                 </div>
+
                 <div class="row g-3 mb-4">
-
-                    <div class="col-md d-flex">
-                        <div class="card bg-primary text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body d-flex flex-column justify-content-center text-center">
-                                <h6>Total Orders</h6>
-                                <p class="mb-0 fs-5">
-                                    <%= summary.totalOrderCount %>
-                                </p>
-                            </div>
+                    <div class="col-md">
+                        <div class="card bg-primary text-white summary-card text-center">
+                            <h6>Total Orders</h6>
+                            <p class="fs-5">
+                                <%= summary.totalOrderCount %>
+                            </p>
                         </div>
                     </div>
 
-                    <div class="col-md d-flex">
-                        <div class="card bg-success text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body d-flex flex-column justify-content-center text-center">
-                                <h6>Total Sales</h6>
-                                <p class="mb-0 fs-5">₹ <%= grandTotal.totalAmount.toFixed(2) %>
-                                </p>
-                            </div>
-                        </div>
-                    </div>                  
+                    <div class="col-md">
+                        <div class="card bg-success text-white summary-card text-center">
+                            <h6>Total Sales</h6>
+                            <p class="fs-5">₹ <%= grandTotal.subtotal.toFixed(2) %>
+                            </p>
 
-                    <div class="col-md d-flex">
-                        <div class="card bg-info text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body text-center">
-                                <h6>Total Tax</h6>
-                                <p class="mb-0 fs-5">₹ <%= grandTotal.totalTax.toFixed(2) %>
-                                </p>
-                            </div>
                         </div>
                     </div>
 
-                    <div class="col-md d-flex">
-                        <div class="card bg-warning text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body d-flex flex-column justify-content-center text-center">
-                                <h6>Total Delivery Charges</h6>
-                                <p class="mb-0 fs-5">₹ <%= grandTotal.deliveryCharge.toFixed(2) %>
-                                </p>
-                            </div>
+                    <div class="col-md">
+                        <div class="card bg-info text-white summary-card text-center">
+                            <h6>Total Tax</h6>
+                            <p class="fs-5">₹ <%= grandTotal.totalTax.toFixed(2) %>
+                            </p>
                         </div>
                     </div>
 
-                     <div class="col-md d-flex">
-                        <div class="card bg-danger text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body d-flex flex-column justify-content-center text-center">
-                                <h6>Total Discounts</h6>
-                                <p class="mb-0 fs-5">₹ <%= grandTotal.totalDiscount.toFixed(2) %>
-                                </p>
-                            </div>
+                    <div class="col-md">
+                        <div class="card bg-warning text-white summary-card text-center">
+                            <h6>Delivery Charges</h6>
+                            <p class="fs-5">₹ <%= grandTotal.deliveryCharge.toFixed(2) %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md">
+                        <div class="card bg-danger text-white summary-card text-center">
+                            <h6>Total Discounts</h6>
+                            <p class="fs-5">₹ <%= grandTotal.totalDiscount.toFixed(2) %>
+                            </p>
                         </div>
                     </div>
 
-                    <div class="col-md d-flex">
-                        <div class="card bg-dark text-white summary-card shadow-sm w-100 py-3">
-                            <div class="card-body d-flex flex-column justify-content-center text-center">
-                                <h6>Net Revenue</h6>
-                                <p class="mb-0 fs-5">₹ <%= grandTotal.finalAmount.toFixed(2) %>
-                                </p>
-                            </div>
+                    <div class="col-md">
+                        <div class="card bg-success text-white summary-card text-center">
+                            <h6>Total Sales (Debit)</h6>
+                            <p class="fs-5">₹ <%= grandTotal.totalDebit.toFixed(2) %>
+                            </p>
                         </div>
                     </div>
 
+                    <div class="col-md">
+                        <div class="card bg-danger text-white summary-card text-center">
+                            <h6>Total Refunds (Credit)</h6>
+                            <p class="fs-5">₹ <%= grandTotal.totalCredit.toFixed(2) %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-md">
+                        <div class="card bg-dark text-white summary-card text-center">
+                            <h6>Net Revenue</h6>
+                            <p class="fs-5">₹ <%= grandTotal.netRevenue.toFixed(2) %>
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
+<div class="table-responsive bg-white rounded shadow-sm p-2">
 
-                <div class="table-responsive bg-white rounded shadow-sm p-3">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-dark">
-                            <tr class="text-center">
+                   <table class="table table-sm table-bordered table-hover align-middle small-table">
+
+                        <thead class="table-dark text-center">
+                            <tr>
                                 <th>Date</th>
                                 <th>Order ID</th>
                                 <th>Customer</th>
-                                <th>Subtotal</th>                       
+                                <th>Subtotal</th>
                                 <th>Tax</th>
                                 <th>Delivery</th>
-                                 <th>Discount</th>
-                                <th>Final</th>
-
+                                <th>Discount</th>
+                                <th>Sales(Debit )</th>
+                                <th>Refund(Credit)</th>
+                                <th>Net</th>
+                                <th>Status</th>
                                 <th>Payment</th>
                             </tr>
                         </thead>
@@ -299,9 +281,7 @@
                         <tbody>
                             <% if (orders.length===0) { %>
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">
-                                        No orders found for the selected period.
-                                    </td>
+                                    <td colspan="10" class="text-center text-muted">No orders found</td>
                                 </tr>
                                 <% } else { %>
 
@@ -316,12 +296,26 @@
                                             <td>
                                                 <%= order.user_id?.name || 'Unknown' %>
                                             </td>
-                                            <td>₹ <%= order.subtotal.toFixed(2) %></td>
 
-<td>₹ <%= (order.tax || 0).toFixed(2) %></td>
-<td>₹ <%= (order.deliveryCharge || 0).toFixed(2) %></td>
-<td>₹ <%= (order.couponDiscount || 0).toFixed(2) %></td>
-<td>₹ <%= order.totalPrice.toFixed(2) %></td>
+                                            <td class="text-end">₹ <%= order.subtotal.toFixed(2) %></td>
+
+                                            <td>₹ <%= (order.tax || 0).toFixed(2) %>
+                                            </td>
+                                            <td>₹ <%= (order.deliveryCharge || 0).toFixed(2) %>
+                                            </td>
+                                            <td>₹ <%= (order.couponDiscount || 0).toFixed(2) %>
+                                            </td>                         
+                                            <td>₹ <%= order.debit.toFixed(2) %>
+                                            </td>
+                                            <td>₹ <%= order.credit.toFixed(2) %>
+                                            </td>
+                                            <td>₹ <%= order.net.toFixed(2) %>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<%= order.credit > 0 ? 'danger' : 'success' %>">
+                                                    <%= order.orderStatus %>
+                                                </span>
+                                            </td>
 
                                             <td>
                                                 <%= order.paymentMethod %>
@@ -329,22 +323,33 @@
                                         </tr>
                                         <% }) %>
 
-                                            <tr class="text-center fw-bold" style="background-color: #f8f9fa;">
+                                            <tr class="fw-bold text-center bg-light">
                                                 <td colspan="3">Page Totals</td>
-                                               <td>₹ <%= summary.totalAmount.toFixed(2) %></td>
 
-<td>₹ <%= summary.totalTax.toFixed(2) %></td>
-<td>₹ <%= summary.deliveryCharge.toFixed(2) %></td>
-<td>₹ <%= summary.totalDiscount.toFixed(2) %></td>
-<td>₹ <%= summary.finalAmount.toFixed(2) %></td>
+                                                <td>₹ <%= summary.subtotal.toFixed(2) %>
+                                                </td>
+                                                <td>₹ <%= summary.totalTax.toFixed(2) %>
+                                                </td>
+                                                <td>₹ <%= summary.deliveryCharge.toFixed(2) %>
+                                                </td>
+                                                <td>₹ <%= summary.totalDiscount.toFixed(2) %>
+                                                </td>
+                                             
+                                                <td>₹ <%= summary.totalDebit.toFixed(2) %>
+                                                </td>
+                                                <td>₹ <%= summary.totalCredit.toFixed(2) %>
+                                                </td>
 
+                                                <td>₹ <%= summary.netRevenue.toFixed(2) %>
+                                                </td>
                                                 <td></td>
                                             </tr>
+
 
                                             <% } %>
                         </tbody>
                     </table>
-                    <div class="pagination-wrap">
+                <div class="pagination-wrap">
 
                         <% let start=pagination.currentPage - 1; let end=pagination.currentPage; if (start < 1) {
                             start=1; end=2; } if (end> pagination.totalPages) {
@@ -394,16 +399,12 @@
                                                                     <% } %>
 
                     </div>
-
-
                 </div>
-
             </div>
     </div>
 
 
     <%- include("../../views/partials/adminFooter") %>
-
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

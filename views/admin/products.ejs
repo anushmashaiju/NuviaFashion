@@ -111,16 +111,16 @@
       border: 2px solid #ff9bb8;
     }
 
-    .action-icon {
-      cursor: pointer;
-      font-size: 1rem;
-      margin: 0 3px;
-      transition: transform 0.2s ease;
-    }
+ .action-icon {
+  cursor: pointer;
+  font-size: 0.8rem;   
+  margin: 0 2px;       
+  transition: transform 0.2s ease;
+}
 
-    .action-icon:hover {
-      transform: scale(1.2);
-    }
+.action-icon:hover {
+  transform: scale(1.1); 
+}
 
     .delete {
       color: #e74c3c;
@@ -178,299 +178,263 @@
       border-radius: 5px;
       font-size: 0.8rem;
     }
-  
-@media (max-width: 991px) {
-  .admin-main {
-    margin-left: 0;
-    padding: 16px;
-  }
 
-  .admin-layout {
-    flex-direction: column;
-  }
-}
+    @media (max-width: 991px) {
+      .admin-main {
+        margin-left: 0;
+        padding: 16px;
+      }
 
-@media (max-width: 768px) {
+      .admin-layout {
+        flex-direction: column;
+      }
+    }
 
-  .page-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .search-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
+    @media (max-width: 768px) {
 
-  .search-row input {
-    width: 100%;
-  }
+      .page-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
 
-  .reset-btn {
-    width: 100%;
-  }
+      .search-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
 
-  .table-responsive {
-    overflow-x: auto;
-  }
+      .search-row input {
+        width: 100%;
+      }
 
-  .table-custom {
-    min-width: 1100px;
-  }
-  .pagination-wrap {
-    flex-wrap: wrap;
-  }
-}
+      .reset-btn {
+        width: 100%;
+      }
 
-@media (max-width: 480px) {
+      .table-responsive {
+        overflow-x: auto;
+      }
 
-  .page-top h3 {
-    font-size: 1.1rem;
-  }
+      .table-custom {
+        min-width: 1100px;
+      }
 
-  .btn-add {
-    width: 100%;
-    text-align: center;
-  }
-}
+      .pagination-wrap {
+        flex-wrap: wrap;
+      }
+    }
 
+    @media (max-width: 480px) {
+
+      .page-top h3 {
+        font-size: 1.1rem;
+      }
+
+      .btn-add {
+        width: 100%;
+        text-align: center;
+      }
+    }
   </style>
 
   <div class="admin-layout">
     <%- include("../../views/partials/adminSidebar.ejs") %>
 
       <main class="admin-main">
-      
-          <div class="page-top">
-            <h3>Products</h3>
-            <a href="/admin/products/add" class="btn-add">+ Add Product</a>
-          </div>
 
-          <div class="search-row">
-            <input type="text" id="productSearch" class="form-control" placeholder="Search products..."
-              value="<%= search || '' %>" />
-            <button class="reset-btn" id="resetSearch">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
+        <div class="page-top">
+          <h3>Products</h3>
+          <a href="/admin/products/add" class="btn-add">+ Add Product</a>
+        </div>
 
-          <div class="card-body p-4">
-            <% if (products && products.length> 0) { %>
-              <div class="table-responsive">
-                <table class="table table-bordered text-center align-middle table-custom">
-                  <thead>
+        <div class="search-row">
+          <input type="text" id="productSearch" class="form-control" placeholder="Search products..."
+            value="<%= search || '' %>" />
+          <button class="reset-btn" id="resetSearch">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="card-body p-6">
+          <% if (products && products.length> 0) { %>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle table-custom">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Brand</th>
+                    <th>Category Offer(%)</th>
+                    <th>Product Offer(%)</th>
+                    <th>Offer Status</th>
+                    <th>OfferPrice / Price</th>
+                    <th>Stock (A/T)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% products.forEach((product, index)=> {
+                    const mainStock = product.stock || 0;
+                    const variantStock = (product.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0);
+                    const totalStock = mainStock + variantStock;
+                    %>
                     <tr>
-                      <th>#</th>
-                      <th>Image</th>
-                      <th>Name</th>
-                      <th>Category</th>
-                      <th>Brand</th>
-                      <th>Category Offer(%)</th>
+                      <td>
+                        <%= (currentPage - 1) * limit + (index + 1) %>
+                      </td>
 
-                      <th>Product Offer(%)</th>
+                      <td>
+                        <% const firstImage=product.images?.length> 0 ? product.images[0] : null;
+                          %>
 
-                      <th>Offer Status</th>
-
-                      <th>OfferPrice / Price</th>
-                      <th>Stock (A/T)</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% products.forEach((product, index)=> {
-                      const mainStock = product.stock || 0;
-                      const variantStock = (product.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0);
-                      const totalStock = mainStock + variantStock;
-                      %>
-                      <tr>
-                        <td>
-                          <%= (currentPage - 1) * limit + (index + 1) %>
-                        </td>
-
-                        <td>
-                          <% const firstImage=product.images?.length> 0 ? product.images[0] : null;
-                            %>
-
-                            <% if (firstImage && typeof firstImage==="string" && firstImage.trim() !=="" ) { %>
-                              <img
-                                src="<%= firstImage.startsWith('http') ? firstImage : '/uploads/products/' + firstImage %>"
-                                class="avatar" />
-                              <% } else { %>
-                                <span class="text-muted">No Image</span>
-                                <% } %>
-                        </td>
-
-
-                        <td>
-                          <%= product.name %>
-                        </td>
-                        <td>
-                          <%= product.category?.categoryName || "-" %>
-                        </td>
-                        <td>
-                          <%= product.brand || "-" %>
-                        </td>
-                       <td>
-  <% 
-    const catOffer = product.category?.categoryOffer;
-    const now = new Date();
-    const catActive =
-      catOffer &&
-      catOffer.isActive &&
-      catOffer.startDate &&
-      catOffer.endDate &&
-      now >= new Date(catOffer.startDate) &&
-      now <= new Date(catOffer.endDate);
-  %>
-
-  <% if (catOffer?.percentage > 0) { %>
-    <%= catOffer.percentage %>%
-    <span class="badge <%= catActive ? 'bg-success' : 'bg-danger' %>">
-      <i class="bi <%= catActive ? 'bi-check-circle-fill' : 'bi-x-circle-fill' %>"></i>
-    </span>
-  <% } else { %>
-    <span class="badge bg-secondary">No Offer</span>
-  <% } %>
-</td>
-
-<td>
-  <% 
-    // Extract product offer safely
-    const offer = product.productOffer;
-    let isActive = false;
-
-    if (offer && offer.percentage > 0 && offer.startDate && offer.endDate) {
-      const now = new Date();
-      const start = new Date(offer.startDate);
-      const end = new Date(offer.endDate);
-
-      isActive = now >= start && now <= end;
-    }
-  %>
-
-  <% if (offer) { %>
-
-    <% if (offer.percentage > 0) { %>
-      <%= offer.percentage %>%
-
-      <% if (isActive) { %>
-        <span class="badge bg-success">
-          <i class="bi bi-check-circle-fill"></i>
-        </span>
-      <% } else { %>
-        <span class="badge bg-danger">
-          <i class="bi bi-x-circle-fill"></i>
-        </span>
-      <% } %>
-
-    <% } else { %>
-      <span class="badge bg-secondary">No Offer</span>
-    <% } %>
-
-  <% } else { %>
-    —
-  <% } %>
-</td>
-
-                       <td>
-<% if (product.activeOffer && product.activeOffer.percentage > 0) { %>
-    <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Offer</span>
-<% } else { %>
-    <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> No Offer</span>
-<% } %>
-
-</td>
-
-
-
-
-<td>
-  <span style="color: green; font-weight:600;">₹ <%= product.finalPrice %></span>
-  /
-  <span style="color: red; text-decoration: line-through;">₹ <%= product.price %></span>
-</td>
-
-
-
-                        <td>
-                          <%= mainStock %> / <%= product.totalStock || 0 %>
-                        </td>
-
-                        <td>
-                          <% if (product.isBlocked) { %>
-                            <span class="badge bg-danger">Blocked</span>
-                            <% } else if (!product.isListed) { %>
-                              <span class="badge bg-secondary">Unlisted</span>
-                              <% } else { %>
-                                <span class="badge bg-success">Active</span>
-                                <% } %>
-                        </td>
-
-                        <td>
-                          <a href="/admin/products/edit/<%= product._id %>" class="action-icon edit" title="Edit">
-                            <i class="bi bi-pencil-square"></i>
-                          </a>
-                          <a href="#" class="action-icon delete" onclick="confirmDelete('<%= product._id %>')"
-                            title="Delete">
-                            <i class="bi bi-trash"></i>
-                          </a>
-                          <% if (product.isBlocked) { %>
-                            <a href="#" class="action-icon unblock"
-                              onclick="confirmBlockToggle('<%= product._id %>', false)" title="Unblock">
-                              <i class="bi bi-unlock"></i>
-                            </a>
+                          <% if (firstImage && typeof firstImage==="string" && firstImage.trim() !=="" ) { %>
+                            <img
+                              src="<%= firstImage.startsWith('http') ? firstImage : '/uploads/products/' + firstImage %>"
+                              class="avatar" />
                             <% } else { %>
-                              <a href="#" class="action-icon block"
-                                onclick="confirmBlockToggle('<%= product._id %>', true)" title="Block">
-                                <i class="bi bi-ban"></i>
-                              </a>
+                              <span class="text-muted">No Image</span>
                               <% } %>
-                                <% if (product.isListed) { %>
-                                  <a href="#" class="action-icon unlist"
-                                    onclick="confirmListToggle('<%= product._id %>', false)" title="Unlist">
-                                    <i class="bi bi-eye-slash"></i>
-                                  </a>
-                                  <% } else { %>
-                                    <a href="#" class="action-icon list"
-                                      onclick="confirmListToggle('<%= product._id %>', true)" title="List">
-                                      <i class="bi bi-eye"></i>
-                                    </a>
-                                    <% } %>
+                      </td>
+                      <td>
+                        <%= product.name %>
+                      </td>
+                      <td>
+                        <%= product.category?.categoryName || "-" %>
+                      </td>
+                      <td>
+                        <%= product.brand || "-" %>
+                      </td>
+                      <td>
+                        <% const catOffer=product.category?.categoryOffer; const now=new Date(); const
+                          catActive=catOffer && catOffer.isActive && catOffer.startDate && catOffer.endDate && now>= new
+                          Date(catOffer.startDate) &&
+                          now <= new Date(catOffer.endDate); %>
 
-                        </td>
-                      </tr>
-                      <% }) %>
-                  </tbody>
-                </table>
-              </div>
-              <div class="pagination-wrap">
-                <button class="page-btn" <%=currentPage> 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
-                  &laquo; Prev
+                            <% if (catOffer?.percentage> 0) { %>
+                              <%= catOffer.percentage %>%
+                                <span class="badge <%= catActive ? 'bg-success' : 'bg-danger' %>">
+                                  <i class="bi <%= catActive ? 'bi-check-circle-fill' : 'bi-x-circle-fill' %>"></i>
+                                </span>
+                                <% } else { %>
+                                  <span class="badge bg-secondary">No Offer</span>
+                                  <% } %>
+                      </td>
+
+                      <td>
+                        <% const offer=product.productOffer; let isActive=false; if (offer && offer.percentage> 0 &&
+                          offer.startDate && offer.endDate) {
+                          const now = new Date();
+                          const start = new Date(offer.startDate);
+                          const end = new Date(offer.endDate);
+
+                          isActive = now >= start && now <= end; } %>
+
+                            <% if (offer) { %>
+
+                              <% if (offer.percentage> 0) { %>
+                                <%= offer.percentage %>%
+
+                                  <% if (isActive) { %>
+                                    <span class="badge bg-success">
+                                      <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                    <% } else { %>
+                                      <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                      </span>
+                                      <% } %>
+
+                                        <% } else { %>
+                                          <span class="badge bg-secondary">No Offer</span>
+                                          <% } %>
+
+                                            <% } else { %>
+                                              —
+                                              <% } %>
+                      </td>
+
+                      <td>
+                        <% if (product.activeOffer && product.activeOffer.percentage> 0) { %>
+                          <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Offer</span>
+                          <% } else { %>
+                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> No Offer</span>
+                            <% } %>
+
+                      </td>
+
+                      <td>
+                        <span style="color: green; font-weight:600;">₹ <%= product.finalPrice %></span>
+                        /
+                        <span style="color: red; text-decoration: line-through;">₹ <%= product.price %></span>
+                      </td>
+
+                      <td>
+                        <%= mainStock %> / <%= product.totalStock || 0 %>
+                      </td>
+
+                      <td>
+                        <% if (product.isBlocked) { %>
+                          <span class="badge bg-danger">Blocked</span>
+                          <% } else { %>
+                            <span class="badge bg-success">Active</span>
+                            <% } %>
+                      </td>
+
+                      <td>
+                        <a href="/admin/products/edit/<%= product._id %>" class="action-icon edit" title="Edit">
+                          <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <a href="#" class="action-icon delete" onclick="confirmDelete('<%= product._id %>')"
+                          title="Delete">
+                          <i class="bi bi-trash"></i>
+                        </a>
+                        <% if (product.isBlocked) { %>
+                          <a href="#" class="action-icon unblock"
+                            onclick="confirmBlockToggle('<%= product._id %>', false)" title="Unblock">
+                            <i class="bi bi-unlock"></i>
+                          </a>
+                          <% } else { %>
+                            <a href="#" class="action-icon block"
+                              onclick="confirmBlockToggle('<%= product._id %>', true)" title="Block">
+                              <i class="bi bi-ban"></i>
+                            </a>
+                            <% } %>
+                      </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination-wrap">
+              <button class="page-btn" <%=currentPage> 1 ? `onclick="changePage(${currentPage - 1})"` : "disabled" %>>
+                &laquo; Prev
+              </button>
+
+              <% for (let i=1; i <=totalPages; i++) { %>
+                <button class="page-btn <%= i === currentPage ? 'active' : '' %>" onclick="changePage(<%= i %>)">
+                  <%= i %>
                 </button>
-
-                <% for (let i=1; i <=totalPages; i++) { %>
-                  <button class="page-btn <%= i === currentPage ? 'active' : '' %>" onclick="changePage(<%= i %>)">
-                    <%= i %>
-                  </button>
-                  <% } %>
-
-                    <button class="page-btn" <%=currentPage < totalPages ? `onclick="changePage(${currentPage + 1})" `
-                      : "disabled" %>>
-                      Next &raquo;
-                    </button>
-              </div>
-              <% } else { %>
-                <div class="text-center py-5">
-                  <img src="/img/empty.svg" alt="No Products" width="200" class="mb-3">
-                  <h5 class="text-muted">No products added yet</h5>
-                  <a href="/admin/products/add" class="btn btn-pink mt-3">
-                    <i class="fas fa-plus me-2"></i>Add New Product
-                  </a>
-                </div>
                 <% } %>
-          </div>
- 
+
+                  <button class="page-btn" <%=currentPage < totalPages ? `onclick="changePage(${currentPage + 1})" `
+                    : "disabled" %>>
+                    Next &raquo;
+                  </button>
+            </div>
+            <% } else { %>
+              <div class="text-center py-5">
+                <img src="/img/empty.svg" alt="No Products" width="200" class="mb-3">
+                <h5 class="text-muted">No products added yet</h5>
+                <a href="/admin/products/add" class="btn btn-pink mt-3">
+                  <i class="fas fa-plus me-2"></i>Add New Product
+                </a>
+              </div>
+              <% } %>
+        </div>
+
       </main>
   </div>
 
@@ -524,24 +488,6 @@
         }).then((result) => {
           if (result.isConfirmed) {
             window.location.href = `/admin/products/${id}/toggle-block`;
-          }
-        });
-      }
-
-      function confirmListToggle(id, toList) {
-        Swal.fire({
-          title: toList ? "List Product?" : "Unlist Product?",
-          text: toList
-            ? "Do you want to list this product?"
-            : "Are you sure you want to unlist this product?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonColor: toList ? "#20c997" : "#6c757d",
-          cancelButtonColor: "#6c757d",
-          confirmButtonText: toList ? "Yes, list it!" : "Yes, unlist it!"
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.location.href = `/admin/products/${id}/toggle-list`;
           }
         });
       }

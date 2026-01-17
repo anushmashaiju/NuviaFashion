@@ -95,12 +95,13 @@
     window.location.href = url;
   });
 
-  const orderId = "<%= order?.orderID || '' %>";
-  const goToOrderBtn = document.getElementById("goToOrderBtn");
+  const orderStatus = "<%= order?.orderStatus || '' %>";
+const orderId = "<%= order?.orderID || '' %>";
 
-  if (orderId) {
-    goToOrderBtn.href = `/order/${orderId}`; 
-  } else {
-    goToOrderBtn.href = "/order/list";
-  }
+if (orderId && orderStatus !== "Failed") {
+  goToOrderBtn.href = `/order/${orderId}`;
+} else {
+  goToOrderBtn.href = "/order/list";
+}
+
 </script>
