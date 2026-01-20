@@ -228,6 +228,21 @@ const selectedAddress =
         paymentMethod: "Razorpay",
         sessionSummary: req.session.orderSummary
       });
+const deliveryCharge = calculateDeliveryCharge({
+  subtotal: summary.subtotal,
+  paymentMethod: "Razorpay",
+  address: selectedAddress
+});
+
+summary.deliveryCharge = deliveryCharge;
+summary.finalAmount =
+  summary.subtotal +
+  summary.tax +
+  deliveryCharge -
+  (summary.couponDiscount || 0);
+
+req.session.orderSummary = summary;
+await req.session.save();
 
     if (!items || !items.length) {
       req.flash("error", MESSAGES.NO_ITEMS_TO_CHECKOUT);

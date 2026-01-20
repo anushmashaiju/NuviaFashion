@@ -14,44 +14,47 @@ import MESSAGES from "../../utils/messages.js";
 };
 
 // Admin Login
- const adminLogin = async (req, res) => {
+const adminLogin = async (req, res) => {
   const { email, password } = req.body;
+console.log("LOGIN EMAIL:", email);
+const userByEmail = await User.findOne({ email });
+console.log("USER FOUND:", userByEmail);
+
+  if (!email) {
+    return res.render("admin/adminLogin", {
+      title: "Admin Login",
+      errorField: "email",
+      errorMessage: MESSAGES.EMAIL_REQUIRED,
+    });
+  }
+  
+  if (!password) {
+    return res.render("admin/adminLogin", {
+      title: "Admin Login",
+      email,
+      errorField: "password",
+      errorMessage: MESSAGES.PASSWORD_REQUIRED,
+    });
+  }
 
   try {
-    const user = await User.findOne({ email });
-
-    if (!email) {
-      return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
-        title: "Admin Login",
-        errorField: "email",
-        errorMessage: MESSAGES.EMAIL_REQUIRED
-      });
-    }
-
-    if (!password) {
-      return res.status(STATUS.BAD_REQUEST).render("admin/adminLogin", {
-        title: "Admin Login",
-        errorField: "password",
-        errorMessage: MESSAGES.PASSWORD_REQUIRED
-      });
-    }
-
-    if (!user || user.role !== "admin") {
-      return res.status(STATUS.UNAUTHORIZED).render("admin/adminLogin", {
+    const user = await User.findOne({ email, role: "admin" });
+    if (!user) {
+      return res.render("admin/adminLogin", {
         title: "Admin Login",
         email,
         errorField: "email",
-        errorMessage: MESSAGES.EMAIL_REQUIRED
+        errorMessage: MESSAGES.ADMIN_NOT_FOUND,
       });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(STATUS.UNAUTHORIZED).render("admin/adminLogin", {
+      return res.render("admin/adminLogin", {
         title: "Admin Login",
         email,
         errorField: "password",
-        errorMessage: MESSAGES.INCORRECT_PASSWORD
+        errorMessage: MESSAGES.INCORRECT_PASSWORD,
       });
     }
 
@@ -59,30 +62,20 @@ import MESSAGES from "../../utils/messages.js";
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: "admin",
     };
 
-    req.session.save(err => {
-      if (err) {
-        return res.status(STATUS.SERVER_ERROR).render("admin/adminLogin", {
-          title: "Admin Login",
-          email,
-          errorField: null,
-          errorMessage: MESSAGES.SERVER_ERROR
-        });
-      }
-      res.status(STATUS.SUCCESS).redirect("/admin/dashboard");
-    });
+    res.redirect("/admin/dashboard");
 
   } catch (error) {
     console.error(error);
-    res.status(STATUS.SERVER_ERROR).render("admin/adminLogin", {
+    res.render("admin/adminLogin", {
       title: "Admin Login",
-      errorField: "",
-      errorMessage: MESSAGES.SERVER_ERROR
+      errorMessage: MESSAGES.SERVER_ERROR,
     });
   }
 };
+
 // postAdminForgotPassword
  const postAdminForgotPassword = async (req, res) => {
   const { email } = req.body;

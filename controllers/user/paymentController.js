@@ -153,18 +153,6 @@ await Cart.updateOne(
     const tax = parseFloat(summary.tax.toFixed(2));
     const couponDiscount = parseFloat(summary.couponDiscount || 0);
     const products = items.map(i => ({ deliveryCharge: i.deliveryCharge || 0 }));
-
-    // const baseDeliveryCharge = calculateDeliveryCharge({
-    //   subtotal,
-    //   products,
-    //   paymentMethod,
-    //   address
-    // });
-
-    // let deliveryCharge = baseDeliveryCharge;
-
-    // summary.baseDeliveryCharge = baseDeliveryCharge;
-    // summary.deliveryCharge = deliveryCharge;
 const deliveryCharge = Number(summary.deliveryCharge || 0);
 
     let totalAmount = subtotal + tax - couponDiscount + deliveryCharge;

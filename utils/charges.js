@@ -58,11 +58,6 @@ const calculateDeliveryCharge = ({
   if (paymentMethod === "COD") {
     charge += 30;
   }
-console.log("calculateDeliveryCharge called with:", {
-  subtotal,
-  state: address?.state,
-  paymentMethod
-});
   return charge;
 };
 

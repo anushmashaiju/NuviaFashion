@@ -873,16 +873,19 @@
     }));
   });
 }
-                if (buyNowBtn) {
-                  buyNowBtn.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    let url = `/buy-now/${productId}?buyNow=true`;
-                    if (buyNowBtn.dataset.variantId) {
-                      url += `?variantId=${buyNowBtn.dataset.variantId}`;
-                    }
-                    window.location.href = url;
-                  });
-                }
+           if (buyNowBtn) {
+  buyNowBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    let url = `/buy-now/${productId}?buyNow=true`;
+
+    if (buyNowBtn.dataset.variantId) {
+      url += `&variantId=${buyNowBtn.dataset.variantId}`;
+    }
+
+    window.location.href = url;
+  });
+}
 
                 if (wishlistBtn) {
                   wishlistBtn.addEventListener("click", async (e) => {

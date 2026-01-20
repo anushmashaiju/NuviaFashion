@@ -203,28 +203,54 @@
           text: "Only JPG, JPEG, PNG, WEBP images are allowed",
           confirmButtonColor: "#e63946",
         });
-
         this.value = "";
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.style.width = "150px";
-        img.style.height = "150px";
-        img.style.objectFit = "contain";
-        img.style.border = "1px solid #ccc";
-        img.style.borderRadius = "8px";
-        preview.appendChild(img);
+      // Wrapper
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "relative";
+      wrapper.style.display = "inline-block";
+
+      // Image
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.style.width = "150px";
+      img.style.height = "150px";
+      img.style.objectFit = "contain";
+      img.style.border = "1px solid #ccc";
+      img.style.borderRadius = "8px";
+
+      // ❌ Remove button
+      const removeBtn = document.createElement("span");
+      removeBtn.innerHTML = "&times;";
+      removeBtn.style.position = "absolute";
+      removeBtn.style.top = "-8px";
+      removeBtn.style.right = "-8px";
+      removeBtn.style.width = "22px";
+      removeBtn.style.height = "22px";
+      removeBtn.style.background = "#e63946";
+      removeBtn.style.color = "#fff";
+      removeBtn.style.borderRadius = "50%";
+      removeBtn.style.display = "flex";
+      removeBtn.style.alignItems = "center";
+      removeBtn.style.justifyContent = "center";
+      removeBtn.style.cursor = "pointer";
+      removeBtn.style.fontWeight = "bold";
+
+      removeBtn.onclick = () => {
+        preview.innerHTML = "";
+        input.value = "";
       };
-      reader.readAsDataURL(file);
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(removeBtn);
+      preview.appendChild(wrapper);
     });
   });
 
+  // Success alert
   const params = new URLSearchParams(window.location.search);
-
   if (params.get("success") === "true") {
     Swal.fire({
       icon: "success",
@@ -235,27 +261,6 @@
       window.location.href = "/admin/categories";
     });
   }
-  
-  const input = document.getElementById("thumbnail");
-  const preview = document.getElementById("preview");
-
-  input.addEventListener("change", function () {
-    preview.innerHTML = "";
-    if (this.files && this.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.style.width = "150px";
-        img.style.height = "150px";
-        img.style.objectFit = "contain";
-        img.style.border = "1px solid #ccc";
-        img.style.borderRadius = "8px";
-        preview.appendChild(img);
-      };
-      reader.readAsDataURL(this.files[0]);
-    }
-  });
 
 </script>
 

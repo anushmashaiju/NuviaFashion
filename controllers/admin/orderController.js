@@ -3,8 +3,7 @@ import Product from "../../models/productModel.js";
 import User from "../../models/userModel.js";
 import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
-import { processWalletRefund } from "../../utils/walletRefund.js";
-
+import { refundFullOrder, refundSingleItem } from "../../utils/walletRefund.js";
 
 // ADMIN — LIST ALL ORDERS
 const getOrdersPage = async (req, res) => {
@@ -289,8 +288,12 @@ const approveReturnRequest = async (req, res) => {
       !order.refundProcessed &&
       ["COD", "Razorpay", "Wallet"].includes(order.paymentMethod)
     ) {
-      await processWalletRefund({ order });
-    }
+    await refundFullOrder({
+    userId: order.user_id,
+    order,
+    description: `Refund for returned order ${order.orderID}`
+  });
+}
 
     await order.save();
 
@@ -338,9 +341,17 @@ const adminCancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
-    if (!order.refundProcessed) {
-      await processWalletRefund(order, "Refund for cancelled order");
-    }
+   if (
+  !order.refundProcessed &&
+  order.paymentMethod !== "COD"
+) {
+  await refundFullOrder({
+    userId: order.user_id,
+    order,
+    description: `Refund for cancelled order ${order.orderID}`
+  });
+}
+
 
     for (let item of order.items) {
       await Product.findByIdAndUpdate(item.productId, {
@@ -397,14 +408,37 @@ if (!order) {
       });
     }
 
-    if (item.returnType === "REFUND" && !item.refundProcessed) {
-      await processWalletRefund({
-        userId: order.user_id,
-        order,
-        item,
-        description: `Refund for returned item: ${item.productName}`
-      });
-    }
+if (item.returnType === "REFUND" && !item.refundProcessed) {
+
+  // 🔹 1. item subtotal
+  const itemSubtotal = Number((item.finalPrice * item.quantity).toFixed(2));
+
+  // 🔹 2. proportional tax
+  const itemTax = order.subtotal > 0
+    ? Number(((itemSubtotal / order.subtotal) * order.tax).toFixed(2))
+    : 0;
+
+  // 🔹 3. proportional coupon share
+  let itemCouponShare = 0;
+  if (order.couponDiscount > 0 && order.subtotal > 0) {
+    itemCouponShare = Number(
+      ((itemSubtotal / order.subtotal) * order.couponDiscount).toFixed(2)
+    );
+  }
+
+  // 🔹 4. final refund amount (NO delivery charge)
+  const refundAmount = Number(
+    (itemSubtotal + itemTax - itemCouponShare).toFixed(2)
+  );
+
+  // 🔹 5. wallet refund
+  await refundSingleItem({
+    userId: order.user_id,
+    item,
+    refundAmount,
+    description: `Refund for returned item: ${item.productName}`
+  });
+}
 
     const activeItems = order.items.filter(
       i => !i.isCancelled && !i.isReturned

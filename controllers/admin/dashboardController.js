@@ -1,32 +1,8 @@
 import User from "../../models/userModel.js";
 import Order from "../../models/orderModel.js";
 import STATUS from "../../utils/statusCodes.js";
+import {normalizeOrder} from "../admin/reportController.js";
 
-const normalizeOrder = (order) => {
-  let debit = 0;
-  let credit = 0;
-
-  const refundedStatuses = [
-    "Cancelled",
-    "Returned",
-    "Return Approved"
-  ];
-
-  const isRefunded = refundedStatuses.includes(order.orderStatus);
-
-  if (isRefunded) {
-    credit = order.refundAmount || order.totalPrice || 0;
-  } else if (order.paymentStatus === "success") {
-    debit = order.totalPrice || 0;
-  }
-
-  return {
-    ...order.toObject(),
-    debit,
-    credit,
-    net: debit - credit
-  };
-};
 
 // Get admin dashboard
 const getAdminDashboard = async (req, res) => {
@@ -75,22 +51,18 @@ const getAdminDashboard = async (req, res) => {
 
     const normalizedOrders = allOrders.map(normalizeOrder);
 
-    const totalRevenue = normalizedOrders.reduce(
-      (sum, o) => sum + o.net,
-      0
-    );
-    const monthlyRevenue = Array(12).fill(0);
+ const totalRevenue = normalizedOrders.reduce(
+  (sum, o) => sum + o.net,
+  0
+);
 
-    successfulOrders.forEach(order => {
-      const month = new Date(order.createdAt).getMonth();
-      const monthlyRevenue = Array(12).fill(0);
+const monthlyRevenue = Array(12).fill(0);
 
-      normalizedOrders.forEach(order => {
-        const month = new Date(order.createdAt).getMonth();
-        monthlyRevenue[month] += order.net;
-      });
+normalizedOrders.forEach(order => {
+  const month = new Date(order.createdAt).getMonth();
+  monthlyRevenue[month] += order.net;
+});
 
-    });
 
     const statusCounts = {
       Delivered: 0,

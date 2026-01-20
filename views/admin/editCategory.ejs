@@ -112,6 +112,23 @@
   .btn-cancel:hover {
     background-color: #ffb6c8;
   }
+   .remove-existing {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    background: #e63946;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
 @media (max-width: 992px) {
   .admin-main {
     margin-left: 0 !important;
@@ -212,19 +229,32 @@
     value="<%= category.categoryOffer?.endDate ? category.categoryOffer.endDate.toISOString().split('T')[0] : '' %>"
   >
 </div>
-        <div class="form-group">
-          <label for="thumbnail">Thumbnail Image</label>
-          <input type="file" id="thumbnail" name="thumbnail" class="image-input" accept="image/*">
+       <div class="form-group">
+  <label for="thumbnail">Thumbnail Image</label>
 
-          <% if (category.thumbnail) { %>
-            <div class="image-preview">
-              <p>Current Image:</p>
-              <img src="<%= category.thumbnail %>" alt="Category Image">
-            </div>
-          <% } %>
+  <input 
+    type="file" 
+    id="thumbnail" 
+    name="thumbnail" 
+    class="image-input" 
+    accept="image/*"
+  />
 
-          <div id="newThumbnailPreview"></div>
-        </div>
+  <div id="preview" class="d-flex flex-wrap mt-2">
+    <% if (category && category.thumbnail) { %>
+      <div class="img-wrapper" style="position:relative; display:inline-block;">
+        <img 
+          src="<%= category.thumbnail %>" 
+          style="width:150px;height:150px;object-fit:contain;border:1px solid #ccc;border-radius:8px;"
+        />
+        <span class="remove-existing">&times;</span>
+      </div>
+    <% } %>
+  </div>
+
+  <input type="hidden" name="removeThumbnail" id="removeThumbnail" value="false">
+</div>
+
 
         <div class="form-buttons">
           <button type="submit" class="btn-update">Update Category</button>
@@ -247,26 +277,64 @@
 <% } %>
 
 <script>
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-  document.querySelectorAll(".image-input").forEach(input => {
-    input.addEventListener("change", function () {
-      const file = this.files[0];
-
-      if (!file) return;
-
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: "error",
-          title: "Invalid File",
-          text: "Only JPG, JPEG, PNG, WEBP images are allowed",
-          confirmButtonColor: "#e63946",
-        });
-
-        this.value = "";
-      }
+  const allowedTypes = ["image/jpeg","image/png","image/webp","image/jpg"];
+  const input = document.getElementById("thumbnail");
+  const preview = document.getElementById("preview");
+  const removeFlag = document.getElementById("removeThumbnail");
+  document.querySelectorAll(".remove-existing").forEach(btn => {
+    btn.addEventListener("click", () => {
+      preview.innerHTML = "";
+      removeFlag.value = "true";
     });
   });
+
+  input.addEventListener("change", function () {
+    const file = this.files[0];
+    preview.innerHTML = "";
+
+    if (!file) return;
+
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File",
+        text: "Only JPG, JPEG, PNG, WEBP images are allowed",
+        confirmButtonColor: "#e63946",
+      });
+      this.value = "";
+      return;
+    }
+
+    removeFlag.value = "false";
+
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "relative";
+    wrapper.style.display = "inline-block";
+
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.style.width = "150px";
+    img.style.height = "150px";
+    img.style.objectFit = "contain";
+    img.style.border = "1px solid #ccc";
+    img.style.borderRadius = "8px";
+
+    const removeBtn = document.createElement("span");
+    removeBtn.innerHTML = "&times;";
+    removeBtn.className = "remove-existing";
+
+    removeBtn.onclick = () => {
+      preview.innerHTML = "";
+      input.value = "";
+      removeFlag.value = "true";
+    };
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeBtn);
+    preview.appendChild(wrapper);
+  });
+
   const params = new URLSearchParams(window.location.search);
   if (params.get("success") === "true") {
     Swal.fire({

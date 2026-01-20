@@ -45,7 +45,7 @@ const productSchema = new mongoose.Schema(
     productOffer: productOfferSchema,
     activeOffer: activeOfferSchema,
     coupons: [{ type: mongoose.Schema.Types.ObjectId, ref: "Coupon" }],
-
+    isListed: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
   },

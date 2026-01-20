@@ -244,6 +244,8 @@ const addProduct = [
         description,
         images: uploadedImages,
         variants,
+        isListed: true,
+        isBlocked: false,
         productOffer: {
           percentage: offerNum,
           startDate: productStart,
@@ -278,7 +280,6 @@ const addProduct = [
   }
 ];
 
-
 // RENDER EDIT PRODUCT PAGE
 
 const getEditProductPage = async (req, res) => {
@@ -308,7 +309,7 @@ const updateProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product)
       return res.status(STATUS.NOT_FOUND).json({ errorMessage: MESSAGES.PRODUCT_NOT_FOUND });
-
+    product.isListed = true;
     const {
       name, brand, price, description, category, stock,
       offerPercentage, offerStartDate, offerEndDate,

@@ -6,6 +6,7 @@ import ReferralCode from "../../models/referralModel.js";
 import Wallet from "../../models/walletModel.js";
 import { generateReferralCode } from "../../utils/referralHelper.js";
 import STATUS from "../../utils/statusCodes.js";
+import MESSAGES from "../../utils/messages.js";
 
 //  Welcome Page
 const getWelcomePage = (req, res) => {

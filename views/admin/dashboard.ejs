@@ -200,9 +200,7 @@
   const monthlyRevenue = <%- JSON.stringify(monthlyRevenue) %>;
   const statusCounts = <%- JSON.stringify(statusCounts) %>;
 
-  // ======================
   // Revenue Chart
-  // ======================
   const revenueCtx = document.getElementById('revenueChart');
   if (revenueCtx) {
     window.revenueChart = new Chart(revenueCtx, {
@@ -222,9 +220,7 @@
     });
   }
 
-  // ======================
   // Order Status Pie Chart
-  // ======================
   const orderCtx = document.getElementById('orderChart');
   if (orderCtx) {
     new Chart(orderCtx, {
@@ -242,9 +238,7 @@
     });
   }
 
-  // ======================
   // Revenue Filter
-  // ======================
   document.getElementById("revenueFilter").addEventListener("change", async (e) => {
     const res = await fetch(`/admin/revenue-stats?filter=${e.target.value}`);
     const result = await res.json();
@@ -259,9 +253,7 @@
     revenueChart.update();
   });
 
-  // ======================
   // Best Selling Products
-  // ======================
   const productRes = await fetch("/admin/best-selling-products");
   const productData = await productRes.json();
 
@@ -276,9 +268,7 @@
     }
   });
 
-  // ======================
   // Best Selling Categories
-  // ======================
   const categoryRes = await fetch("/admin/best-selling-categories");
   const categoryData = await categoryRes.json();
 
@@ -293,9 +283,7 @@
     }
   });
 
-  // ======================
   // Best Selling Brands
-  // ======================
   const brandRes = await fetch("/admin/best-selling-brands");
   const brandData = await brandRes.json();
 

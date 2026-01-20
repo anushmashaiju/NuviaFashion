@@ -238,6 +238,7 @@ const downloadSalesReportExcel = async (req, res) => {
 };
 
 export {
+  normalizeOrder,
   getSalesReport,
   downloadSalesReportPDF,
   downloadSalesReportExcel

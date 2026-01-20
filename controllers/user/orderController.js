@@ -5,7 +5,7 @@ import ejs from "ejs";
 import path from "path";
 import MESSAGES from "../../utils/messages.js";
 import STATUS from "../../utils/statusCodes.js";
-import { processWalletRefund } from "../../utils/walletRefund.js";
+import { refundFullOrder, refundSingleItem } from "../../utils/walletRefund.js";
 import Coupon from "../../models/couponModel.js";
 
 const getCouponEligibleSubtotal = (order, productIdToExclude) => {
@@ -136,7 +136,7 @@ const cancelOrder = async (req, res) => {
         message: MESSAGES.LOGIN_REQUIRED
       });
     }
- const { orderID } = req.params;
+    const { orderID } = req.params;
 
     const order = await Order.findOne({
       orderID,
@@ -157,27 +157,44 @@ const cancelOrder = async (req, res) => {
       });
     }
 
-  const refundable =
-  order.paymentMethod !== "COD" ||
-  (order.paymentMethod === "COD" && order.orderStatus === "Delivered");
+    const refundable =
+      order.paymentMethod !== "COD" ||
+      (order.paymentMethod === "COD" && order.orderStatus === "Delivered");
 
-if (refundable) {
-  for (const item of order.items) {
-    if (item.refundProcessed || item.isCancelled) continue;
+    // if (refundable) {
+    //   for (const item of order.items) {
+    //     if (item.refundProcessed || item.isCancelled) continue;
 
-    item.isCancelled = true;
+    //     item.isCancelled = true;
 
-    await processWalletRefund({
-      userId: order.user_id,
-      order,
-      item,
-      description: `Refund for cancelled order ${order.orderID}`
+    //     await processWalletRefund({
+    //       userId: order.user_id,
+    //       order,
+    //       item,
+    //       description: `Refund for cancelled order ${order.orderID}`
+    //     });
+    //   }
+    // }
+
+    //     order.orderStatus = "Cancelled";
+    //     order.cancelReason = reason || null;
+    //     await order.save();
+    if (refundable && !order.refundProcessed) {
+      await refundFullOrder({
+        userId: order.user_id,
+        order,
+        description: `Full refund for cancelled order ${order.orderID}`
+      });
+    }
+
+    // mark all items cancelled
+    order.items.forEach(item => {
+      item.isCancelled = true;
+      item.cancelReason = reason || null;
+      item.cancelledAt = new Date();
     });
-  }
-}
 
     order.orderStatus = "Cancelled";
-    order.cancelReason = reason || null;
     await order.save();
 
     for (let item of order.items) {
@@ -212,7 +229,7 @@ const cancelProduct = async (req, res) => {
         message: MESSAGES.LOGIN_REQUIRED
       });
     }
- const { orderID } = req.params;
+    const { orderID } = req.params;
     const order = await Order.findOne({
       orderID,
       user_id: userId
@@ -287,20 +304,33 @@ const cancelProduct = async (req, res) => {
     let refundAmount = 0;
 
     if (allowRefund) {
-      const itemSubtotal = item.finalPrice * item.quantity;
-      const itemTax = Number((itemSubtotal * 0.18).toFixed(2));
+      const itemSubtotal = Number((item.finalPrice * item.quantity).toFixed(2));
 
-      refundAmount = itemSubtotal + itemTax;
+      // proportional tax
+      const itemTax = order.subtotal > 0
+        ? Number(((itemSubtotal / order.subtotal) * order.tax).toFixed(2))
+        : 0;
+
+      // proportional coupon
+      let itemCouponShare = 0;
+      if (order.couponDiscount > 0 && order.subtotal > 0) {
+        itemCouponShare = Number(
+          ((itemSubtotal / order.subtotal) * order.couponDiscount).toFixed(2)
+        );
+      }
+      refundAmount = Number(
+        (itemSubtotal + itemTax - itemCouponShare).toFixed(2)
+      );
 
       if (refundAmount > 0) {
-      await processWalletRefund({
-  userId: order.user_id,
-  order,
-  item,
-  description: isOnlyItem
-    ? `Refund for cancelled order ${order.orderID}`
-    : `Refund for cancelled item: ${item.productName}`
-});
+        await refundSingleItem({
+          userId: order.user_id,
+          refundAmount,
+          item,
+          description: isOnlyItem
+            ? `Refund for cancelled order ${order.orderID}`
+            : `Refund for cancelled item: ${item.productName}`
+        });
 
       }
     }
@@ -358,7 +388,7 @@ const searchOrders = async (req, res) => {
   try {
     const query = req.params.query;
     const userId = req.session.user?.id;
- 
+
     if (!userId) return res.redirect("/login");
 
     const orConditions = [
@@ -405,8 +435,8 @@ const downloadInvoice = async (req, res) => {
   try {
     const { orderID } = req.params;
 
-const order = await Order.findOne({ orderID })
-  .populate("shippingAddressId");
+    const order = await Order.findOne({ orderID })
+      .populate("shippingAddressId");
 
     if (!order) return res.status(STATUS.NOT_FOUND).send(MESSAGES.ORDER_NOT_FOUND);
 
@@ -445,12 +475,12 @@ const requestReturn = async (req, res) => {
         message: MESSAGES.RETURN_REASON_REQUIRED
       });
     }
-const { orderID } = req.params;
+    const { orderID } = req.params;
 
-const order = await Order.findOne({
-  orderID,
-  user_id: userId
-});
+    const order = await Order.findOne({
+      orderID,
+      user_id: userId
+    });
 
 
     if (!order) {
@@ -517,12 +547,12 @@ const requestItemReturn = async (req, res) => {
       });
     }
 
- const { orderID } = req.params;
+    const { orderID } = req.params;
 
-const order = await Order.findOne({
-  orderID,
-  user_id: userId
-});
+    const order = await Order.findOne({
+      orderID,
+      user_id: userId
+    });
 
 
     if (!order) {
