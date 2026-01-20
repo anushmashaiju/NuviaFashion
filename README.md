@@ -48,16 +48,4 @@ Nuvia is a modern, full-featured e-commerce website for fashion products built w
 ```bash
 git clone https://github.com/anushmashaiju/NuviaFashion.git
 
-## 🖼 Screenshots
-
-### Homepage
-![Homepage](screenshots/homepage.png)
-
-### Product Page
-![Product Page](screenshots/product.png)
-
-### Cart Page
-![Cart](screenshots/cart.png)
-
-### Admin Dashboard
-![Admin Dashboard](screenshots/admin-dashboard.png)
+Mongodb compass uri - mongodb://localhost:27017/nuvia
